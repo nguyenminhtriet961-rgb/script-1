@@ -1,3 +1,8 @@
+local allowedPlaceId = 7243409883
+if game.PlaceId ~= allowedPlaceId then
+    warn("Cảnh báo: Script này không được cấp phép cho tựa game hiện tại!")
+    return -- Dừng toàn bộ quá trình chạy script phía dưới
+end
 -- ==========================================================
 -- 👑 MINH TRIẾT VIP - DUELING GROUNDS (BẢN FIX TẬN GỐC) 👑
 -- Cập nhật: Giả lập chạm màn hình (Mobile M1), Xoay mặt siêu tốc
