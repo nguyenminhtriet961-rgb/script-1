@@ -1,6 +1,6 @@
 -- ==========================================================
--- 👑 MINH TRIẾT VIP - DUELING GROUNDS (ĐA NHIỆM) 👑
--- Cập nhật: Xóa bỏ luật "Độc quyền", cho phép bật song song 
+-- 👑 MINH TRIẾT VIP - DUELING GROUNDS (BẢN FIX TẬN GỐC) 👑
+-- Cập nhật: Giả lập chạm màn hình (Mobile M1), Xoay mặt siêu tốc
 -- ==========================================================
 
 local CoreGui = game:GetService("CoreGui")
@@ -43,15 +43,13 @@ CloseBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
 CloseBtn.TextSize = 16
 CloseBtn.MouseButton1Click:Connect(function() SG:Destroy() end)
 
--- Biến quản lý trạng thái Từng Nút (Cho phép bật nhiều cái cùng lúc)
 local Toggles = {
-    ["Tự Đánh Nhào Lên"] = false,
+    ["Tự Đánh (Giả lập chạm)"] = false,
     ["Tự Đỡ (Parry)"] = false,
-    ["Khóa Mục Tiêu"] = false,
+    ["Khóa Mục Tiêu (Gắn chặt)"] = false,
     ["Xuyên Tường (ESP)"] = false
 }
 
--- Hàm tạo Nút bấm
 local function CreateToggleButton(name, yPos)
     local Btn = Instance.new("TextButton", Frame)
     Btn.Size = UDim2.new(0.9, 0, 0, 30)
@@ -60,7 +58,7 @@ local function CreateToggleButton(name, yPos)
     Btn.Font = Enum.Font.GothamBold
     Btn.Text = name .. " [TẮT]"
     Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-    Btn.TextSize = 13
+    Btn.TextSize = 12
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
     
     Btn.MouseButton1Click:Connect(function()
@@ -73,8 +71,6 @@ local function CreateToggleButton(name, yPos)
             Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
             Btn.Text = name .. " [TẮT]"
             Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-            
-            -- Xóa ESP ngay lập tức nếu tắt
             if name == "Xuyên Tường (ESP)" then
                 for _, p in pairs(Players:GetPlayers()) do
                     if p.Character and p.Character:FindFirstChild("MTRIET_ESP") then
@@ -87,26 +83,22 @@ local function CreateToggleButton(name, yPos)
     return Btn
 end
 
-CreateToggleButton("Tự Đánh Nhào Lên", 40)
+CreateToggleButton("Tự Đánh (Giả lập chạm)", 40)
 CreateToggleButton("Tự Đỡ (Parry)", 75)
-CreateToggleButton("Khóa Mục Tiêu", 110)
+CreateToggleButton("Khóa Mục Tiêu (Gắn chặt)", 110)
 CreateToggleButton("Xuyên Tường (ESP)", 145)
 
--- ==========================================
--- VÒNG LẶP XỬ LÝ CHUNG (HEARTBEAT MƯỢT MÀ)
--- ==========================================
+-- Biến chống spam chạm màn hình
+local lastAttackTick = 0
 
 RunService.Heartbeat:Connect(function()
     local char = LocalPlayer.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") or char.Humanoid.Health <= 0 then return end
     
     local myHRP = char.HumanoidRootPart
-    local equippedTool = char:FindFirstChildOfClass("Tool")
-    
     local closestTarget = nil
-    local shortestDist = 30 -- Khoảng cách quét chung
+    local shortestDist = 25 
 
-    -- Tìm mục tiêu gần nhất
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
             local dist = (p.Character.HumanoidRootPart.Position - myHRP.Position).Magnitude
@@ -115,7 +107,6 @@ RunService.Heartbeat:Connect(function()
                 closestTarget = p.Character
             end
             
-            -- Chức năng ESP Xuyên Tường
             if Toggles["Xuyên Tường (ESP)"] and not p.Character:FindFirstChild("MTRIET_ESP") then
                 local hl = Instance.new("Highlight")
                 hl.Name = "MTRIET_ESP"
@@ -127,32 +118,36 @@ RunService.Heartbeat:Connect(function()
     end
 
     if closestTarget then
-        -- 1. Khóa Mục Tiêu (Aim Assist)
-        if Toggles["Khóa Mục Tiêu"] then
+        -- 1. Aim Assist (Xoay mặt siêu nhanh, giữ nguyên trục Y)
+        if Toggles["Khóa Mục Tiêu (Gắn chặt)"] then
             local targetPos = closestTarget.HumanoidRootPart.Position
             local lookAtCFrame = CFrame.new(myHRP.Position, Vector3.new(targetPos.X, myHRP.Position.Y, targetPos.Z))
-            myHRP.CFrame = myHRP.CFrame:Lerp(lookAtCFrame, 0.2)
+            -- Tốc độ lia mặt 0.6 (rất nhanh) để chống lại trò Dash lách ra hông
+            myHRP.CFrame = myHRP.CFrame:Lerp(lookAtCFrame, 0.6)
         end
 
-        -- 2. Tự Đỡ (Parry) - Ưu tiên phòng thủ nếu địch quá gần (dưới 10 stud)
+        -- 2. Parry (Ép phím F)
         if Toggles["Tự Đỡ (Parry)"] and shortestDist < 10 then
             VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
             task.wait(0.01)
             VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
         end
 
-        -- 3. Tự Đánh (Auto M1) - Chém nếu nằm trong tầm kiếm
-        if Toggles["Tự Đánh Nhào Lên"] and equippedTool and shortestDist < 12 then
-            equippedTool:Activate()
+        -- 3. Tự đánh (Giả lập nhấp màn hình di động / Click chuột trái)
+        if Toggles["Tự Đánh (Giả lập chạm)"] and shortestDist < 12 then
+            -- Giới hạn tốc độ click để game không chặn (0.2s một lần nhấp)
+            if tick() - lastAttackTick > 0.2 then
+                lastAttackTick = tick()
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+                task.wait(0.02)
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+            end
         end
     end
 end)
 
--- Tắt các chức năng khi hồi sinh để tránh lỗi kẹt script
 LocalPlayer.CharacterAdded:Connect(function()
-    for key, _ in pairs(Toggles) do
-        Toggles[key] = false
-    end
+    for key, _ in pairs(Toggles) do Toggles[key] = false end
     for _, child in ipairs(Frame:GetChildren()) do
         if child:IsA("TextButton") and child.Name ~= "Close" then
             child.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
