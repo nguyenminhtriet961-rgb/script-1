@@ -1,38 +1,38 @@
 -- ==========================================================
--- 👑 MTRIET DUELING GROUNDS - MINIMALIST HUB 👑
--- Yêu cầu: Bật 1 tắt 3, Nút chuyển xanh ON / Đỏ OFF
+-- 👑 MINH TRIẾT VIP - DUELING GROUNDS (FULL TIẾNG VIỆT) 👑
+-- Cập nhật: Fix lỗi vừa đi vừa Parry, Menu chuẩn Việt Hóa
 -- ==========================================================
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
 
 -- Tạo GUI cơ bản
 local SG = Instance.new("ScreenGui")
-SG.Name = "MTRIET_MiniHub"
+SG.Name = "MTRIET_DuelingHub"
 SG.ResetOnSpawn = false
 pcall(function() SG.Parent = CoreGui end)
 if not SG.Parent then SG.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
 local Frame = Instance.new("Frame", SG)
-Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 Frame.Position = UDim2.new(0.5, -100, 0.1, 0)
 Frame.Size = UDim2.new(0, 200, 0, 190)
 Frame.Active = true
 Frame.Draggable = true
 Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
-Instance.new("UIStroke", Frame).Color = Color3.fromRGB(0, 150, 255)
+Instance.new("UIStroke", Frame).Color = Color3.fromRGB(255, 170, 0) -- Viền cam VIP
 Instance.new("UIStroke", Frame).Thickness = 2
 
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1, 0, 0, 30)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.Text = "DUELING GROUNDS VIP"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 14
+Title.Text = "👑 MINH TRIẾT VIP"
+Title.TextColor3 = Color3.fromRGB(255, 200, 0)
+Title.TextSize = 15
 
 local CloseBtn = Instance.new("TextButton", Frame)
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -44,18 +44,17 @@ CloseBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
 CloseBtn.TextSize = 16
 CloseBtn.MouseButton1Click:Connect(function() SG:Destroy() end)
 
--- Biến lưu trữ trạng thái để dọn dẹp
+-- Biến lưu trạng thái
 local ActiveFeature = "None"
 local FeatureConnections = {}
 
 local function ClearAllFeatures()
-    -- Ngắt tất cả các vòng lặp/sự kiện đang chạy
     for _, conn in ipairs(FeatureConnections) do
         if conn then conn:Disconnect() end
     end
     FeatureConnections = {}
     
-    -- Dọn dẹp Hitbox lỡ như đang bật Hitbox Expander
+    -- Dọn dẹp Hitbox
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
             p.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
@@ -66,41 +65,39 @@ local function ClearAllFeatures()
 end
 
 -- Hàm tạo Nút bấm
-local function CreateToggleButton(name, yPos, logicFunc)
+local function CreateToggleButton(name, yPos)
     local Btn = Instance.new("TextButton", Frame)
     Btn.Size = UDim2.new(0.9, 0, 0, 30)
     Btn.Position = UDim2.new(0.05, 0, 0, yPos)
-    Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     Btn.Font = Enum.Font.GothamBold
-    Btn.Text = name .. " [OFF]"
-    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Btn.Text = name .. " [TẮT]"
+    Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
     Btn.TextSize = 14
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
-    
     return Btn
 end
 
--- Khởi tạo 4 nút
-local BtnParry = CreateToggleButton("Auto Parry", 40)
-local BtnSilent = CreateToggleButton("Silent Aim", 75)
-local BtnHitbox = CreateToggleButton("Hitbox Giấu", 110)
-local BtnAntiStun = CreateToggleButton("Auto Lách", 145)
+-- Khởi tạo 4 nút Tiếng Việt
+local BtnParry = CreateToggleButton("Tự Động Đỡ", 40)
+local BtnSilent = CreateToggleButton("Chém Trúng Đích", 75)
+local BtnHitbox = CreateToggleButton("Vùng Đánh Giấu", 110)
+local BtnAntiStun = CreateToggleButton("Tự Động Lách", 145)
 
 local AllButtons = {
-    ["Auto Parry"] = BtnParry,
-    ["Silent Aim"] = BtnSilent,
-    ["Hitbox Giấu"] = BtnHitbox,
-    ["Auto Lách"] = BtnAntiStun
+    ["Tự Động Đỡ"] = BtnParry,
+    ["Chém Trúng Đích"] = BtnSilent,
+    ["Vùng Đánh Giấu"] = BtnHitbox,
+    ["Tự Động Lách"] = BtnAntiStun
 }
 
 -- ==========================================
--- LOGIC TÍNH NĂNG (HỆ THỐNG MÃ LÕI)
+-- LOGIC TÍNH NĂNG (ĐÃ TỐI ƯU HÓA)
 -- ==========================================
 
 local Features = {
-    ["Auto Parry"] = function()
-        -- [LƯU Ý]: Auto Parry thật cần đọc ID Animation của game Dueling Grounds.
-        -- Đây là khung logic mô phỏng: Cứ mỗi 0.1s kiểm tra nếu địch ở rất gần thì ấn Block.
+    ["Tự Động Đỡ"] = function()
+        -- Dùng VirtualInputManager để không bị kẹt khi đang di chuyển
         local conn = RunService.Heartbeat:Connect(function()
             local char = LocalPlayer.Character
             if not char or not char:FindFirstChild("HumanoidRootPart") then return end
@@ -108,12 +105,17 @@ local Features = {
             
             for _, p in pairs(Players:GetPlayers()) do
                 if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    -- Kiểm tra địch có đang cầm vũ khí không
+                    local enemyHasWeapon = p.Character:FindFirstChildOfClass("Tool")
                     local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
-                    if dist < 8 then -- Địch áp sát
-                        -- Mô phỏng ấn phím F (Block)
-                        keypress(0x46) 
-                        task.wait(0.1)
-                        keyrelease(0x46)
+                    
+                    -- Nếu địch cầm vũ khí và áp sát (10 stud)
+                    if dist < 10 and enemyHasWeapon then
+                        -- Giả lập bấm phím F mượt mà
+                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+                        task.wait(0.05)
+                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+                        task.wait(0.3) -- Nghỉ 0.3s để không bị liệt phím
                     end
                 end
             end
@@ -121,15 +123,13 @@ local Features = {
         table.insert(FeatureConnections, conn)
     end,
 
-    ["Silent Aim"] = function()
-        -- Kéo góc nhìn nhẹ nhàng về phía thằng gần nhất mà không làm giật camera
+    ["Chém Trúng Đích"] = function()
         local conn = RunService.RenderStepped:Connect(function()
             local char = LocalPlayer.Character
-            local cam = workspace.CurrentCamera
             if not char or not char:FindFirstChild("HumanoidRootPart") then return end
             
             local closest = nil
-            local shortest = 50 -- Bán kính 50 stud
+            local shortest = 30 -- Khoảng cách khóa mục tiêu
             
             for _, p in pairs(Players:GetPlayers()) do
                 if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
@@ -142,20 +142,18 @@ local Features = {
             end
             
             if closest then
-                -- Ép mặt chém về hướng mục tiêu (CFrame LookAt)
                 char.HumanoidRootPart.CFrame = CFrame.new(char.HumanoidRootPart.Position, Vector3.new(closest.Position.X, char.HumanoidRootPart.Position.Y, closest.Position.Z))
             end
         end)
         table.insert(FeatureConnections, conn)
     end,
 
-    ["Hitbox Giấu"] = function()
-        -- Phóng to hitbox địch nhưng để trong suốt, chị chém không khí vẫn trúng
+    ["Vùng Đánh Giấu"] = function()
         local conn = RunService.Heartbeat:Connect(function()
             for _, p in pairs(Players:GetPlayers()) do
                 if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                    p.Character.HumanoidRootPart.Size = Vector3.new(15, 15, 15)
-                    p.Character.HumanoidRootPart.Transparency = 1 -- Giấu đi cho tự nhiên
+                    p.Character.HumanoidRootPart.Size = Vector3.new(12, 12, 12)
+                    p.Character.HumanoidRootPart.Transparency = 1 
                     p.Character.HumanoidRootPart.CanCollide = false
                 end
             end
@@ -163,15 +161,14 @@ local Features = {
         table.insert(FeatureConnections, conn)
     end,
 
-    ["Auto Lách"] = function()
-        -- Tự động lùi (Lách) khi bị ăn sát thương (Mất máu)
+    ["Tự Động Lách"] = function()
         local char = LocalPlayer.Character
         if char and char:FindFirstChild("Humanoid") then
             local oldHealth = char.Humanoid.Health
             local conn = char.Humanoid.HealthChanged:Connect(function(newHealth)
                 if newHealth < oldHealth then
-                    -- Nếu mất máu -> tự động dịch chuyển giật lùi về sau 15 stud để né combo
                     if char:FindFirstChild("HumanoidRootPart") then
+                        -- Tự giật lùi về sau 15 stud khi mất máu
                         char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 0, 15)
                     end
                 end
@@ -183,57 +180,50 @@ local Features = {
 }
 
 -- ==========================================
--- HỆ THỐNG NÚT ĐỘC QUYỀN (MUTEX LOGIC)
+-- HỆ THỐNG NÚT BẤM ĐỘC QUYỀN
 -- ==========================================
 
 local function ActivateButton(btnName)
-    -- Nếu đang bật rồi mà bấm lại -> TẮT TOÀN BỘ
     if ActiveFeature == btnName then
         ActiveFeature = "None"
         ClearAllFeatures()
         for name, btn in pairs(AllButtons) do
-            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            btn.Text = name .. " [OFF]"
-            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            btn.Text = name .. " [TẮT]"
+            btn.TextColor3 = Color3.fromRGB(200, 200, 200)
         end
         return
     end
 
-    -- Bật chức năng mới: Dọn dẹp cái cũ trước
     ClearAllFeatures()
     ActiveFeature = btnName
 
-    -- Chuyển toàn bộ nút về màu OFF (Xám/Đỏ)
     for name, btn in pairs(AllButtons) do
-        btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        btn.Text = name .. " [OFF]"
+        btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        btn.Text = name .. " [TẮT]"
         btn.TextColor3 = Color3.fromRGB(200, 200, 200)
     end
 
-    -- Bật Xanh (ON) cái nút đang bấm
     local activeBtn = AllButtons[btnName]
-    activeBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 50) -- Màu xanh lá
-    activeBtn.Text = btnName .. " [ON]"
+    activeBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 50) 
+    activeBtn.Text = btnName .. " [BẬT]"
     activeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 
-    -- Gọi hàm tính năng tương ứng
     if Features[btnName] then
         Features[btnName]()
     end
 end
 
--- Gắn sự kiện Click cho 4 nút
-BtnParry.MouseButton1Click:Connect(function() ActivateButton("Auto Parry") end)
-BtnSilent.MouseButton1Click:Connect(function() ActivateButton("Silent Aim") end)
-BtnHitbox.MouseButton1Click:Connect(function() ActivateButton("Hitbox Giấu") end)
-BtnAntiStun.MouseButton1Click:Connect(function() ActivateButton("Auto Lách") end)
+BtnParry.MouseButton1Click:Connect(function() ActivateButton("Tự Động Đỡ") end)
+BtnSilent.MouseButton1Click:Connect(function() ActivateButton("Chém Trúng Đích") end)
+BtnHitbox.MouseButton1Click:Connect(function() ActivateButton("Vùng Đánh Giấu") end)
+BtnAntiStun.MouseButton1Click:Connect(function() ActivateButton("Tự Động Lách") end)
 
--- Reset khi chết
 LocalPlayer.CharacterAdded:Connect(function()
     if ActiveFeature ~= "None" then
         task.wait(1)
         local savedFeature = ActiveFeature
         ActiveFeature = "None"
-        ActivateButton(savedFeature) -- Kích hoạt lại tính năng đang dùng
+        ActivateButton(savedFeature)
     end
 end)
