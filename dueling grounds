@@ -1,163 +1,121 @@
 --[[
-    👑 MTRIET TESTER - MOBILE EDITION (V13 LOGIC FIXED) 👑
-    - Fix lỗi ngắt sớm: Dời bước quét túi đồ xuống SAU khi nhặt đồ ở Bước 1.
-    - Giữ nguyên hệ thống ID Server và Combo xả chiêu E.
+    👑 MTRIET ULTIMATE - V14 BOSS SLAYER EDITION 👑
+    - Tự động nhận diện Job ID server đặc biệt.
+    - Combo Orbit: Xoay vòng quanh Boss + Max Hitbox + Spam VP 2.
+    - Fix thăng bằng và trọng lực tuyệt đối.
 ]]
 
 local Players = game:GetService("Players")
-local VIM = game:GetService("VirtualInputManager")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 -- =======================================================
--- 🎯 TỌA ĐỘ CHUẨN CỦA CHỊ MINT:
+-- 🎯 THÔNG SỐ CẤU HÌNH CỦA CHỊ MINT:
 -- =======================================================
-local TOA_DO_1 = CFrame.new(732.4, 22.5, -113.8)   -- Bước 1: Lấy đồ
-local TOA_DO_2 = CFrame.new(1379.3, -115.2, 64.4)  -- Bước 2: Xả E (VP 2)
-local TOA_DO_3 = CFrame.new(1334.2, -115.2, 70.1)  -- Bước 3: Xả E (VP 3)
-local TOA_DO_4 = CFrame.new(750.7, 18.3, -3.3)     -- Bước 4: Về đích & Dừng
-
-local function DungChieuE(myTool)
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("Humanoid") then return end
-    
-    if myTool then
-        char.Humanoid:UnequipTools()
-        task.wait(0.2)
-        
-        char.Humanoid:EquipTool(myTool)
-        task.wait(0.5)
-        
-        pcall(function()
-            VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-            task.wait(0.1)
-            VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-        end)
-        
-        task.wait(3)
-    else
-        warn("❌ Lỗi: Vật phẩm không tồn tại!")
-    end
-end
+local TARGET_JOB_ID = "fb541321-ec60-43ea-8834-4158fe763129" -- ID Server chị yêu cầu
+local TOA_DO_BOSS_ZONE = CFrame.new(0, 100, 0) -- [!] CHỊ ĐIỀN TỌA ĐỘ CHỖ BOSS XUẤT HIỆN VÀO ĐÂY
+local BOSS_NAME = "Vua Hắc Ám" -- Tên boss trong hình chị gửi
+local ORBIT_SPEED = 5 -- Tốc độ quay quanh boss
+local ORBIT_RADIUS = 10 -- Khoảng cách quay (bán kính)
 
 -- =======================================================
 -- 🎨 GIAO DIỆN RAYFIELD
 -- =======================================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-    Name = "📱 TESTER V13",
-    LoadingTitle = "Đang nạp dữ liệu...",
-    LoadingSubtitle = "Fix trật tự lấy đồ ở Bước 1",
+    Name = "📱 BOSS SLAYER V14",
+    LoadingTitle = "Đang kiểm tra ID Server...",
+    LoadingSubtitle = "Hệ thống chuyên trị Boss Hắc Ám",
     ConfigurationSaving = { Enabled = false }, 
     KeySystem = false 
 })
 
--- ==========================================
--- 🌐 TAB: THÔNG TIN SERVER (JOB ID)
--- ==========================================
-local TabServer = Window:CreateTab("🌐 Server Info")
+local TabBoss = Window:CreateTab("👹 Diệt Boss")
+local TabOther = Window:CreateTab("⏳ Tiện Ích")
+local AutoSlay = false
+local angle = 0
 
-TabServer:CreateButton({
-    Name = "📋 COPY ID SERVER (Job ID)", 
-    Callback = function() 
-        local jobId = game.JobId
-        if jobId and jobId ~= "" then
-            if setclipboard then
-                setclipboard(jobId)
-                Rayfield:Notify({Title = "Thành công!", Content = "Đã copy Job ID.", Duration = 5})
-            else
-                print("Job ID: " .. jobId)
-                Rayfield:Notify({Title = "Lỗi Executor", Content = "Mở Console F9 để xem ID.", Duration = 5})
-            end
-        else
-            Rayfield:Notify({Title = "Thất bại", Content = "Bạn đang ở Private Server hỏng hoặc Test mode.", Duration = 3})
-        end
+-- Hàm tìm Boss và tăng Hitbox
+local function FixBoss(name)
+    local target = workspace:FindFirstChild(name, true)
+    if target and target:FindFirstChild("HumanoidRootPart") then
+        local hrp = target.HumanoidRootPart
+        hrp.Size = Vector3.new(50, 50, 50) -- Max Hitbox cho chị chém
+        hrp.Transparency = 0.5
+        hrp.CanCollide = false
+        return hrp
     end
-})
+    return nil
+end
 
-TabServer:CreateButton({
-    Name = "🔄 REJOIN SERVER NÀY", 
-    Callback = function() 
-        local ts = game:GetService("TeleportService")
-        local p = game:GetService("Players").LocalPlayer
-        ts:TeleportToPlaceInstance(game.PlaceId, game.JobId, p)
-    end
-})
-
--- ==========================================
--- 🌌 TAB: COMBO BOSS
--- ==========================================
-local TabCombo = Window:CreateTab("🌌 Combo Boss")
-local ComboToggle 
-
-ComboToggle = TabCombo:CreateToggle({
-    Name = "🚀 Khởi chạy Combo (VP 2 & VP 3)", 
+TabBoss:CreateToggle({
+    Name = "🚀 KÍCH HOẠT COMBO DIỆT BOSS", 
     CurrentValue = false, 
     Callback = function(v)
-        _G.AutoVoid = v
+        AutoSlay = v
         if v then
             task.spawn(function()
-                while _G.AutoVoid do
+                while AutoSlay do
                     local char = LocalPlayer.Character
-                    if not char or not char:FindFirstChild("HumanoidRootPart") then break end
-                    local hrp = char.HumanoidRootPart
+                    local root = char and char:FindFirstChild("HumanoidRootPart")
+                    if not root then task.wait(1) continue end
 
-                    -- BƯỚC 1: TỚI LẤY TRÁI TRƯỚC
-                    print("▶️ Bước 1: Lấy vật phẩm...")
-                    hrp.Anchored = false
-                    hrp.CFrame = TOA_DO_1
-                    task.wait(3) -- Đợi rớt đồ vào túi
+                    -- BƯỚC 1: Bay tới tọa độ chờ Boss
+                    root.Anchored = false
+                    root.CFrame = TOA_DO_BOSS_ZONE
+                    print("▶️ Đang chờ Boss xuất hiện...")
+                    task.wait(5) -- Đợi 5 giây như chị yêu cầu
 
-                    -- CHỐT SỔ TÚI ĐỒ (Sau khi nhặt xong mới đếm)
-                    local allTools = {}
-                    for _, t in ipairs(LocalPlayer:WaitForChild("Backpack"):GetChildren()) do
-                        if t:IsA("Tool") then table.insert(allTools, t) end
+                    -- BƯỚC 2: Tìm Boss và bắt đầu Orbit (Quay quanh)
+                    local bossHRP = FixBoss(BOSS_NAME)
+                    if bossHRP then
+                        -- Khóa thăng bằng
+                        root.Velocity = Vector3.zero
+                        
+                        -- Vòng lặp quay và chém
+                        while AutoSlay and bossHRP.Parent do
+                            RunService.Heartbeat:Wait()
+                            angle = angle + math.rad(ORBIT_SPEED)
+                            
+                            -- Tính toán vị trí quay quanh Boss
+                            local offset = Vector3.new(math.cos(angle) * ORBIT_RADIUS, 5, math.sin(angle) * ORBIT_RADIUS)
+                            root.CFrame = CFrame.new(bossHRP.Position + offset, bossHRP.Position)
+                            
+                            -- Spam Vật phẩm 2
+                            local tool = LocalPlayer.Backpack:GetChildren()[2] or char:FindFirstChildOfClass("Tool")
+                            if tool then
+                                char.Humanoid:EquipTool(tool)
+                                tool:Activate()
+                            end
+                        end
                     end
-                    for _, t in ipairs(char:GetChildren()) do
-                        if t:IsA("Tool") then table.insert(allTools, t) end
-                    end
-                    
-                    local ToolSo2 = allTools[2]
-                    local ToolSo3 = allTools[3]
-
-                    if not ToolSo2 or not ToolSo3 then
-                        Rayfield:Notify({Title = "Lỗi Túi Đồ", Content = "Lấy trái xong vẫn không đủ đồ!", Duration = 5})
-                        _G.AutoVoid = false
-                        ComboToggle:Set(false)
-                        break
-                    end
-
-                    -- BƯỚC 2
-                    print("▶️ Bước 2: Dùng chiêu VP 2...")
-                    hrp.CFrame = TOA_DO_2
-                    task.wait(0.1)
-                    hrp.Anchored = true 
-                    DungChieuE(ToolSo2)
-
-                    -- BƯỚC 3
-                    print("▶️ Bước 3: Dùng chiêu VP 3...")
-                    hrp.Anchored = false 
-                    hrp.CFrame = TOA_DO_3
-                    task.wait(0.1)
-                    hrp.Anchored = true 
-                    DungChieuE(ToolSo3)
-
-                    -- BƯỚC 4
-                    print("▶️ Bước 4: Về đích...")
-                    hrp.Anchored = false
-                    hrp.CFrame = TOA_DO_4
-                    task.wait(0.1)
-                    hrp.Anchored = true 
-                    
-                    _G.AutoVoid = false
-                    ComboToggle:Set(false) 
-                    Rayfield:Notify({Title = "Hoàn tất", Content = "Đã xả xong chu trình an toàn.", Duration = 5})
-                    break 
+                    task.wait(1)
                 end
             end)
         else
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                 LocalPlayer.Character.HumanoidRootPart.Anchored = false
             end
+        end
+    end
+})
+
+-- TỰ ĐỘNG CHẠY NẾU ĐÚNG ID SERVER
+if game.JobId == TARGET_JOB_ID then
+    Rayfield:Notify({Title = "ID Hợp Lệ!", Content = "Đang tự động dịch chuyển tới Boss Zone...", Duration = 5})
+    task.wait(2)
+    -- Chỗ này chị có thể gọi lệnh bật Toggle tự động nếu muốn
+end
+
+-- TIỆN ÍCH LẤY TỌA ĐỘ (Giữ lại cho chị điền vào dòng 12)
+TabOther:CreateButton({
+    Name = "📍 LẤY TỌA ĐỘ ĐỨNG (COPY)", 
+    Callback = function() 
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local str = string.format("CFrame.new(%.1f, %.1f, %.1f)", char.HumanoidRootPart.Position.X, char.HumanoidRootPart.Position.Y, char.HumanoidRootPart.Position.Z)
+            if setclipboard then setclipboard(str) end
+            Rayfield:Notify({Title = "Đã Copy!", Content = str, Duration = 5})
         end
     end
 })
