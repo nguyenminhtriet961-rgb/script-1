@@ -112,7 +112,7 @@ ComboToggle = TabCombo:CreateToggle({
                     print("▶️ Đã xong. Rút lui...")
                     hrp.Anchored = false
                     hrp.CFrame = TOA_DO_DICH
-                    task.wait(0.2)
+                    task.wait(0.2) 
                     hrp.Anchored = true 
                     
                     _G.AutoCombo = false
