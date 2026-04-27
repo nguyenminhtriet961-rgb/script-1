@@ -1,7 +1,7 @@
 --[[
-    👑 MTRIET TESTER - MOBILE EDITION (V10 FIXED INVENTORY) 👑
-    - Fix lỗi không đổi vũ khí: Tự động cất đồ (UnequipTools) để reset túi đồ.
-    - Giữ nguyên logic VP 2 -> VP 3 và Anchored.
+    👑 MTRIET TESTER - MOBILE EDITION (V12 SERVER ID + COMBO) 👑
+    - Thêm tính năng Copy ID Server (JobId).
+    - Giữ nguyên Combo VP2 -> VP3 (Fix lú inventory).
 ]]
 
 local Players = game:GetService("Players")
@@ -16,37 +16,26 @@ local TOA_DO_2 = CFrame.new(1379.3, -115.2, 64.4)  -- Xả E lần 1 (VP 2)
 local TOA_DO_3 = CFrame.new(1334.2, -115.2, 70.1)  -- Xả E lần 2 (VP 3)
 local TOA_DO_4 = CFrame.new(750.7, 18.3, -3.3)     -- Về đích & Dừng
 
--- Hàm trang bị và bấm E chuẩn Mobile (Đã Fix Lỗi Túi Đồ)
-local function DungChieuE(viTriItem)
+local function DungChieuE(myTool)
     local char = LocalPlayer.Character
     if not char or not char:FindFirstChild("Humanoid") then return end
     
-    -- CẤT HẾT ĐỒ VÀO TÚI ĐỂ RESET THỨ TỰ (Chống lú inventory)
-    char.Humanoid:UnequipTools()
-    task.wait(0.2) 
-    
-    local tools = {}
-    -- Sau khi cất, toàn bộ đồ sẽ nằm ngoan ngoãn trong Backpack
-    for _, t in ipairs(LocalPlayer:WaitForChild("Backpack"):GetChildren()) do
-        if t:IsA("Tool") then table.insert(tools, t) end
-    end
-    
-    if tools[viTriItem] then
-        local myTool = tools[viTriItem]
+    if myTool then
+        char.Humanoid:UnequipTools()
+        task.wait(0.2)
+        
         char.Humanoid:EquipTool(myTool)
         task.wait(0.5)
         
-        -- Giả lập phím E cho Mobile
         pcall(function()
             VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
             task.wait(0.1)
             VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
         end)
         
-        -- Đợi 3 giây xả chiêu theo yêu cầu
         task.wait(3)
     else
-        warn("❌ Không tìm thấy đồ ở ô số " .. tostring(viTriItem))
+        warn("❌ Lỗi: Vật phẩm không tồn tại!")
     end
 end
 
@@ -55,13 +44,48 @@ end
 -- =======================================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-    Name = "📱 TESTER COMBO V10",
+    Name = "📱 TESTER V12",
     LoadingTitle = "Đang nạp dữ liệu...",
-    LoadingSubtitle = "Đã fix lỗi lú túi đồ (VP2->VP3)",
+    LoadingSubtitle = "Có thêm chức năng Lấy ID Server",
     ConfigurationSaving = { Enabled = false }, 
     KeySystem = false 
 })
 
+-- ==========================================
+-- 🌐 TAB: THÔNG TIN SERVER (JOB ID)
+-- ==========================================
+local TabServer = Window:CreateTab("🌐 Server Info")
+
+TabServer:CreateButton({
+    Name = "📋 COPY ID SERVER (Job ID)", 
+    Callback = function() 
+        local jobId = game.JobId
+        if jobId and jobId ~= "" then
+            if setclipboard then
+                setclipboard(jobId)
+                Rayfield:Notify({Title = "Thành công!", Content = "Đã copy Job ID. Chị có thể dán ra tin nhắn.", Duration = 5})
+            else
+                print("Job ID: " .. jobId)
+                Rayfield:Notify({Title = "Lỗi Executor", Content = "Hãy mở Console (F9) để copy tay.", Duration = 5})
+            end
+        else
+            Rayfield:Notify({Title = "Thất bại", Content = "Bạn đang ở Private Server hỏng hoặc Test mode.", Duration = 3})
+        end
+    end
+})
+
+TabServer:CreateButton({
+    Name = "🔄 REJOIN SERVER NÀY", 
+    Callback = function() 
+        local ts = game:GetService("TeleportService")
+        local p = game:GetService("Players").LocalPlayer
+        ts:TeleportToPlaceInstance(game.PlaceId, game.JobId, p)
+    end
+})
+
+-- ==========================================
+-- 🌌 TAB: COMBO BOSS
+-- ==========================================
 local TabCombo = Window:CreateTab("🌌 Combo Boss")
 local ComboToggle 
 
@@ -77,25 +101,43 @@ ComboToggle = TabCombo:CreateToggle({
                     if not char or not char:FindFirstChild("HumanoidRootPart") then break end
                     local hrp = char.HumanoidRootPart
 
-                    -- BƯỚC 1: Lấy trái
+                    local allTools = {}
+                    for _, t in ipairs(LocalPlayer:WaitForChild("Backpack"):GetChildren()) do
+                        if t:IsA("Tool") then table.insert(allTools, t) end
+                    end
+                    for _, t in ipairs(char:GetChildren()) do
+                        if t:IsA("Tool") then table.insert(allTools, t) end
+                    end
+                    
+                    local ToolSo2 = allTools[2]
+                    local ToolSo3 = allTools[3]
+
+                    if not ToolSo2 or not ToolSo3 then
+                        Rayfield:Notify({Title = "Lỗi Túi Đồ", Content = "Không đủ 3 vật phẩm trong người!", Duration = 5})
+                        _G.AutoVoid = false
+                        ComboToggle:Set(false)
+                        break
+                    end
+
+                    -- Bước 1
                     hrp.Anchored = false
                     hrp.CFrame = TOA_DO_1
                     task.wait(3) 
 
-                    -- BƯỚC 2: Đóng băng & Xả chiêu VP 2
+                    -- Bước 2
                     hrp.CFrame = TOA_DO_2
                     task.wait(0.1)
                     hrp.Anchored = true 
-                    DungChieuE(2) -- DÙNG VẬT PHẨM 2
+                    DungChieuE(ToolSo2)
 
-                    -- BƯỚC 3: Đóng băng & Xả chiêu VP 3
+                    -- Bước 3
                     hrp.Anchored = false 
                     hrp.CFrame = TOA_DO_3
                     task.wait(0.1)
                     hrp.Anchored = true 
-                    DungChieuE(3) -- DÙNG VẬT PHẨM 3
+                    DungChieuE(ToolSo3)
 
-                    -- BƯỚC 4: Về đích và Tự tắt
+                    -- Bước 4
                     hrp.Anchored = false
                     hrp.CFrame = TOA_DO_4
                     task.wait(0.1)
@@ -103,7 +145,7 @@ ComboToggle = TabCombo:CreateToggle({
                     
                     _G.AutoVoid = false
                     ComboToggle:Set(false) 
-                    Rayfield:Notify({Title = "Hoàn tất", Content = "Đã xả xong VP 2 và VP 3.", Duration = 5})
+                    Rayfield:Notify({Title = "Hoàn tất", Content = "Đã xả xong VP 2 và VP 3 an toàn.", Duration = 5})
                     break 
                 end
             end)
