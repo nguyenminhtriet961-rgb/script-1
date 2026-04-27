@@ -1,65 +1,119 @@
--- ==========================================
-    -- 🌌 TAB: COMBO KHÔNG GIAN (LOGIC TỐI ƯU CỦA CHỊ MINT)
-    -- ==========================================
-    local TabKhongGian = Window:CreateTab("🌌 Combo Boss")
-    local AutoVoidCustom = false
-    local VIM = game:GetService("VirtualInputManager")
+--[[
+    👑 MTRIET TESTER - COMBO KHÔNG GIAN ĐỘC LẬP 👑
+    Bản script nhẹ chuyên dùng để dò tọa độ và test chu trình.
+]]
 
-    -- [!] CHỊ MINT NHỚ LẤY TỌA ĐỘ BẰNG NÚT F9 VÀ ĐIỀN VÀO 3 DÒNG NÀY:
-    local TOA_DO_TRAI_VOID = CFrame.new(0, 100, 0) -- Điểm 1: Nơi trái bóng tối xuất hiện
-    local TOA_DO_DUNG_VP2  = CFrame.new(0, 100, 0) -- Điểm 2: Nơi chị muốn đứng để xả chiêu VP 2
-    local TOA_DO_DUNG_VP3  = CFrame.new(0, 100, 0) -- Điểm 3: Nơi chị muốn đứng để xả chiêu VP 3
+local Players = game:GetService("Players")
+local VIM = game:GetService("VirtualInputManager")
 
-    local function TrangBiVaBamE(viTriItem)
-        local backpack = LocalPlayer:WaitForChild("Backpack")
-        local tools = backpack:GetChildren()
+local LocalPlayer = Players.LocalPlayer
+
+-- =======================================================
+-- 🎯 CHỊ MINT ĐIỀN 3 TỌA ĐỘ VÀO ĐÂY NHÉ:
+-- =======================================================
+local TOA_DO_TRAI_VOID = CFrame.new(0, 100, 0) -- Điểm 1: Lấy trái bóng tối
+local TOA_DO_DUNG_VP2  = CFrame.new(0, 100, 0) -- Điểm 2: Đứng xả VP 2
+local TOA_DO_DUNG_VP3  = CFrame.new(0, 100, 0) -- Điểm 3: Đứng xả VP 3
+
+-- Hàm trang bị và bấm E
+local function TrangBiVaBamE(viTriItem)
+    local backpack = LocalPlayer:WaitForChild("Backpack")
+    local tools = backpack:GetChildren()
+    
+    if tools[viTriItem] and tools[viTriItem]:IsA("Tool") then
+        LocalPlayer.Character.Humanoid:EquipTool(tools[viTriItem])
+        task.wait(0.5)
         
-        if tools[viTriItem] and tools[viTriItem]:IsA("Tool") then
-            -- Trang bị vũ khí
-            LocalPlayer.Character.Humanoid:EquipTool(tools[viTriItem])
-            task.wait(0.5)
+        -- Dùng VirtualInputManager ép game nhận phím E
+        VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+        task.wait(0.1)
+        VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+        task.wait(0.5)
+    end
+end
+
+-- =======================================================
+-- 🎨 TẠO GIAO DIỆN RAYFIELD
+-- =======================================================
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Window = Rayfield:CreateWindow({
+    Name = "🛠️ TESTER COMBO",
+    LoadingTitle = "Đang tải công cụ test...",
+    LoadingSubtitle = "Chị MinT test riêng lẻ cho dễ",
+    ConfigurationSaving = { Enabled = false }, -- Tắt lưu cấu hình để tránh đụng chạm bản gốc
+    KeySystem = false 
+})
+
+-- ==========================================
+-- 📍 TAB 1: CÔNG CỤ LẤY TỌA ĐỘ
+-- ==========================================
+local TabToaDo = Window:CreateTab("📍 Lấy Tọa Độ")
+
+TabToaDo:CreateParagraph({
+    Title = "Hướng dẫn cho chị MinT:",
+    Content = "1. Đi bộ đến chỗ cần đứng.\n2. Bấm nút dưới đây.\n3. Nhấn F9 mở Console.\n4. Copy dòng CFrame dán vào code."
+})
+
+TabToaDo:CreateButton({
+    Name = "BẤM VÀO ĐÂY ĐỂ LẤY TỌA ĐỘ HIỆN TẠI", 
+    Callback = function() 
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local pos = char.HumanoidRootPart.Position
+            local str = string.format("CFrame.new(%.1f, %.1f, %.1f)", pos.X, pos.Y, pos.Z)
             
-            -- Ép hệ thống nhận diện phím E (Chống kẹt chiêu)
-            VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-            task.wait(0.1)
-            VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-            task.wait(0.5)
+            print("===============================")
+            print("📍 TỌA ĐỘ ĐÂY CHỊ MINT ƠI:")
+            print(str)
+            print("===============================")
+            
+            Rayfield:Notify({
+                Title = "Thành công!", 
+                Content = "Bấm F9 để copy CFrame.new(...) nhé", 
+                Duration = 5
+            })
         end
     end
+})
 
-    TabKhongGian:CreateToggle({
-        Name = "Khởi chạy Combo Tự Động", 
-        CurrentValue = false, 
-        Callback = function(v)
-            AutoVoidCustom = v
-            task.spawn(function()
-                while AutoVoidCustom do
-                    task.wait(1)
-                    local char = LocalPlayer.Character
-                    if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
-                    local hrp = char.HumanoidRootPart
+-- ==========================================
+-- 🌌 TAB 2: CHẠY THỬ COMBO
+-- ==========================================
+local TabCombo = Window:CreateTab("🌌 Test Combo")
+local AutoVoidCustom = false
 
-                    -- BƯỚC 1: Dịch chuyển lấy trái bóng tối
-                    hrp.CFrame = TOA_DO_TRAI_VOID
-                    task.wait(1.5) -- Đợi 1.5s để server ghi nhận đã nhặt được
+TabCombo:CreateToggle({
+    Name = "Khởi chạy Combo Tự Động", 
+    CurrentValue = false, 
+    Callback = function(v)
+        AutoVoidCustom = v
+        task.spawn(function()
+            while AutoVoidCustom do
+                task.wait(1)
+                local char = LocalPlayer.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
+                local hrp = char.HumanoidRootPart
 
-                    -- BƯỚC 2: Dịch chuyển tới tọa độ chỉ định thứ nhất
-                    hrp.CFrame = TOA_DO_DUNG_VP2
-                    task.wait(0.5) -- Khựng lại một nhịp cho ổn định vật lý
+                -- BƯỚC 1: Dịch chuyển lấy trái bóng tối
+                hrp.CFrame = TOA_DO_TRAI_VOID
+                task.wait(1.5) 
 
-                    -- BƯỚC 3: Cầm vật phẩm 2 và bấm E
-                    TrangBiVaBamE(2)
-                    task.wait(1) -- Đợi hiệu ứng chiêu xuất hiện
+                -- BƯỚC 2: Dịch chuyển tới vị trí 2
+                hrp.CFrame = TOA_DO_DUNG_VP2
+                task.wait(0.5) 
 
-                    -- BƯỚC 4: Dịch chuyển tới tọa độ chỉ định thứ hai
-                    hrp.CFrame = TOA_DO_DUNG_VP3
-                    task.wait(0.5)
+                -- BƯỚC 3: Xả chiêu VP 2
+                TrangBiVaBamE(2)
+                task.wait(1) 
 
-                    -- BƯỚC 5: Cầm vật phẩm 3 và bấm E
-                    TrangBiVaBamE(3)
-                    task.wait(2) -- Nghỉ ngơi xả chiêu xong trước khi lặp lại vòng mới
-                    
-                end
-            end)
-        end
-    })
+                -- BƯỚC 4: Dịch chuyển tới vị trí 3
+                hrp.CFrame = TOA_DO_DUNG_VP3
+                task.wait(0.5)
+
+                -- BƯỚC 5: Xả chiêu VP 3
+                TrangBiVaBamE(3)
+                task.wait(2) 
+            end
+        end)
+    end
+})
