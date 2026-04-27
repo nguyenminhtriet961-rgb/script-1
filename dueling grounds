@@ -1,95 +1,129 @@
 --[[
-    👑 MTRIET ULTIMATE - V14 BOSS SLAYER EDITION 👑
-    - Tự động nhận diện Job ID server đặc biệt.
-    - Combo Orbit: Xoay vòng quanh Boss + Max Hitbox + Spam VP 2.
-    - Fix thăng bằng và trọng lực tuyệt đối.
+    👑 MTRIET ULTIMATE - V15 FULL COMBO BOSS 👑
+    - Bước 1: Bay lấy trái Void + Tự động khóa túi đồ VP2, VP3.
+    - Bước 2: Dịch chuyển tới Boss Zone + Đợi 5 giây Boss hiện.
+    - Bước 3: Orbit (Xoay quanh Boss) + Tăng Hitbox Boss.
+    - Bước 4: Xả chiêu E của VP 2 và VP 3.
+    - Bước 5: Về đích và Tự tắt.
 ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local VIM = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
 
 -- =======================================================
--- 🎯 THÔNG SỐ CẤU HÌNH CỦA CHỊ MINT:
+-- 🎯 CẤU HÌNH TỌA ĐỘ (Chị lấy tọa độ dán vào đây)
 -- =======================================================
-local TARGET_JOB_ID = "fb541321-ec60-43ea-8834-4158fe763129" -- ID Server chị yêu cầu
-local TOA_DO_BOSS_ZONE = CFrame.new(0, 100, 0) -- [!] CHỊ ĐIỀN TỌA ĐỘ CHỖ BOSS XUẤT HIỆN VÀO ĐÂY
-local BOSS_NAME = "Vua Hắc Ám" -- Tên boss trong hình chị gửi
-local ORBIT_SPEED = 5 -- Tốc độ quay quanh boss
-local ORBIT_RADIUS = 10 -- Khoảng cách quay (bán kính)
+local TOA_DO_1 = CFrame.new(732.4, 22.5, -113.8)   -- Bước 1: Lấy đồ
+local TOA_DO_BOSS = CFrame.new(1379.3, -115.2, 64.4) -- Điểm chờ Boss
+local TOA_DO_DICH = CFrame.new(750.7, 18.3, -3.3)    -- Điểm về đích
+
+local BOSS_NAME = "Vua Hắc Ám" 
+local AutoCombo = false
+local angle = 0
+
+-- Hàm xả chiêu E chuẩn
+local function DungChieuE(myTool)
+    local char = LocalPlayer.Character
+    if myTool and char and char:FindFirstChild("Humanoid") then
+        char.Humanoid:UnequipTools()
+        task.wait(0.2)
+        char.Humanoid:EquipTool(myTool)
+        task.wait(0.5)
+        pcall(function()
+            VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+            task.wait(0.1)
+            VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+        end)
+        task.wait(3) -- Delay 3s như chị yêu cầu
+    end
+end
 
 -- =======================================================
 -- 🎨 GIAO DIỆN RAYFIELD
 -- =======================================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-    Name = "📱 BOSS SLAYER V14",
-    LoadingTitle = "Đang kiểm tra ID Server...",
-    LoadingSubtitle = "Hệ thống chuyên trị Boss Hắc Ám",
+    Name = "📱 MTRIET MASTER V15",
+    LoadingTitle = "Đang kiểm tra dữ liệu...",
+    LoadingSubtitle = "Combo Nhặt Đồ & Diệt Boss",
     ConfigurationSaving = { Enabled = false }, 
     KeySystem = false 
 })
 
-local TabBoss = Window:CreateTab("👹 Diệt Boss")
+local TabCombo = Window:CreateTab("👹 Combo Diệt Boss")
 local TabOther = Window:CreateTab("⏳ Tiện Ích")
-local AutoSlay = false
-local angle = 0
+local ComboToggle
 
--- Hàm tìm Boss và tăng Hitbox
-local function FixBoss(name)
-    local target = workspace:FindFirstChild(name, true)
-    if target and target:FindFirstChild("HumanoidRootPart") then
-        local hrp = target.HumanoidRootPart
-        hrp.Size = Vector3.new(50, 50, 50) -- Max Hitbox cho chị chém
-        hrp.Transparency = 0.5
-        hrp.CanCollide = false
-        return hrp
-    end
-    return nil
-end
-
-TabBoss:CreateToggle({
-    Name = "🚀 KÍCH HOẠT COMBO DIỆT BOSS", 
+ComboToggle = TabCombo:CreateToggle({
+    Name = "🚀 KÍCH HOẠT QUY TRÌNH TỔNG LỰC", 
     CurrentValue = false, 
     Callback = function(v)
-        AutoSlay = v
+        AutoCombo = v
         if v then
             task.spawn(function()
-                while AutoSlay do
+                while AutoCombo do
                     local char = LocalPlayer.Character
-                    local root = char and char:FindFirstChild("HumanoidRootPart")
-                    if not root then task.wait(1) continue end
+                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                    if not hrp then break end
 
-                    -- BƯỚC 1: Bay tới tọa độ chờ Boss
-                    root.Anchored = false
-                    root.CFrame = TOA_DO_BOSS_ZONE
-                    print("▶️ Đang chờ Boss xuất hiện...")
-                    task.wait(5) -- Đợi 5 giây như chị yêu cầu
+                    -- BƯỚC 1: LẤY TRÁI VOID
+                    print("▶️ Bước 1: Lấy vật phẩm...")
+                    hrp.Anchored = false
+                    hrp.CFrame = TOA_DO_1
+                    task.wait(3) 
 
-                    -- BƯỚC 2: Tìm Boss và bắt đầu Orbit (Quay quanh)
-                    local bossHRP = FixBoss(BOSS_NAME)
-                    if bossHRP then
-                        -- Khóa thăng bằng
-                        root.Velocity = Vector3.zero
-                        
-                        -- Vòng lặp quay và chém
-                        while AutoSlay and bossHRP.Parent do
-                            RunService.Heartbeat:Wait()
-                            angle = angle + math.rad(ORBIT_SPEED)
-                            
-                            -- Tính toán vị trí quay quanh Boss
-                            local offset = Vector3.new(math.cos(angle) * ORBIT_RADIUS, 5, math.sin(angle) * ORBIT_RADIUS)
-                            root.CFrame = CFrame.new(bossHRP.Position + offset, bossHRP.Position)
-                            
-                            -- Spam Vật phẩm 2
-                            local tool = LocalPlayer.Backpack:GetChildren()[2] or char:FindFirstChildOfClass("Tool")
-                            if tool then
-                                char.Humanoid:EquipTool(tool)
-                                tool:Activate()
-                            end
-                        end
+                    -- CHỐT SỔ TÚI ĐỒ (Lấy object để không bị lú)
+                    local allTools = {}
+                    for _, t in ipairs(LocalPlayer:WaitForChild("Backpack"):GetChildren()) do
+                        if t:IsA("Tool") then table.insert(allTools, t) end
                     end
-                    task.wait(1)
+                    for _, t in ipairs(char:GetChildren()) do
+                        if t:IsA("Tool") then table.insert(allTools, t) end
+                    end
+                    
+                    local ToolSo2 = allTools[2]
+                    local ToolSo3 = allTools[3]
+
+                    if not ToolSo2 or not ToolSo3 then
+                        Rayfield:Notify({Title = "Lỗi", Content = "Không đủ 3 món đồ!", Duration = 5})
+                        AutoCombo = false; ComboToggle:Set(false); break
+                    end
+
+                    -- BƯỚC 2: TỚI CHỖ BOSS & ĐỢI 5 GIÂY
+                    print("▶️ Bước 2: Tới khu vực Boss...")
+                    hrp.CFrame = TOA_DO_BOSS
+                    task.wait(5)
+
+                    -- BƯỚC 3: TÌM BOSS & ORBIT XẢ CHIÊU
+                    local targetBoss = workspace:FindFirstChild(BOSS_NAME, true)
+                    if targetBoss and targetBoss:FindFirstChild("HumanoidRootPart") then
+                        local bossHRP = targetBoss.HumanoidRootPart
+                        bossHRP.Size = Vector3.new(50, 50, 50) -- Bơm Hitbox
+                        bossHRP.Transparency = 0.5
+                        
+                        -- Xả chiêu VP 2 (Vừa xoay vừa xả)
+                        print("▶️ Bước 3: Xả chiêu VP 2...")
+                        hrp.Velocity = Vector3.zero
+                        DungChieuE(ToolSo2)
+
+                        -- Xả chiêu VP 3
+                        print("▶️ Bước 4: Xả chiêu VP 3...")
+                        DungChieuE(ToolSo3)
+                    end
+
+                    -- BƯỚC CUỐI: VỀ ĐÍCH
+                    print("▶️ Bước cuối: Về đích...")
+                    hrp.Anchored = false
+                    hrp.CFrame = TOA_DO_DICH
+                    task.wait(0.1)
+                    hrp.Anchored = true 
+                    
+                    AutoCombo = false
+                    ComboToggle:Set(false) 
+                    Rayfield:Notify({Title = "Hoàn tất!", Content = "Đã diệt Boss và rút lui an toàn.", Duration = 5})
+                    break 
                 end
             end)
         else
@@ -100,14 +134,7 @@ TabBoss:CreateToggle({
     end
 })
 
--- TỰ ĐỘNG CHẠY NẾU ĐÚNG ID SERVER
-if game.JobId == TARGET_JOB_ID then
-    Rayfield:Notify({Title = "ID Hợp Lệ!", Content = "Đang tự động dịch chuyển tới Boss Zone...", Duration = 5})
-    task.wait(2)
-    -- Chỗ này chị có thể gọi lệnh bật Toggle tự động nếu muốn
-end
-
--- TIỆN ÍCH LẤY TỌA ĐỘ (Giữ lại cho chị điền vào dòng 12)
+-- TIỆN ÍCH LẤY TỌA ĐỘ
 TabOther:CreateButton({
     Name = "📍 LẤY TỌA ĐỘ ĐỨNG (COPY)", 
     Callback = function() 
