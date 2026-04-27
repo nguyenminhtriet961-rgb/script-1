@@ -747,7 +747,54 @@ local function LoadMainHub()
         end
     end})
 end
+-- ==========================================
+    -- 💎 TAB: AUTO LƯỢM ĐỒ (BAO GỒM LINH HỒN PK)
+    -- ==========================================
+    local TabDrop = Window:CreateTab("💎 Lượm Đồ")
+    local AutoGom = false
 
+    TabDrop:CreateToggle({
+        Name = "Bật Máy Hút Kim Cương & Linh Hồn",
+        CurrentValue = false,
+        Callback = function(Value)
+            AutoGom = Value
+            task.spawn(function()
+                while AutoGom do
+                    task.wait(0.2) 
+                    
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        local hrp = LocalPlayer.Character.HumanoidRootPart
+                        
+                        -- Quét toàn bộ bản đồ
+                        for _, item in ipairs(workspace:GetDescendants()) do
+                            local itemName = item.Name:lower()
+                            
+                            -- Lọc đồ: Kim cương, rác rớt ra, và Linh hồn PK
+                            if itemName == "diamond" or itemName == "drop" or itemName:match("soul") then
+                                
+                                -- Trường hợp 1: Nhặt bằng cách dẫm lên (Touch)
+                                if item:IsA("BasePart") and item:FindFirstChild("TouchInterest") then
+                                    if firetouchinterest then
+                                        firetouchinterest(hrp, item, 0)
+                                        task.wait()
+                                        firetouchinterest(hrp, item, 1)
+                                    end
+                                end
+                                
+                                -- Trường hợp 2: Nhặt bằng cách nhấn giữ nút (ProximityPrompt)
+                                local prompt = item:FindFirstChildWhichIsA("ProximityPrompt")
+                                if prompt and fireproximityprompt then
+                                    -- Tính năng xịn: Tự động bỏ qua thời gian chờ (HoldDuration)
+                                    fireproximityprompt(prompt)
+                                end
+
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    })
 -- ==============================================================================
 -- 🚀 CHẠY TRỰC TIẾP KHÔNG CẦN KEY
 -- ==============================================================================
