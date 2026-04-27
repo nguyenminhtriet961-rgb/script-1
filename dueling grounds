@@ -1,7 +1,7 @@
 --[[
-    👑 MTRIET TESTER - MOBILE EDITION (V9 FINAL REVERT) 👑
-    - Trả lại logic: Bước 2 dùng VP 2, Bước 3 dùng VP 3.
-    - Giữ nguyên: Đóng băng (Anchored) và Tự động tắt khi về đích.
+    👑 MTRIET TESTER - MOBILE EDITION (V10 FIXED INVENTORY) 👑
+    - Fix lỗi không đổi vũ khí: Tự động cất đồ (UnequipTools) để reset túi đồ.
+    - Giữ nguyên logic VP 2 -> VP 3 và Anchored.
 ]]
 
 local Players = game:GetService("Players")
@@ -16,20 +16,24 @@ local TOA_DO_2 = CFrame.new(1379.3, -115.2, 64.4)  -- Xả E lần 1 (VP 2)
 local TOA_DO_3 = CFrame.new(1334.2, -115.2, 70.1)  -- Xả E lần 2 (VP 3)
 local TOA_DO_4 = CFrame.new(750.7, 18.3, -3.3)     -- Về đích & Dừng
 
--- Hàm trang bị và bấm E chuẩn Mobile
+-- Hàm trang bị và bấm E chuẩn Mobile (Đã Fix Lỗi Túi Đồ)
 local function DungChieuE(viTriItem)
-    local tools = {}
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("Humanoid") then return end
     
+    -- CẤT HẾT ĐỒ VÀO TÚI ĐỂ RESET THỨ TỰ (Chống lú inventory)
+    char.Humanoid:UnequipTools()
+    task.wait(0.2) 
+    
+    local tools = {}
+    -- Sau khi cất, toàn bộ đồ sẽ nằm ngoan ngoãn trong Backpack
     for _, t in ipairs(LocalPlayer:WaitForChild("Backpack"):GetChildren()) do
-        if t:IsA("Tool") then table.insert(tools, t) end
-    end
-    for _, t in ipairs(LocalPlayer.Character:GetChildren()) do
         if t:IsA("Tool") then table.insert(tools, t) end
     end
     
     if tools[viTriItem] then
         local myTool = tools[viTriItem]
-        LocalPlayer.Character.Humanoid:EquipTool(myTool)
+        char.Humanoid:EquipTool(myTool)
         task.wait(0.5)
         
         -- Giả lập phím E cho Mobile
@@ -51,9 +55,9 @@ end
 -- =======================================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-    Name = "📱 TESTER COMBO V9",
+    Name = "📱 TESTER COMBO V10",
     LoadingTitle = "Đang nạp dữ liệu...",
-    LoadingSubtitle = "VP 2 -> VP 3 | Fix Anchored",
+    LoadingSubtitle = "Đã fix lỗi lú túi đồ (VP2->VP3)",
     ConfigurationSaving = { Enabled = false }, 
     KeySystem = false 
 })
@@ -99,7 +103,7 @@ ComboToggle = TabCombo:CreateToggle({
                     
                     _G.AutoVoid = false
                     ComboToggle:Set(false) 
-                    Rayfield:Notify({Title = "Hoàn tất", Content = "Đã xong quy trình VP 2 và VP 3.", Duration = 5})
+                    Rayfield:Notify({Title = "Hoàn tất", Content = "Đã xả xong VP 2 và VP 3.", Duration = 5})
                     break 
                 end
             end)
