@@ -1,6 +1,6 @@
 --[[
-    👑 MTRIET VIP HUB - ULTIMATE V2 (HIT & RUN EDITION) 👑
-    Cập nhật: Bổ nhào từ trên trời, Sửa lỗi nhặt đồ trang trí, Fix Auto YES.
+    👑 MTRIET VIP HUB - ALL IN ONE EDITION 👑
+    Cập nhật: Khôi phục toàn bộ chức năng cũ, Tích hợp V2 Hit & Run.
 ]]
 
 local CoreGui = game:GetService("CoreGui")
@@ -13,21 +13,165 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 local Mouse = LocalPlayer:GetMouse()
 
+-- Biến Global
+local NoclipConnection, AimbotConnection
+local invisOn, ghostOn, ghostSpeed, noclipOn = false, false, 50, false
+local espLoop, InfJump, isRec = false, false, false
+local RecData = {}
 local AutoTour, AutoSkillTour, AutoGom = false, false, false
 local SafeCFrame = nil 
 
 local function LoadMainHub()
     local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
     local Window = Rayfield:CreateWindow({
-        Name = "👑 MTRIET VIP - V2 HIT & RUN",
+        Name = "👑 MTRIET VIP - ALL IN ONE",
         LoadingTitle = "Đang nạp hệ thống...",
-        LoadingSubtitle = "Bản vá lỗi nhặt đồ & Combo Ẩu",
+        LoadingSubtitle = "Phiên bản Đầy đủ - Hit & Run",
         ConfigurationSaving = { Enabled = true, FolderName = "MTRIET_VIP", FileName = "Config" },
         KeySystem = false 
     })
 
     -- ==========================================
-    -- 🌋 TAB: GIẢI ĐẤU & COMBAT ẨU
+    -- 👻 TAB: GHOST & INVIS (Khôi phục)
+    -- ==========================================
+    local TabGhost = Window:CreateTab("👻 Ghost Mode")
+
+    TabGhost:CreateToggle({Name = "Tàng Hình Ghost", CurrentValue = false, Callback = function(v) 
+        invisOn = v
+        local char = LocalPlayer.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+
+        if invisOn then
+            for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.Transparency = 0.5 end end
+            local savedpos = char.HumanoidRootPart.CFrame
+            task.wait()
+            char:MoveTo(Vector3.new(-25.95, 84, 3537.55))
+            task.wait(0.15)
+            
+            local Seat = Instance.new("Seat")
+            Seat.Anchored, Seat.CanCollide, Seat.Name, Seat.Transparency = false, false, "invischair", 1
+            Seat.Position = Vector3.new(-25.95, 84, 3537.55)
+            Seat.Parent = workspace
+            
+            local Weld = Instance.new("Weld", Seat)
+            Weld.Part0, Weld.Part1 = Seat, char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+            Seat.CFrame = savedpos
+            Rayfield:Notify({Title = "Tàng Hình", Content = "Đã vào chế độ Ma", Duration = 2})
+        else
+            for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.Transparency = 0 end end
+            if workspace:FindFirstChild("invischair") then workspace.invischair:Destroy() end
+            if char:FindFirstChild("Humanoid") then
+                char.Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+            end
+            Rayfield:Notify({Title = "Tàng Hình", Content = "Đã hiện hình", Duration = 2})
+        end
+    end})
+    
+    TabGhost:CreateSlider({Name = "Tốc độ Ghost", Range = {16, 200}, Increment = 1, CurrentValue = 50, Callback = function(v) ghostSpeed = v end})
+    TabGhost:CreateToggle({Name = "Chạy Nhanh Ghost", CurrentValue = false, Callback = function(v) 
+        ghostOn = v
+        local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed = ghostOn and ghostSpeed or 16 end 
+    end})
+    TabGhost:CreateToggle({Name = "Đi Xuyên Tường", CurrentValue = false, Callback = function(v) 
+        noclipOn = v
+        if noclipOn then
+            NoclipConnection = RunService.Stepped:Connect(function()
+                if LocalPlayer.Character then
+                    for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
+                        if part:IsA("BasePart") then part.CanCollide = false end
+                    end
+                end
+            end)
+        else
+            if NoclipConnection then NoclipConnection:Disconnect() NoclipConnection = nil end
+        end
+    end})
+
+    -- ==========================================
+    -- 🎯 TAB: COMBAT (Khôi phục Aimbot, ESP, Hitbox)
+    -- ==========================================
+    local TabCombat = Window:CreateTab("🎯 Hỗ Trợ Chiến Đấu")
+    local AimOn, SizeHB = false, 15
+
+    TabCombat:CreateToggle({Name = "Aimbot (Auto Lock)", CurrentValue = false, Callback = function(v) 
+        AimOn = v 
+        if AimOn then
+            AimbotConnection = RunService.RenderStepped:Connect(function()
+                local target, dist = nil, 1000
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        local screenPos, onScreen = Camera:WorldToViewportPoint(p.Character.HumanoidRootPart.Position)
+                        if onScreen then
+                            local d = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
+                            if d < dist then dist = d; target = p.Character.HumanoidRootPart end
+                        end
+                    end
+                end
+                if target then Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position) end
+            end)
+        else
+            if AimbotConnection then AimbotConnection:Disconnect() AimbotConnection = nil end
+        end
+    end})
+
+    TabCombat:CreateSlider({Name = "Size Hitbox", Range = {5, 50}, Increment = 1, CurrentValue = 15, Callback = function(v) SizeHB = v end})
+    TabCombat:CreateToggle({Name = "Bật Hitbox Expander", CurrentValue = false, Callback = function(v) 
+        _G.HB = v
+        if not v then
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    p.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
+                    p.Character.HumanoidRootPart.Transparency = 1
+                    p.Character.HumanoidRootPart.CanCollide = true
+                end
+            end
+            return
+        end
+        task.spawn(function() 
+            while _G.HB do 
+                for _, p in pairs(Players:GetPlayers()) do 
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then 
+                        p.Character.HumanoidRootPart.Size = Vector3.new(SizeHB, SizeHB, SizeHB)
+                        p.Character.HumanoidRootPart.Transparency = 0.7
+                        p.Character.HumanoidRootPart.CanCollide = false 
+                    end 
+                end 
+                task.wait(1) 
+            end 
+        end) 
+    end})
+
+    TabCombat:CreateToggle({Name = "Bật ESP Highlight", CurrentValue = false, Callback = function(v) 
+        espLoop = v
+        if v then
+            task.spawn(function()
+                while espLoop do
+                    for _, p in pairs(Players:GetPlayers()) do 
+                        if p ~= LocalPlayer and p.Character then 
+                            if not p.Character:FindFirstChild("MTRIET_ESP") then
+                                local hl = Instance.new("Highlight")
+                                hl.Name = "MTRIET_ESP"
+                                hl.FillColor = p.TeamColor and p.TeamColor.Color or Color3.new(1,0,0)
+                                hl.FillTransparency = 0.5 
+                                hl.Parent = p.Character
+                            end
+                        end 
+                    end
+                    task.wait(1)
+                end
+            end)
+        else
+            for _, p in pairs(Players:GetPlayers()) do 
+                if p.Character and p.Character:FindFirstChild("MTRIET_ESP") then 
+                    p.Character.MTRIET_ESP:Destroy() 
+                end 
+            end
+        end
+    end})
+
+    -- ==========================================
+    -- 🌋 TAB: GIẢI ĐẤU SINH TỬ (Bản V2 Chuẩn)
     -- ==========================================
     local TabAuto = Window:CreateTab("🌋 Giải Đấu Sinh Tử")
 
@@ -35,19 +179,16 @@ local function LoadMainHub()
         AutoTour = v
         task.spawn(function()
             while AutoTour do
-                task.wait(0.5) -- Quét nhanh hơn
+                task.wait(0.5) 
                 pcall(function()
                     local pGui = LocalPlayer:WaitForChild("PlayerGui")
                     for _, gui in ipairs(pGui:GetDescendants()) do
-                        -- Quét rộng hơn để tránh xịt UI
                         if gui:IsA("TextButton") and (string.match(gui.Name:lower(), "yes") or string.match(gui.Text:lower(), "yes")) then
-                            if gui.AbsolutePosition.X > 0 and gui.AbsolutePosition.Y > 0 then -- Đảm bảo UI đang hiện trên màn hình
+                            if gui.AbsolutePosition.X > 0 and gui.AbsolutePosition.Y > 0 then
                                 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                                     SafeCFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
                                 end
-                                for _, connection in pairs(getconnections(gui.MouseButton1Click)) do 
-                                    connection:Fire() 
-                                end
+                                for _, connection in pairs(getconnections(gui.MouseButton1Click)) do connection:Fire() end
                             end
                         end
                     end
@@ -59,7 +200,6 @@ local function LoadMainHub()
     TabAuto:CreateToggle({Name = "2. Bật Combo Ẩu (Tàng Hình + Bay Lên + Gõ Xuống)", CurrentValue = false, Callback = function(v)
         AutoSkillTour = v
         
-        -- Kích hoạt tàng hình khi bật
         if AutoSkillTour and LocalPlayer.Character then
             for _, p in ipairs(LocalPlayer.Character:GetDescendants()) do 
                 if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.Transparency = 1 end 
@@ -68,43 +208,34 @@ local function LoadMainHub()
 
         task.spawn(function()
             while AutoSkillTour do
-                task.wait(0.05) -- Tốc độ vòng lặp cực nhanh để giật hit & run
+                task.wait(0.05)
                 if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then continue end
                 local myHRP = LocalPlayer.Character.HumanoidRootPart
                 local bestTarget = nil
                 local shortestDist = 5000
 
-                -- Tìm mục tiêu (Sống & Không bị rơi vực)
                 for _, p in pairs(Players:GetPlayers()) do
                     if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") then
                         local targetHRP = p.Character.HumanoidRootPart
                         local targetHum = p.Character.Humanoid
-                        -- Check máu và vận tốc rơi (né mấy thằng đang rớt đài)
                         if targetHum.Health > 0 and targetHRP.Velocity.Y > -45 then
                             local dist = (targetHRP.Position - myHRP.Position).Magnitude
-                            if dist < shortestDist then
-                                shortestDist = dist
-                                bestTarget = targetHRP
-                            end
+                            if dist < shortestDist then shortestDist = dist; bestTarget = targetHRP end
                         end
                     end
                 end
 
                 if bestTarget then
-                    -- 1. Phóng to hitbox tối đa
                     bestTarget.Size = Vector3.new(50, 50, 50)
                     bestTarget.Transparency = 0.8
                     bestTarget.CanCollide = false
                     
-                    -- 2. Đảo vị trí: Treo trên đầu địch (Y+50) để an toàn
                     myHRP.CFrame = bestTarget.CFrame * CFrame.new(0, 50, 0)
                     myHRP.Velocity = Vector3.zero
                     task.wait(0.1) 
                     
-                    -- 3. Bổ nhào xuống gõ
-                    if AutoSkillTour then -- Tránh trường hợp tắt đột ngột
+                    if AutoSkillTour then 
                         myHRP.CFrame = bestTarget.CFrame * CFrame.new(0, 0, 3)
-                        -- Spam vũ khí
                         for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
                             if tool:IsA("Tool") then
                                 LocalPlayer.Character.Humanoid:EquipTool(tool)
@@ -113,14 +244,10 @@ local function LoadMainHub()
                         end
                     end
                 else
-                    -- Không có địch thì về chỗ an toàn
-                    if SafeCFrame then
-                        myHRP.CFrame = SafeCFrame + Vector3.new(0, 50, 0) -- Đứng tạm trên không
-                    end
+                    if SafeCFrame then myHRP.CFrame = SafeCFrame + Vector3.new(0, 50, 0) end
                 end
             end
             
-            -- Trả lại hình dáng khi tắt
             if not AutoSkillTour and LocalPlayer.Character then
                 for _, p in ipairs(LocalPlayer.Character:GetDescendants()) do 
                     if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.Transparency = 0 end 
@@ -135,52 +262,115 @@ local function LoadMainHub()
     end})
 
     -- ==========================================
-    -- 💎 TAB: MÁY HÚT LINH HỒN
+    -- 💎 TAB: MÁY LƯỢM (Bản Fix Fake)
     -- ==========================================
     local TabDrop = Window:CreateTab("💎 Máy Lượm")
 
-    TabDrop:CreateToggle({
-        Name = "Hút Kim Cương & Linh Hồn (Đã Fix Hàng Fake)",
-        CurrentValue = false,
-        Callback = function(v)
-            AutoGom = v
-            task.spawn(function()
-                while AutoGom do
-                    task.wait(0.1) 
-                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                        local hrp = LocalPlayer.Character.HumanoidRootPart
-                        local oldPos = hrp.CFrame 
-                        
-                        for _, item in ipairs(workspace:GetDescendants()) do
-                            local itemName = item.Name:lower()
-                            if itemName == "diamond" or itemName == "drop" or string.match(itemName, "soul") then
-                                if item:IsA("BasePart") then
-                                    -- CHỐNG LỎ: Chỉ dịch chuyển nếu part có TouchInterest (hàng thật)
-                                    if item:FindFirstChild("TouchInterest") or item:FindFirstChildWhichIsA("ProximityPrompt") then
-                                        hrp.CFrame = item.CFrame
-                                        task.wait(0.05)
-                                        
-                                        if item:FindFirstChild("TouchInterest") and firetouchinterest then
-                                            firetouchinterest(hrp, item, 0)
-                                            task.wait()
-                                            firetouchinterest(hrp, item, 1)
-                                        end
-                                        
-                                        local prompt = item:FindFirstChildWhichIsA("ProximityPrompt")
-                                        if prompt and fireproximityprompt then
-                                            fireproximityprompt(prompt)
-                                        end
-                                        
-                                        hrp.CFrame = oldPos -- Giật về
+    TabDrop:CreateToggle({Name = "Hút Kim Cương & Linh Hồn", CurrentValue = false, Callback = function(v)
+        AutoGom = v
+        task.spawn(function()
+            while AutoGom do
+                task.wait(0.1) 
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = LocalPlayer.Character.HumanoidRootPart
+                    local oldPos = hrp.CFrame 
+                    
+                    for _, item in ipairs(workspace:GetDescendants()) do
+                        local itemName = item.Name:lower()
+                        if itemName == "diamond" or itemName == "drop" or string.match(itemName, "soul") then
+                            if item:IsA("BasePart") then
+                                if item:FindFirstChild("TouchInterest") or item:FindFirstChildWhichIsA("ProximityPrompt") then
+                                    hrp.CFrame = item.CFrame
+                                    task.wait(0.05)
+                                    
+                                    if item:FindFirstChild("TouchInterest") and firetouchinterest then
+                                        firetouchinterest(hrp, item, 0)
+                                        task.wait()
+                                        firetouchinterest(hrp, item, 1)
                                     end
+                                    
+                                    local prompt = item:FindFirstChildWhichIsA("ProximityPrompt")
+                                    if prompt and fireproximityprompt then fireproximityprompt(prompt) end
+                                    
+                                    hrp.CFrame = oldPos 
                                 end
                             end
                         end
                     end
                 end
-            end)
-        end
-    })
+            end
+        end)
+    end})
+
+    -- ==========================================
+    -- ⏳ TAB: TIỆN ÍCH (Khôi phục Fly Mobile & Tool)
+    -- ==========================================
+    local TabOther = Window:CreateTab("⏳ Tiện Ích")
+
+    TabOther:CreateButton({Name = "🚀 Mở Bảng Fly Mobile (VIP)", Callback = function() 
+        if LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("MTRIET_FlyGUI") then return end
+        -- (Đoạn GUI Fly Mobile tạo bằng Instance.new của chị được nhét gọn vào đây để khỏi vướng mắt)
+        local main = Instance.new("ScreenGui"); main.Name = "MTRIET_FlyGUI"; main.Parent = LocalPlayer:WaitForChild("PlayerGui")
+        local Frame = Instance.new("Frame", main); Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25); Frame.Size = UDim2.new(0, 200, 0, 90); Frame.Position = UDim2.new(0.1, 0, 0.4, 0); Frame.Active = true; Frame.Draggable = true
+        Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8); Instance.new("UIStroke", Frame).Color = Color3.fromRGB(0, 120, 215)
+        local up = Instance.new("TextButton", Frame); up.Size = UDim2.new(0, 55, 0, 25); up.Position = UDim2.new(0.05, 0, 0.35, 0); up.Text = "UP"
+        local down = Instance.new("TextButton", Frame); down.Size = UDim2.new(0, 55, 0, 25); down.Position = UDim2.new(0.05, 0, 0.65, 0); down.Text = "DOWN"
+        local onof = Instance.new("TextButton", Frame); onof.Size = UDim2.new(0, 60, 0, 25); onof.Position = UDim2.new(0.65, 0, 0.65, 0); onof.Text = "FLY"
+        local closebutton = Instance.new("TextButton", Frame); closebutton.Size = UDim2.new(0, 25, 0, 25); closebutton.Position = UDim2.new(0.85, -5, -0.3, 0); closebutton.Text = "X"; closebutton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        
+        -- Logic Fly cơ bản (Rút gọn để file không quá nát)
+        local flying = false
+        onof.MouseButton1Down:connect(function() flying = not flying; onof.BackgroundColor3 = flying and Color3.new(0,1,0) or Color3.fromRGB(0, 120, 215) end)
+        closebutton.MouseButton1Click:Connect(function() main:Destroy() end)
+        
+        local tis, dis
+        up.MouseButton1Down:connect(function() tis = RunService.RenderStepped:Connect(function() if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then LocalPlayer.Character.HumanoidRootPart.CFrame *= CFrame.new(0,1,0) end end) end)
+        up.MouseButton1Up:connect(function() if tis then tis:Disconnect() end end)
+        down.MouseButton1Down:connect(function() dis = RunService.RenderStepped:Connect(function() if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then LocalPlayer.Character.HumanoidRootPart.CFrame *= CFrame.new(0,-1,0) end end) end)
+        down.MouseButton1Up:connect(function() if dis then dis:Disconnect() end end)
+    end})
+
+    TabOther:CreateToggle({Name = "Ghi Hình Hành Động", CurrentValue = false, Callback = function(v) 
+        isRec = v
+        if v then 
+            RecData = {} 
+            task.spawn(function() 
+                while isRec do 
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then 
+                        table.insert(RecData, LocalPlayer.Character.HumanoidRootPart.CFrame) 
+                    end 
+                    task.wait(0.05) 
+                end 
+            end) 
+        end 
+    end})
+    
+    TabOther:CreateButton({Name = "Phát Lại (Replay)", Callback = function() 
+        if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+        for i = 1, #RecData do 
+            LocalPlayer.Character.HumanoidRootPart.CFrame = RecData[i] 
+            task.wait(0.05) 
+        end 
+    end})
+    
+    TabOther:CreateToggle({Name = "Nhảy Vô Tận", CurrentValue = false, Callback = function(v) InfJump = v end})
+    UserInputService.JumpRequest:Connect(function() 
+        if InfJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then 
+            LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping) 
+        end 
+    end)
+
+    TabOther:CreateButton({Name = "Lấy Gậy Dịch Chuyển (TP Tool)", Callback = function() 
+        local Tool = Instance.new("Tool")
+        Tool.Name = "Gậy TP VIP"
+        Tool.RequiresHandle = false
+        Tool.Parent = LocalPlayer.Backpack
+        Tool.Activated:Connect(function() 
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(Mouse.Hit.Position + Vector3.new(0,3,0)) 
+            end
+        end) 
+    end})
 end
 
 LoadMainHub()
