@@ -1,19 +1,20 @@
 --[[
-    👑 MTRIET TESTER - MOBILE EDITION 👑
-    Bản dành riêng cho điện thoại: Tự động Copy tọa độ & Kích chiêu bằng chạm.
+    👑 MTRIET TESTER - MOBILE EDITION (LOGIC 4 BƯỚC) 👑
+    Đã nạp đúng tọa độ và logic xả chiêu ở vị trí 2 và 3 của chị MinT.
 ]]
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 -- =======================================================
--- 🎯 CHỊ MINT DÁN 3 TỌA ĐỘ VÀO ĐÂY (Bấm nút ở Tab 1 để Copy):
+-- 🎯 4 TỌA ĐỘ CHUẨN CỦA CHỊ MINT:
 -- =======================================================
-local TOA_DO_TRAI_VOID = CFrame.new(0, 100, 0) -- Nơi lấy trái
-local TOA_DO_DUNG_VP2  = CFrame.new(0, 100, 0) -- Nơi đứng xả VP 2
-local TOA_DO_DUNG_VP3  = CFrame.new(0, 100, 0) -- Nơi đứng xả VP 3
+local TOA_DO_1 = CFrame.new(732.4, 22.5, -113.8)   -- Bước 1: Điểm lấy trái
+local TOA_DO_2 = CFrame.new(1228.6, -114.9, 184.6) -- Bước 2: Điểm xả VP 2
+local TOA_DO_3 = CFrame.new(1277.9, -114.9, 185.5) -- Bước 3: Điểm xả VP 3
+local TOA_DO_4 = CFrame.new(748.9, 18.3, -3.9)     -- Bước 4: Điểm kết thúc / chờ
 
--- Hàm xả chiêu chuẩn cho Điện Thoại
+-- Hàm kích chiêu (Hỗ trợ Mobile chạm màn hình)
 local function TrangBiVaCham(viTriItem)
     local tools = {}
     for _, t in ipairs(LocalPlayer:WaitForChild("Backpack"):GetChildren()) do
@@ -28,13 +29,13 @@ local function TrangBiVaCham(viTriItem)
         LocalPlayer.Character.Humanoid:EquipTool(myTool)
         task.wait(0.5)
         
-        -- Mô phỏng chạm ngón tay vào màn hình (Mobile)
+        -- Kích hoạt chiêu (Chạm màn hình)
         pcall(function()
             myTool:Activate() 
         end)
         task.wait(0.5)
     else
-        warn("Không tìm thấy đồ ở ô số " .. tostring(viTriItem))
+        warn("❌ Lỗi: Không tìm thấy vật phẩm ở ô số " .. tostring(viTriItem))
     end
 end
 
@@ -43,41 +44,17 @@ end
 -- =======================================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-    Name = "📱 TESTER MOBILE",
-    LoadingTitle = "Đang nạp công cụ...",
-    LoadingSubtitle = "Bản Tối Ưu Cho Điện Thoại",
+    Name = "📱 TESTER COMBO",
+    LoadingTitle = "Đang nạp dữ liệu...",
+    LoadingSubtitle = "Logic 4 Bước Chuẩn Của MinT",
     ConfigurationSaving = { Enabled = false }, 
     KeySystem = false 
 })
 
 -- ==========================================
--- 📍 TAB 1: CÔNG CỤ LẤY TỌA ĐỘ (MOBILE)
+-- 🌌 TAB 1: CHẠY THỬ COMBO
 -- ==========================================
-local TabToaDo = Window:CreateTab("📍 Lấy Tọa Độ")
-
-TabToaDo:CreateButton({
-    Name = "📋 BẤM ĐỂ COPY TỌA ĐỘ VÀO BỘ NHỚ", 
-    Callback = function() 
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            local pos = char.HumanoidRootPart.Position
-            local str = string.format("CFrame.new(%.1f, %.1f, %.1f)", pos.X, pos.Y, pos.Z)
-            
-            -- Tự động chép vào Clipboard của điện thoại
-            if setclipboard then
-                setclipboard(str)
-                Rayfield:Notify({Title = "Đã Copy!", Content = "Chỉ cần dán (Paste) vào code: " .. str, Duration = 5})
-            else
-                Rayfield:Notify({Title = "Lỗi Executor", Content = "App của chị không hỗ trợ Copy. Đành tự gõ tay nhé: " .. str, Duration = 10})
-            end
-        end
-    end
-})
-
--- ==========================================
--- 🌌 TAB 2: CHẠY THỬ COMBO
--- ==========================================
-local TabCombo = Window:CreateTab("🌌 Test Combo")
+local TabCombo = Window:CreateTab("🌌 Combo 4 Bước")
 local AutoVoidCustom = false
 
 TabCombo:CreateToggle({
@@ -92,19 +69,56 @@ TabCombo:CreateToggle({
                 if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
                 local hrp = char.HumanoidRootPart
 
-                hrp.CFrame = TOA_DO_TRAI_VOID
+                -- BƯỚC 1: Tới lấy trái
+                print("▶️ BƯỚC 1: Bay tới tọa độ 1...")
+                hrp.CFrame = TOA_DO_1
                 task.wait(1.5) 
 
-                hrp.CFrame = TOA_DO_DUNG_VP2
+                -- BƯỚC 2: Tới tọa độ 2 và xả chiêu 2
+                print("▶️ BƯỚC 2: Tới tọa độ 2 và dùng VP 2...")
+                hrp.CFrame = TOA_DO_2
                 task.wait(0.5) 
                 TrangBiVaCham(2)
-                task.wait(1) 
+                task.wait(1.5) -- Đợi chiêu xả xong
 
-                hrp.CFrame = TOA_DO_DUNG_VP3
+                -- BƯỚC 3: Tới tọa độ 3 và xả chiêu 3
+                print("▶️ BƯỚC 3: Tới tọa độ 3 và dùng VP 3...")
+                hrp.CFrame = TOA_DO_3
                 task.wait(0.5)
                 TrangBiVaCham(3)
+                task.wait(1.5) -- Đợi chiêu xả xong
+
+                -- BƯỚC 4: Bay về điểm cuối
+                print("▶️ BƯỚC 4: Rút về tọa độ 4 chờ đợt mới...")
+                hrp.CFrame = TOA_DO_4
                 task.wait(2) 
+                
+                print("✅ Xong 1 vòng lặp!")
             end
         end)
+    end
+})
+
+-- ==========================================
+-- 📍 TAB 2: CÔNG CỤ LẤY TỌA ĐỘ DỰ PHÒNG
+-- ==========================================
+local TabToaDo = Window:CreateTab("📍 Lấy Tọa Độ")
+
+TabToaDo:CreateButton({
+    Name = "📋 BẤM ĐỂ COPY TỌA ĐỘ VÀO BỘ NHỚ", 
+    Callback = function() 
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local pos = char.HumanoidRootPart.Position
+            local str = string.format("CFrame.new(%.1f, %.1f, %.1f)", pos.X, pos.Y, pos.Z)
+            
+            if setclipboard then
+                setclipboard(str)
+                Rayfield:Notify({Title = "Đã Copy!", Content = "Dán vào note: " .. str, Duration = 5})
+            else
+                print(str)
+                Rayfield:Notify({Title = "Lỗi Copy", Content = "Mở F9 để xem tọa độ", Duration = 3})
+            end
+        end
     end
 })
