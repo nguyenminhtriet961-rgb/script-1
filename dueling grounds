@@ -1,8 +1,7 @@
 --[[
-    👑 MTRIET HYBRID - V17 BOSS KING (STABLE MOBILE) 👑
-    - Tối ưu hóa cho điện thoại để không bị đứng script.
-    - Nhận diện Job ID: fb541321-ec60-43ea-8834-4158fe763129.
-    - Boss King: Max Hitbox + Fix đóng băng chống đánh văng.
+    👑 MTRIET TESTER - MOBILE EDITION (V13 LOGIC FIXED) 👑
+    - Fix lỗi ngắt sớm: Dời bước quét túi đồ xuống SAU khi nhặt đồ ở Bước 1.
+    - Giữ nguyên hệ thống ID Server và Combo xả chiêu E.
 ]]
 
 local Players = game:GetService("Players")
@@ -10,32 +9,33 @@ local VIM = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
 
 -- =======================================================
--- 🎯 DỮ LIỆU TỌA ĐỘ CHỊ MINT ĐÃ CUNG CẤP:
+-- 🎯 TỌA ĐỘ CHUẨN CỦA CHỊ MINT:
 -- =======================================================
-local TARGET_JOB_ID = "fb541321-ec60-43ea-8834-4158fe763129"
-local BOSS_NAME = "King" 
+local TOA_DO_1 = CFrame.new(732.4, 22.5, -113.8)   -- Bước 1: Lấy đồ
+local TOA_DO_2 = CFrame.new(1379.3, -115.2, 64.4)  -- Bước 2: Xả E (VP 2)
+local TOA_DO_3 = CFrame.new(1334.2, -115.2, 70.1)  -- Bước 3: Xả E (VP 3)
+local TOA_DO_4 = CFrame.new(750.7, 18.3, -3.3)     -- Bước 4: Về đích & Dừng
 
-local TOA_DO_1 = CFrame.new(732.4, 22.5, -113.8)   -- Bước 1: Nhặt đồ
-local TOA_DO_BOSS = CFrame.new(1379.3, -115.2, 64.4) -- Điểm đợi King
-local TOA_DO_DICH = CFrame.new(750.7, 18.3, -3.3)    -- Điểm về đích
-
--- Hàm xả chiêu E an toàn
 local function DungChieuE(myTool)
     local char = LocalPlayer.Character
-    if myTool and char and char:FindFirstChild("Humanoid") then
+    if not char or not char:FindFirstChild("Humanoid") then return end
+    
+    if myTool then
         char.Humanoid:UnequipTools()
-        task.wait(0.3)
+        task.wait(0.2)
+        
         char.Humanoid:EquipTool(myTool)
         task.wait(0.5)
         
-        -- Kích hoạt chiêu E
         pcall(function()
             VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
             task.wait(0.1)
             VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
         end)
         
-        task.wait(3) -- Delay xả chiêu
+        task.wait(3)
+    else
+        warn("❌ Lỗi: Vật phẩm không tồn tại!")
     end
 end
 
@@ -44,35 +44,70 @@ end
 -- =======================================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-    Name = "📱 KING SLAYER V17",
-    LoadingTitle = "Đang kiểm tra Server...",
-    LoadingSubtitle = (game.JobId == TARGET_JOB_ID and "SERVER MỤC TIÊU: OK" or "SERVER THƯỜNG"),
+    Name = "📱 TESTER V13",
+    LoadingTitle = "Đang nạp dữ liệu...",
+    LoadingSubtitle = "Fix trật tự lấy đồ ở Bước 1",
     ConfigurationSaving = { Enabled = false }, 
     KeySystem = false 
 })
 
-local TabCombo = Window:CreateTab("👹 Combo Diệt Boss")
-local ComboToggle
+-- ==========================================
+-- 🌐 TAB: THÔNG TIN SERVER (JOB ID)
+-- ==========================================
+local TabServer = Window:CreateTab("🌐 Server Info")
+
+TabServer:CreateButton({
+    Name = "📋 COPY ID SERVER (Job ID)", 
+    Callback = function() 
+        local jobId = game.JobId
+        if jobId and jobId ~= "" then
+            if setclipboard then
+                setclipboard(jobId)
+                Rayfield:Notify({Title = "Thành công!", Content = "Đã copy Job ID.", Duration = 5})
+            else
+                print("Job ID: " .. jobId)
+                Rayfield:Notify({Title = "Lỗi Executor", Content = "Mở Console F9 để xem ID.", Duration = 5})
+            end
+        else
+            Rayfield:Notify({Title = "Thất bại", Content = "Bạn đang ở Private Server hỏng hoặc Test mode.", Duration = 3})
+        end
+    end
+})
+
+TabServer:CreateButton({
+    Name = "🔄 REJOIN SERVER NÀY", 
+    Callback = function() 
+        local ts = game:GetService("TeleportService")
+        local p = game:GetService("Players").LocalPlayer
+        ts:TeleportToPlaceInstance(game.PlaceId, game.JobId, p)
+    end
+})
+
+-- ==========================================
+-- 🌌 TAB: COMBO BOSS
+-- ==========================================
+local TabCombo = Window:CreateTab("🌌 Combo Boss")
+local ComboToggle 
 
 ComboToggle = TabCombo:CreateToggle({
-    Name = "🚀 Chạy Quy Trình Tổng Lực", 
+    Name = "🚀 Khởi chạy Combo (VP 2 & VP 3)", 
     CurrentValue = false, 
     Callback = function(v)
-        _G.AutoCombo = v
+        _G.AutoVoid = v
         if v then
             task.spawn(function()
-                while _G.AutoCombo do
+                while _G.AutoVoid do
                     local char = LocalPlayer.Character
-                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                    if not hrp then break end
+                    if not char or not char:FindFirstChild("HumanoidRootPart") then break end
+                    local hrp = char.HumanoidRootPart
 
-                    -- BƯỚC 1: NHẶT ĐỒ
-                    print("▶️ B1: Đang nhặt vật phẩm...")
+                    -- BƯỚC 1: TỚI LẤY TRÁI TRƯỚC
+                    print("▶️ Bước 1: Lấy vật phẩm...")
                     hrp.Anchored = false
                     hrp.CFrame = TOA_DO_1
-                    task.wait(3) 
+                    task.wait(3) -- Đợi rớt đồ vào túi
 
-                    -- KHÓA TÚI ĐỒ (Lấy món 2 và món 3)
+                    -- CHỐT SỔ TÚI ĐỒ (Sau khi nhặt xong mới đếm)
                     local allTools = {}
                     for _, t in ipairs(LocalPlayer:WaitForChild("Backpack"):GetChildren()) do
                         if t:IsA("Tool") then table.insert(allTools, t) end
@@ -84,40 +119,38 @@ ComboToggle = TabCombo:CreateToggle({
                     local ToolSo2 = allTools[2]
                     local ToolSo3 = allTools[3]
 
-                    -- BƯỚC 2: KIỂM TRA SERVER VÀ DIỆT BOSS
-                    if game.JobId == TARGET_JOB_ID then
-                        print("🎯 Server khớp! Đang tới chỗ King...")
-                        hrp.CFrame = TOA_DO_BOSS
-                        task.wait(5) -- Đợi King hiện
-
-                        local boss = workspace:FindFirstChild(BOSS_NAME, true)
-                        if boss and boss:FindFirstChild("HumanoidRootPart") then
-                            local bossHRP = boss.HumanoidRootPart
-                            
-                            -- Khóa nhân vật tại chỗ để không bị đẩy
-                            hrp.Anchored = true 
-                            bossHRP.Size = Vector3.new(60, 60, 60)
-                            bossHRP.CanCollide = false
-                            
-                            print("⚔️ Đang xả chiêu...")
-                            if ToolSo2 then DungChieuE(ToolSo2) end
-                            if ToolSo3 then DungChieuE(ToolSo3) end
-                        end
-                    else
-                        print("⏩ Server thường, bỏ qua Boss.")
-                        task.wait(1)
+                    if not ToolSo2 or not ToolSo3 then
+                        Rayfield:Notify({Title = "Lỗi Túi Đồ", Content = "Lấy trái xong vẫn không đủ đồ!", Duration = 5})
+                        _G.AutoVoid = false
+                        ComboToggle:Set(false)
+                        break
                     end
 
-                    -- BƯỚC CUỐI: VỀ ĐÍCH
-                    print("▶️ Đã xong. Rút lui...")
+                    -- BƯỚC 2
+                    print("▶️ Bước 2: Dùng chiêu VP 2...")
+                    hrp.CFrame = TOA_DO_2
+                    task.wait(0.1)
+                    hrp.Anchored = true 
+                    DungChieuE(ToolSo2)
+
+                    -- BƯỚC 3
+                    print("▶️ Bước 3: Dùng chiêu VP 3...")
+                    hrp.Anchored = false 
+                    hrp.CFrame = TOA_DO_3
+                    task.wait(0.1)
+                    hrp.Anchored = true 
+                    DungChieuE(ToolSo3)
+
+                    -- BƯỚC 4
+                    print("▶️ Bước 4: Về đích...")
                     hrp.Anchored = false
-                    hrp.CFrame = TOA_DO_DICH
-                    task.wait(0.2) 
+                    hrp.CFrame = TOA_DO_4
+                    task.wait(0.1)
                     hrp.Anchored = true 
                     
-                    _G.AutoCombo = false
+                    _G.AutoVoid = false
                     ComboToggle:Set(false) 
-                    Rayfield:Notify({Title = "Hoàn tất!", Content = "Quy trình đã kết thúc.", Duration = 5})
+                    Rayfield:Notify({Title = "Hoàn tất", Content = "Đã xả xong chu trình an toàn.", Duration = 5})
                     break 
                 end
             end)
