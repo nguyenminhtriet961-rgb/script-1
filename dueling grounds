@@ -1,7 +1,7 @@
 --[[
-    👑 MTRIET TESTER - MOBILE EDITION (V12 SERVER ID + COMBO) 👑
-    - Thêm tính năng Copy ID Server (JobId).
-    - Giữ nguyên Combo VP2 -> VP3 (Fix lú inventory).
+    👑 MTRIET TESTER - MOBILE EDITION (V13 LOGIC FIXED) 👑
+    - Fix lỗi ngắt sớm: Dời bước quét túi đồ xuống SAU khi nhặt đồ ở Bước 1.
+    - Giữ nguyên hệ thống ID Server và Combo xả chiêu E.
 ]]
 
 local Players = game:GetService("Players")
@@ -11,10 +11,10 @@ local LocalPlayer = Players.LocalPlayer
 -- =======================================================
 -- 🎯 TỌA ĐỘ CHUẨN CỦA CHỊ MINT:
 -- =======================================================
-local TOA_DO_1 = CFrame.new(732.4, 22.5, -113.8)   -- Lấy trái
-local TOA_DO_2 = CFrame.new(1379.3, -115.2, 64.4)  -- Xả E lần 1 (VP 2)
-local TOA_DO_3 = CFrame.new(1334.2, -115.2, 70.1)  -- Xả E lần 2 (VP 3)
-local TOA_DO_4 = CFrame.new(750.7, 18.3, -3.3)     -- Về đích & Dừng
+local TOA_DO_1 = CFrame.new(732.4, 22.5, -113.8)   -- Bước 1: Lấy đồ
+local TOA_DO_2 = CFrame.new(1379.3, -115.2, 64.4)  -- Bước 2: Xả E (VP 2)
+local TOA_DO_3 = CFrame.new(1334.2, -115.2, 70.1)  -- Bước 3: Xả E (VP 3)
+local TOA_DO_4 = CFrame.new(750.7, 18.3, -3.3)     -- Bước 4: Về đích & Dừng
 
 local function DungChieuE(myTool)
     local char = LocalPlayer.Character
@@ -44,9 +44,9 @@ end
 -- =======================================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-    Name = "📱 TESTER V12",
+    Name = "📱 TESTER V13",
     LoadingTitle = "Đang nạp dữ liệu...",
-    LoadingSubtitle = "Có thêm chức năng Lấy ID Server",
+    LoadingSubtitle = "Fix trật tự lấy đồ ở Bước 1",
     ConfigurationSaving = { Enabled = false }, 
     KeySystem = false 
 })
@@ -63,10 +63,10 @@ TabServer:CreateButton({
         if jobId and jobId ~= "" then
             if setclipboard then
                 setclipboard(jobId)
-                Rayfield:Notify({Title = "Thành công!", Content = "Đã copy Job ID. Chị có thể dán ra tin nhắn.", Duration = 5})
+                Rayfield:Notify({Title = "Thành công!", Content = "Đã copy Job ID.", Duration = 5})
             else
                 print("Job ID: " .. jobId)
-                Rayfield:Notify({Title = "Lỗi Executor", Content = "Hãy mở Console (F9) để copy tay.", Duration = 5})
+                Rayfield:Notify({Title = "Lỗi Executor", Content = "Mở Console F9 để xem ID.", Duration = 5})
             end
         else
             Rayfield:Notify({Title = "Thất bại", Content = "Bạn đang ở Private Server hỏng hoặc Test mode.", Duration = 3})
@@ -101,6 +101,13 @@ ComboToggle = TabCombo:CreateToggle({
                     if not char or not char:FindFirstChild("HumanoidRootPart") then break end
                     local hrp = char.HumanoidRootPart
 
+                    -- BƯỚC 1: TỚI LẤY TRÁI TRƯỚC
+                    print("▶️ Bước 1: Lấy vật phẩm...")
+                    hrp.Anchored = false
+                    hrp.CFrame = TOA_DO_1
+                    task.wait(3) -- Đợi rớt đồ vào túi
+
+                    -- CHỐT SỔ TÚI ĐỒ (Sau khi nhặt xong mới đếm)
                     local allTools = {}
                     for _, t in ipairs(LocalPlayer:WaitForChild("Backpack"):GetChildren()) do
                         if t:IsA("Tool") then table.insert(allTools, t) end
@@ -113,31 +120,29 @@ ComboToggle = TabCombo:CreateToggle({
                     local ToolSo3 = allTools[3]
 
                     if not ToolSo2 or not ToolSo3 then
-                        Rayfield:Notify({Title = "Lỗi Túi Đồ", Content = "Không đủ 3 vật phẩm trong người!", Duration = 5})
+                        Rayfield:Notify({Title = "Lỗi Túi Đồ", Content = "Lấy trái xong vẫn không đủ đồ!", Duration = 5})
                         _G.AutoVoid = false
                         ComboToggle:Set(false)
                         break
                     end
 
-                    -- Bước 1
-                    hrp.Anchored = false
-                    hrp.CFrame = TOA_DO_1
-                    task.wait(3) 
-
-                    -- Bước 2
+                    -- BƯỚC 2
+                    print("▶️ Bước 2: Dùng chiêu VP 2...")
                     hrp.CFrame = TOA_DO_2
                     task.wait(0.1)
                     hrp.Anchored = true 
                     DungChieuE(ToolSo2)
 
-                    -- Bước 3
+                    -- BƯỚC 3
+                    print("▶️ Bước 3: Dùng chiêu VP 3...")
                     hrp.Anchored = false 
                     hrp.CFrame = TOA_DO_3
                     task.wait(0.1)
                     hrp.Anchored = true 
                     DungChieuE(ToolSo3)
 
-                    -- Bước 4
+                    -- BƯỚC 4
+                    print("▶️ Bước 4: Về đích...")
                     hrp.Anchored = false
                     hrp.CFrame = TOA_DO_4
                     task.wait(0.1)
@@ -145,7 +150,7 @@ ComboToggle = TabCombo:CreateToggle({
                     
                     _G.AutoVoid = false
                     ComboToggle:Set(false) 
-                    Rayfield:Notify({Title = "Hoàn tất", Content = "Đã xả xong VP 2 và VP 3 an toàn.", Duration = 5})
+                    Rayfield:Notify({Title = "Hoàn tất", Content = "Đã xả xong chu trình an toàn.", Duration = 5})
                     break 
                 end
             end)
