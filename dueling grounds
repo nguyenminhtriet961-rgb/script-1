@@ -1,7 +1,9 @@
 --[[
-    👑 MTRIET VIP - ULTIMATE MASTER EDITION (V5 FIXED) 👑
-    - Fix Chế độ 3: Tạo bệ đỡ AFK trên trời thay vì khóa Y.
-    - Fix Aura: Sử dụng Glitch Ghost gốc tách xác.
+    👑 MTRIET VIP - ULTIMATE MASTER EDITION (V6 PHYSICS FIXED) 👑
+    - Fix Fly: Không còn tự lao về trước.
+    - Fix AFK Sky: Neo cứng trên không (Anchored), không rớt đài.
+    - Fix Aura: Đứng trên đầu đỉnh (Y offset), bỏ bám góc xoay (chống quay mòng mòng).
+    - Tốc chém max tốc, hiện rõ Hitbox đỏ.
 ]]
 
 local CoreGui = game:GetService("CoreGui")
@@ -20,19 +22,19 @@ local invisOn, ghostOn, ghostSpeed, noclipOn = false, false, 50, false
 local espLoop, InfJump, isRec = false, false, false
 local RecData = {}
 local AutoTour = false
-local AuraOn, AuraAtkSpeed, AuraOffsetDist, AuraScanRange = false, 0.1, 3, 5000
+local AuraOn, AuraAtkSpeed, AuraOffsetDist, AuraScanRange = false, 0, 5, 5000
 local lastAtkTime = 0
 local AutoGomMode = 0
 local HitboxSize = 15
 local SafeCFrame = nil
-local SkyPlatform = nil -- Bệ đỡ AFK
+local AFK_SkyPos = nil
 
 local function LoadMainHub()
     local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
     local Window = Rayfield:CreateWindow({
-        Name = "👑 MTRIET VIP - FULL V5",
+        Name = "👑 MTRIET VIP - FULL V6",
         LoadingTitle = "Đang nạp hệ thống...",
-        LoadingSubtitle = "Đã fix AFK Sky & Aura Ghost",
+        LoadingSubtitle = "Đã Fix Vật Lý & Lỗi Quay Mòng Mòng",
         ConfigurationSaving = { Enabled = true, FolderName = "MTRIET_VIP", FileName = "Config" },
         KeySystem = false 
     })
@@ -55,7 +57,7 @@ local function LoadMainHub()
             task.wait(0.15)
             
             local Seat = Instance.new("Seat")
-            Seat.Anchored, Seat.CanCollide, Seat.Name, Seat.Transparency = false, false, "invischair", 1
+            Seat.Anchored, Seat.CanCollide, Seat.Name, Seat.Transparency = true, false, "invischair", 1
             Seat.Position = Vector3.new(-25.95, 84, 3537.55)
             Seat.Parent = workspace
             
@@ -140,7 +142,7 @@ local function LoadMainHub()
     end})
 
     -- ==========================================
-    -- ⚔️ TAB 3: SKILL AURA (GHOST FIXED) & AUTO TOUR
+    -- ⚔️ TAB 3: SKILL AURA & AUTO TOUR
     -- ==========================================
     local TabAura = Window:CreateTab("⚔️ Skill Aura & Tour")
 
@@ -166,27 +168,31 @@ local function LoadMainHub()
         end)
     end})
 
-    TabAura:CreateToggle({Name = "Bật Skill Aura (Dùng Glitch Ghost xịn)", CurrentValue = false, Callback = function(v)
+    TabAura:CreateToggle({Name = "Bật Skill Aura (Đứng đỉnh đầu + Ghost)", CurrentValue = false, Callback = function(v)
         AuraOn = v
         local char = LocalPlayer.Character
         if not char then return end
 
         if AuraOn then
-            -- Bật Glitch Ghost (Tách xác để an toàn)
             local savedpos = char.HumanoidRootPart.CFrame
             char:MoveTo(Vector3.new(-25.95, 84, 3537.55))
             task.wait(0.15)
             local Seat = Instance.new("Seat")
-            Seat.Anchored = false; Seat.CanCollide = false; Seat.Name = "invischair"; Seat.Transparency = 1
+            Seat.Anchored = true; Seat.CanCollide = false; Seat.Name = "invischair"; Seat.Transparency = 1
             Seat.Position = Vector3.new(-25.95, 84, 3537.55)
             Seat.Parent = workspace
             local Weld = Instance.new("Weld", Seat)
             Weld.Part0 = Seat; Weld.Part1 = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
             Seat.CFrame = savedpos
         else
-            -- Tắt Glitch
             if workspace:FindFirstChild("invischair") then workspace.invischair:Destroy() end
             if char:FindFirstChild("Humanoid") then char.Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp) end
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    p.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
+                    p.Character.HumanoidRootPart.Transparency = 0
+                end
+            end
         end
 
         task.spawn(function()
@@ -208,10 +214,14 @@ local function LoadMainHub()
                 end
 
                 if targetHRP then
+                    -- Hiện Hitbox đỏ
                     targetHRP.Size = Vector3.new(HitboxSize, HitboxSize, HitboxSize)
+                    targetHRP.Transparency = 0.5
+                    targetHRP.BrickColor = BrickColor.new("Bright red")
                     targetHRP.CanCollide = false
                     
-                    myHRP.CFrame = targetHRP.CFrame * CFrame.new(0, 0, AuraOffsetDist)
+                    -- CHỐNG QUAY MÒNG MÒNG: Chỉ lấy Vị trí (Position) cộng thêm độ cao (Y), không lấy góc xoay.
+                    myHRP.CFrame = CFrame.new(targetHRP.Position + Vector3.new(0, AuraOffsetDist, 0))
                     
                     if tick() - lastAtkTime >= AuraAtkSpeed then
                         lastAtkTime = tick()
@@ -228,37 +238,37 @@ local function LoadMainHub()
     end})
 
     TabAura:CreateSlider({Name = "Hitbox Kẻ Địch", Range = {5, 50}, Increment = 1, CurrentValue = 15, Callback = function(v) HitboxSize = v end})
-    TabAura:CreateSlider({Name = "Tốc độ chém (Giây/Nhát)", Range = {0.01, 1}, Increment = 0.01, CurrentValue = 0.1, Callback = function(v) AuraAtkSpeed = v end})
-    TabAura:CreateSlider({Name = "Khoảng cách đứng (Stud)", Range = {1, 20}, Increment = 1, CurrentValue = 3, Callback = function(v) AuraOffsetDist = v end})
+    TabAura:CreateSlider({Name = "Tốc độ chém (Giây/Nhát, 0=MAX)", Range = {0, 1}, Increment = 0.01, CurrentValue = 0, Callback = function(v) AuraAtkSpeed = v end})
+    TabAura:CreateSlider({Name = "Độ cao đứng trên đỉnh đầu", Range = {1, 20}, Increment = 1, CurrentValue = 5, Callback = function(v) AuraOffsetDist = v end})
     TabAura:CreateSlider({Name = "Bán kính quét (Stud)", Range = {50, 5000}, Increment = 50, CurrentValue = 5000, Callback = function(v) AuraScanRange = v end})
 
     -- ==========================================
-    -- 💎 TAB 4: MÁY LƯỢM (AFK SKY FIXED)
+    -- 💎 TAB 4: MÁY LƯỢM (ANCHOR FIXED)
     -- ==========================================
     local TabDrop = Window:CreateTab("💎 Máy Lượm")
 
     TabDrop:CreateDropdown({
         Name = "Chọn Chế Độ Nhặt",
-        Options = {"Tắt", "Chế độ 1: Bay lại nhặt", "Chế độ 2: Teleport nhặt", "Chế độ 3: AFK Trên Bệ Đỡ"},
+        Options = {"Tắt", "Chế độ 1: Bay lại nhặt", "Chế độ 2: Teleport nhặt", "Chế độ 3: AFK Trên Trời (Fix rớt)"},
         CurrentOption = {"Tắt"},
         Callback = function(Option)
             if Option[1] == "Tắt" then 
                 AutoGomMode = 0
-                if SkyPlatform then SkyPlatform:Destroy() SkyPlatform = nil end
-            elseif Option[1] == "Chế độ 1: Bay lại nhặt" then AutoGomMode = 1; if SkyPlatform then SkyPlatform:Destroy() SkyPlatform = nil end
-            elseif Option[1] == "Chế độ 2: Teleport nhặt" then AutoGomMode = 2; if SkyPlatform then SkyPlatform:Destroy() SkyPlatform = nil end
-            elseif Option[1] == "Chế độ 3: AFK Trên Bệ Đỡ" then 
-                AutoGomMode = 3
-                if not SkyPlatform then
-                    SkyPlatform = Instance.new("Part")
-                    SkyPlatform.Size = Vector3.new(30, 2, 30)
-                    SkyPlatform.Anchored = true
-                    SkyPlatform.Transparency = 0.5
-                    SkyPlatform.Parent = workspace
-                end
                 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    SkyPlatform.Position = LocalPlayer.Character.HumanoidRootPart.Position + Vector3.new(0, 800, 0)
-                    LocalPlayer.Character.HumanoidRootPart.CFrame = SkyPlatform.CFrame * CFrame.new(0, 5, 0)
+                    LocalPlayer.Character.HumanoidRootPart.Anchored = false
+                end
+            elseif Option[1] == "Chế độ 1: Bay lại nhặt" then 
+                AutoGomMode = 1
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then LocalPlayer.Character.HumanoidRootPart.Anchored = false end
+            elseif Option[1] == "Chế độ 2: Teleport nhặt" then 
+                AutoGomMode = 2
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then LocalPlayer.Character.HumanoidRootPart.Anchored = false end
+            elseif Option[1] == "Chế độ 3: AFK Trên Trời (Fix rớt)" then 
+                AutoGomMode = 3
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    AFK_SkyPos = LocalPlayer.Character.HumanoidRootPart.Position + Vector3.new(0, 500, 0)
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(AFK_SkyPos)
+                    LocalPlayer.Character.HumanoidRootPart.Anchored = true
                 end
             end
         end,
@@ -289,7 +299,7 @@ local function LoadMainHub()
                         if prompt then fireproximityprompt(prompt) end
                         hrp.CFrame = old
                     elseif AutoGomMode == 3 and (prompt or touch) then
-                        local old = hrp.CFrame
+                        hrp.Anchored = false
                         hrp.CFrame = item.CFrame
                         task.wait(0.05)
                         if prompt then fireproximityprompt(prompt) end
@@ -298,7 +308,9 @@ local function LoadMainHub()
                             task.wait()
                             firetouchinterest(hrp, item, 1)
                         end
-                        hrp.CFrame = old -- Quay lại bệ đỡ
+                        -- Trở về vị trí đóng băng trên trời
+                        hrp.CFrame = CFrame.new(AFK_SkyPos)
+                        hrp.Anchored = true
                     end
                 end
             end
@@ -306,11 +318,11 @@ local function LoadMainHub()
     end)
 
     -- ==========================================
-    -- ⏳ TAB 5: FLY MOBILE GỐC & TIỆN ÍCH
+    -- ⏳ TAB 5: FLY MOBILE & TIỆN ÍCH
     -- ==========================================
     local TabOther = Window:CreateTab("⏳ Tiện Ích")
 
-    TabOther:CreateButton({Name = "🚀 Mở Bảng Fly Mobile Gốc", Callback = function() 
+    TabOther:CreateButton({Name = "🚀 Mở Bảng Fly Mobile (Bản Fix Lỗi)", Callback = function() 
         if LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("MTRIET_FlyGUI") then return end
         
         local main = Instance.new("ScreenGui"); main.Name = "MTRIET_FlyGUI"; main.Parent = LocalPlayer:WaitForChild("PlayerGui"); main.ResetOnSpawn = false
@@ -325,11 +337,17 @@ local function LoadMainHub()
         local speed = Instance.new("TextLabel", Frame); speed.BackgroundColor3 = Color3.fromRGB(20, 20, 20); speed.Position = UDim2.new(0.55, 0, 0.35, 0); speed.Size = UDim2.new(0, 40, 0, 25); speed.Font = Enum.Font.GothamBold; speed.Text = "1"; speed.TextColor3 = Color3.fromRGB(255, 170, 0); speed.TextSize = 14; Instance.new("UICorner", speed).CornerRadius = UDim.new(0, 4)
         local mine = Instance.new("TextButton", Frame); mine.BackgroundColor3 = Color3.fromRGB(40, 40, 40); mine.Position = UDim2.new(0.35, 0, 0.35, 0); mine.Size = UDim2.new(0, 30, 0, 25); mine.Font = Enum.Font.GothamBold; mine.Text = "-"; mine.TextColor3 = Color3.fromRGB(255, 0, 0); mine.TextSize = 16; Instance.new("UICorner", mine).CornerRadius = UDim.new(0, 4)
         local closebutton = Instance.new("TextButton", Frame); closebutton.BackgroundColor3 = Color3.fromRGB(200, 50, 50); closebutton.Position = UDim2.new(0.85, -5, -0.3, 0); closebutton.Size = UDim2.new(0, 25, 0, 25); closebutton.Font = Enum.Font.GothamBold; closebutton.Text = "X"; closebutton.TextColor3 = Color3.fromRGB(255, 255, 255); closebutton.TextSize = 14; Instance.new("UICorner", closebutton).CornerRadius = UDim.new(0, 100)
-        local mini = Instance.new("TextButton", Frame); mini.BackgroundColor3 = Color3.fromRGB(100, 100, 100); mini.Position = UDim2.new(0.7, -5, -0.3, 0); mini.Size = UDim2.new(0, 25, 0, 25); mini.Font = Enum.Font.GothamBold; mini.Text = "-"; mini.TextColor3 = Color3.fromRGB(255, 255, 255); mini.TextSize = 18; Instance.new("UICorner", mini).CornerRadius = UDim.new(0, 100)
-        local mini2 = Instance.new("TextButton", Frame); mini2.BackgroundColor3 = Color3.fromRGB(100, 100, 100); mini2.Position = UDim2.new(0.7, -5, -0.3, 0); mini2.Size = UDim2.new(0, 25, 0, 25); mini2.Font = Enum.Font.GothamBold; mini2.Text = "+"; mini2.TextColor3 = Color3.fromRGB(255, 255, 255); mini2.TextSize = 18; mini2.Visible = false; Instance.new("UICorner", mini2).CornerRadius = UDim.new(0, 100)
 
         local speeds = 1
         local nowe = false
+        local ctrl = {f = 0, b = 0, l = 0, r = 0}
+
+        Mouse.KeyDown:connect(function(k)
+            if k:lower() == "w" then ctrl.f = 1 elseif k:lower() == "s" then ctrl.b = -1 elseif k:lower() == "a" then ctrl.l = -1 elseif k:lower() == "d" then ctrl.r = 1 end
+        end)
+        Mouse.KeyUp:connect(function(k)
+            if k:lower() == "w" then ctrl.f = 0 elseif k:lower() == "s" then ctrl.b = 0 elseif k:lower() == "a" then ctrl.l = 0 elseif k:lower() == "d" then ctrl.r = 0 end
+        end)
 
         onof.MouseButton1Down:connect(function()
             nowe = not nowe
@@ -345,7 +363,12 @@ local function LoadMainHub()
                 task.spawn(function()
                     while nowe do
                         RunService.RenderStepped:Wait()
-                        bv.velocity = Camera.CFrame.LookVector * (speeds * 50)
+                        -- Tính toán di chuyển không bị lỗi tự lao về phía trước
+                        if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+                            bv.velocity = ((Camera.CFrame.lookVector * (ctrl.f+ctrl.b)) + ((Camera.CFrame * CFrame.new(ctrl.l+ctrl.r,(ctrl.f+ctrl.b)*.2,0).p) - Camera.CFrame.p)) * (speeds * 50)
+                        else
+                            bv.velocity = Vector3.new(0,0.1,0)
+                        end
                         bg.cframe = Camera.CFrame
                     end
                     bg:Destroy(); bv:Destroy()
@@ -362,8 +385,6 @@ local function LoadMainHub()
         plus.MouseButton1Down:connect(function() speeds = speeds + 1; speed.Text = tostring(speeds) end)
         mine.MouseButton1Down:connect(function() if speeds > 1 then speeds = speeds - 1; speed.Text = tostring(speeds) end end)
         closebutton.MouseButton1Click:Connect(function() main:Destroy() end)
-        mini.MouseButton1Click:Connect(function() Frame.BackgroundTransparency = 1; TextLabel.Visible = false; up.Visible = false; down.Visible = false; onof.Visible = false; plus.Visible = false; speed.Visible = false; mine.Visible = false; mini.Visible = false; mini2.Visible = true end)
-        mini2.MouseButton1Click:Connect(function() Frame.BackgroundTransparency = 0; TextLabel.Visible = true; up.Visible = true; down.Visible = true; onof.Visible = true; plus.Visible = true; speed.Visible = true; mine.Visible = true; mini.Visible = true; mini2.Visible = false end)
     end})
 
     TabOther:CreateToggle({Name = "Nhảy Vô Tận", CurrentValue = false, Callback = function(v) InfJump = v end})
