@@ -1,8 +1,8 @@
 --[[
-    👑 MTRIET HYBRID - V16 SERVER CHECK EDITION 👑
-    - Kiểm tra Job ID: Nếu đúng server "fb541..." mới kích hoạt chế độ đánh Boss xịn.
-    - Server thường: Vẫn chạy Bước 1 nhặt đồ và xả chiêu bình thường.
-    - Fix: Logic triệu hồi và đánh Boss không bị xung đột.
+    👑 MTRIET HYBRID - V17 BOSS KING (STABLE MOBILE) 👑
+    - Tối ưu hóa cho điện thoại để không bị đứng script.
+    - Nhận diện Job ID: fb541321-ec60-43ea-8834-4158fe763129.
+    - Boss King: Max Hitbox + Fix đóng băng chống đánh văng.
 ]]
 
 local Players = game:GetService("Players")
@@ -10,30 +10,32 @@ local VIM = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
 
 -- =======================================================
--- 🎯 CẤU HÌNH HỆ THỐNG
+-- 🎯 DỮ LIỆU TỌA ĐỘ CHỊ MINT ĐÃ CUNG CẤP:
 -- =======================================================
 local TARGET_JOB_ID = "fb541321-ec60-43ea-8834-4158fe763129"
-local TOA_DO_1 = CFrame.new(732.4, 22.5, -113.8)   -- Bước 1: Nhặt đồ (Triệu hồi)
-local TOA_DO_BOSS = CFrame.new(1379.3, -115.2, 64.4) -- Khu vực Boss
-local TOA_DO_DICH = CFrame.new(750.7, 18.3, -3.3)    -- Về đích
+local BOSS_NAME = "King" 
 
-local BOSS_NAME = "Vua Hắc Ám" 
-local AutoCombo = false
+local TOA_DO_1 = CFrame.new(732.4, 22.5, -113.8)   -- Bước 1: Nhặt đồ
+local TOA_DO_BOSS = CFrame.new(1379.3, -115.2, 64.4) -- Điểm đợi King
+local TOA_DO_DICH = CFrame.new(750.7, 18.3, -3.3)    -- Điểm về đích
 
--- Hàm xả chiêu E
+-- Hàm xả chiêu E an toàn
 local function DungChieuE(myTool)
     local char = LocalPlayer.Character
     if myTool and char and char:FindFirstChild("Humanoid") then
         char.Humanoid:UnequipTools()
-        task.wait(0.2)
+        task.wait(0.3)
         char.Humanoid:EquipTool(myTool)
         task.wait(0.5)
+        
+        -- Kích hoạt chiêu E
         pcall(function()
             VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
             task.wait(0.1)
             VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
         end)
-        task.wait(3) 
+        
+        task.wait(3) -- Delay xả chiêu
     end
 end
 
@@ -42,35 +44,35 @@ end
 -- =======================================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-    Name = "📱 MTRIET HYBRID V16",
+    Name = "📱 KING SLAYER V17",
     LoadingTitle = "Đang kiểm tra Server...",
-    LoadingSubtitle = (game.JobId == TARGET_JOB_ID and "Server Mục Tiêu: KHỚP" or "Server Bình Thường"),
+    LoadingSubtitle = (game.JobId == TARGET_JOB_ID and "SERVER MỤC TIÊU: OK" or "SERVER THƯỜNG"),
     ConfigurationSaving = { Enabled = false }, 
     KeySystem = false 
 })
 
-local TabCombo = Window:CreateTab("👹 Combo Tổng Lực")
+local TabCombo = Window:CreateTab("👹 Combo Diệt Boss")
 local ComboToggle
 
 ComboToggle = TabCombo:CreateToggle({
-    Name = "🚀 Chạy Quy Trình (Nhặt & Đánh)", 
+    Name = "🚀 Chạy Quy Trình Tổng Lực", 
     CurrentValue = false, 
     Callback = function(v)
-        AutoCombo = v
+        _G.AutoCombo = v
         if v then
             task.spawn(function()
-                while AutoCombo do
+                while _G.AutoCombo do
                     local char = LocalPlayer.Character
                     local hrp = char and char:FindFirstChild("HumanoidRootPart")
                     if not hrp then break end
 
-                    -- BƯỚC 1: TRIỆU HỒI (NHẶT ĐỒ) - Server nào cũng chạy cái này
-                    print("▶️ Bước 1: Đang tới điểm nhặt đồ...")
+                    -- BƯỚC 1: NHẶT ĐỒ
+                    print("▶️ B1: Đang nhặt vật phẩm...")
                     hrp.Anchored = false
                     hrp.CFrame = TOA_DO_1
                     task.wait(3) 
 
-                    -- QUÉT TÚI ĐỒ SAU KHI NHẶT
+                    -- KHÓA TÚI ĐỒ (Lấy món 2 và món 3)
                     local allTools = {}
                     for _, t in ipairs(LocalPlayer:WaitForChild("Backpack"):GetChildren()) do
                         if t:IsA("Tool") then table.insert(allTools, t) end
@@ -82,47 +84,47 @@ ComboToggle = TabCombo:CreateToggle({
                     local ToolSo2 = allTools[2]
                     local ToolSo3 = allTools[3]
 
-                    -- BƯỚC 2: KIỂM TRA SERVER ĐỂ ĐÁNH BOSS
+                    -- BƯỚC 2: KIỂM TRA SERVER VÀ DIỆT BOSS
                     if game.JobId == TARGET_JOB_ID then
-                        print("✅ Server khớp ID! Tiến hành diệt Boss...")
+                        print("🎯 Server khớp! Đang tới chỗ King...")
                         hrp.CFrame = TOA_DO_BOSS
-                        task.wait(5) -- Đợi Boss hiện
+                        task.wait(5) -- Đợi King hiện
 
-                        local targetBoss = workspace:FindFirstChild(BOSS_NAME, true)
-                        if targetBoss and targetBoss:FindFirstChild("HumanoidRootPart") then
-                            local bossHRP = targetBoss.HumanoidRootPart
-                            bossHRP.Size = Vector3.new(50, 50, 50) -- Max Hitbox
+                        local boss = workspace:FindFirstChild(BOSS_NAME, true)
+                        if boss and boss:FindFirstChild("HumanoidRootPart") then
+                            local bossHRP = boss.HumanoidRootPart
                             
+                            -- Khóa nhân vật tại chỗ để không bị đẩy
+                            hrp.Anchored = true 
+                            bossHRP.Size = Vector3.new(60, 60, 60)
+                            bossHRP.CanCollide = false
+                            
+                            print("⚔️ Đang xả chiêu...")
                             if ToolSo2 then DungChieuE(ToolSo2) end
                             if ToolSo3 then DungChieuE(ToolSo3) end
                         end
                     else
-                        -- NẾU LÀ SERVER THƯỜNG: Chỉ xả chiêu tại chỗ hoặc bỏ qua bước đánh Boss
-                        Rayfield:Notify({Title = "Server Thường", Content = "Bỏ qua bước đánh Boss theo ID.", Duration = 3})
+                        print("⏩ Server thường, bỏ qua Boss.")
                         task.wait(1)
                     end
 
                     -- BƯỚC CUỐI: VỀ ĐÍCH
-                    print("▶️ Kết thúc quy trình.")
+                    print("▶️ Đã xong. Rút lui...")
                     hrp.Anchored = false
                     hrp.CFrame = TOA_DO_DICH
-                    task.wait(0.1)
+                    task.wait(0.2)
                     hrp.Anchored = true 
                     
-                    AutoCombo = false
+                    _G.AutoCombo = false
                     ComboToggle:Set(false) 
+                    Rayfield:Notify({Title = "Hoàn tất!", Content = "Quy trình đã kết thúc.", Duration = 5})
                     break 
                 end
             end)
+        else
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                LocalPlayer.Character.HumanoidRootPart.Anchored = false
+            end
         end
     end
 })
-
--- Tự động thông báo khi vào đúng server
-if game.JobId == TARGET_JOB_ID then
-    Rayfield:Notify({
-        Title = "🎯 Đã vào Server Mục Tiêu!",
-        Content = "Chế độ diệt Boss đặc biệt đã sẵn sàng.",
-        Duration = 10
-    })
-end
