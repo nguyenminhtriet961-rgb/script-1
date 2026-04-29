@@ -1,113 +1,278 @@
 --[[
-    👑 MTRIET TESTER - MOBILE EDITION (V13 LOGIC FIXED) 👑
-    - Fix lỗi ngắt sớm: Dời bước quét túi đồ xuống SAU khi nhặt đồ ở Bước 1.
-    - Giữ nguyên hệ thống ID Server và Combo xả chiêu E.
+    👑 MTRIET ULTIMATE HUB - BẢN TỔNG HỢP TOÀN DIỆN CHO CHỊ MINT 👑
+    - Tích hợp toàn bộ chức năng: Ghost, Aimbot, Hitbox, Lượm Đồ, Fly Mobile, Server ID.
+    - Tích hợp Combo Boss King: Nhận diện Server, Orbit (Xoay quanh), Tự đánh thường VP 2.
 ]]
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local VIM = game:GetService("VirtualInputManager")
+local Workspace = game:GetService("Workspace")
+
 local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
+
+-- ================== CẤU HÌNH COMBO BOSS ==================
+local TARGET_JOB_ID = "fb541321-ec60-43ea-8834-4158fe763129"
+local BOSS_NAME = "King" 
+local ORBIT_SPEED = 5
+local ORBIT_RADIUS = 10
+
+local TOA_DO_1 = CFrame.new(732.4, 22.5, -113.8)       -- Bước 1: Chỗ triệu hồi / Lấy trái
+local TOA_DO_BOSS = CFrame.new(1379.3, -115.2, 64.4)   -- Chỗ đợi Boss xuất hiện
+local TOA_DO_DICH = CFrame.new(750.7, 18.3, -3.3)      -- Chỗ nghỉ ngơi về đích
+
+-- Biến toàn cục
+local NoclipConnection, AimbotConnection, espLoop
+local invisOn, ghostOn, ghostSpeed, noclipOn = false, false, 50, false
+local AutoGomMode = 0
+local AFK_SkyPos = nil
+local AutoComboBoss = false
+local orbitAngle = 0
 
 -- =======================================================
--- 🎯 TỌA ĐỘ CHUẨN CỦA CHỊ MINT:
--- =======================================================
-local TOA_DO_1 = CFrame.new(732.4, 22.5, -113.8)   -- Bước 1: Lấy đồ
-local TOA_DO_2 = CFrame.new(1379.3, -115.2, 64.4)  -- Bước 2: Xả E (VP 2)
-local TOA_DO_3 = CFrame.new(1334.2, -115.2, 70.1)  -- Bước 3: Xả E (VP 3)
-local TOA_DO_4 = CFrame.new(750.7, 18.3, -3.3)     -- Bước 4: Về đích & Dừng
-
-local function DungChieuE(myTool)
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("Humanoid") then return end
-    
-    if myTool then
-        char.Humanoid:UnequipTools()
-        task.wait(0.2)
-        
-        char.Humanoid:EquipTool(myTool)
-        task.wait(0.5)
-        
-        pcall(function()
-            VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-            task.wait(0.1)
-            VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-        end)
-        
-        task.wait(3)
-    else
-        warn("❌ Lỗi: Vật phẩm không tồn tại!")
-    end
-end
-
--- =======================================================
--- 🎨 GIAO DIỆN RAYFIELD
+-- 🎨 KHỞI TẠO GIAO DIỆN CHÍNH
 -- =======================================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-    Name = "📱 TESTER V13",
-    LoadingTitle = "Đang nạp dữ liệu...",
-    LoadingSubtitle = "Fix trật tự lấy đồ ở Bước 1",
+    Name = "👑 MTRIET ULTIMATE HUB",
+    LoadingTitle = "Đang nạp hệ thống toàn diện...",
+    LoadingSubtitle = "Dành riêng cho chị MinT",
     ConfigurationSaving = { Enabled = false }, 
     KeySystem = false 
 })
 
 -- ==========================================
--- 🌐 TAB: THÔNG TIN SERVER (JOB ID)
+-- 👻 TAB 1: GHOST MODE
 -- ==========================================
-local TabServer = Window:CreateTab("🌐 Server Info")
+local TabGhost = Window:CreateTab("👻 Ghost")
 
-TabServer:CreateButton({
-    Name = "📋 COPY ID SERVER (Job ID)", 
-    Callback = function() 
-        local jobId = game.JobId
-        if jobId and jobId ~= "" then
-            if setclipboard then
-                setclipboard(jobId)
-                Rayfield:Notify({Title = "Thành công!", Content = "Đã copy Job ID.", Duration = 5})
-            else
-                print("Job ID: " .. jobId)
-                Rayfield:Notify({Title = "Lỗi Executor", Content = "Mở Console F9 để xem ID.", Duration = 5})
+TabGhost:CreateToggle({Name = "Tàng Hình", CurrentValue = false, Callback = function(v) 
+    invisOn = v
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+
+    if invisOn then
+        for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.Transparency = 0.5 end end
+        local savedpos = char.HumanoidRootPart.CFrame
+        task.wait()
+        char:MoveTo(Vector3.new(-25.95, 84, 3537.55))
+        task.wait(0.15)
+        local Seat = Instance.new("Seat")
+        Seat.Anchored, Seat.CanCollide, Seat.Name, Seat.Transparency = false, false, "invischair", 1
+        Seat.Position = Vector3.new(-25.95, 84, 3537.55)
+        Seat.Parent = workspace
+        local Weld = Instance.new("Weld", Seat)
+        Weld.Part0, Weld.Part1 = Seat, char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+        Seat.CFrame = savedpos
+    else
+        for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.Transparency = 0 end end
+        if workspace:FindFirstChild("invischair") then workspace.invischair:Destroy() end
+        if char:FindFirstChild("Humanoid") then char.Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp) end
+    end
+end})
+
+TabGhost:CreateSlider({Name = "Tốc độ Ghost", Range = {16, 200}, Increment = 1, CurrentValue = 50, Callback = function(v) ghostSpeed = v end})
+TabGhost:CreateToggle({Name = "Chạy Nhanh", CurrentValue = false, Callback = function(v) 
+    ghostOn = v
+    local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if hum then hum.WalkSpeed = ghostOn and ghostSpeed or 16 end 
+end})
+
+TabGhost:CreateToggle({Name = "Xuyên Tường", CurrentValue = false, Callback = function(v) 
+    noclipOn = v
+    if noclipOn then
+        NoclipConnection = RunService.Stepped:Connect(function()
+            if LocalPlayer.Character then
+                for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = false end
+                end
             end
-        else
-            Rayfield:Notify({Title = "Thất bại", Content = "Bạn đang ở Private Server hỏng hoặc Test mode.", Duration = 3})
+        end)
+    else
+        if NoclipConnection then NoclipConnection:Disconnect() NoclipConnection = nil end
+    end
+end})
+
+-- ==========================================
+-- 🎯 TAB 2: COMBAT & ESP
+-- ==========================================
+local TabCombat = Window:CreateTab("🎯 Combat")
+local AimOn, SizeHB = false, 15
+
+TabCombat:CreateToggle({Name = "Aimbot (Khóa Góc Nhìn)", CurrentValue = false, Callback = function(v) 
+    AimOn = v 
+    if AimOn then
+        AimbotConnection = RunService.RenderStepped:Connect(function()
+            local target, dist = nil, 1000
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local screenPos, onScreen = Camera:WorldToViewportPoint(p.Character.HumanoidRootPart.Position)
+                    if onScreen then
+                        local d = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
+                        if d < dist then dist = d; target = p.Character.HumanoidRootPart end
+                    end
+                end
+            end
+            if target then Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position) end
+        end)
+    else
+        if AimbotConnection then AimbotConnection:Disconnect() AimbotConnection = nil end
+    end
+end})
+
+TabCombat:CreateSlider({Name = "Size Hitbox", Range = {5, 50}, Increment = 1, CurrentValue = 15, Callback = function(v) SizeHB = v end})
+TabCombat:CreateToggle({Name = "Hack Hitbox Kẻ Địch", CurrentValue = false, Callback = function(v) 
+    _G.HB = v
+    if not v then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                p.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
+                p.Character.HumanoidRootPart.Transparency = 1
+                p.Character.HumanoidRootPart.CanCollide = true
+            end
+        end
+        return
+    end
+    task.spawn(function() 
+        while _G.HB do 
+            for _, p in pairs(Players:GetPlayers()) do 
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then 
+                    p.Character.HumanoidRootPart.Size = Vector3.new(SizeHB, SizeHB, SizeHB)
+                    p.Character.HumanoidRootPart.Transparency = 0.7
+                    p.Character.HumanoidRootPart.CanCollide = false 
+                end 
+            end 
+            task.wait(1) 
+        end 
+    end) 
+end})
+
+TabCombat:CreateToggle({Name = "Bật ESP Nhìn Xuyên Tường", CurrentValue = false, Callback = function(v) 
+    espLoop = v
+    if v then
+        task.spawn(function()
+            while espLoop do
+                for _, p in pairs(Players:GetPlayers()) do 
+                    if p ~= LocalPlayer and p.Character then 
+                        if not p.Character:FindFirstChild("MTRIET_ESP") then
+                            local hl = Instance.new("Highlight")
+                            hl.Name = "MTRIET_ESP"; hl.FillColor = Color3.new(1,0,0); hl.FillTransparency = 0.5; hl.Parent = p.Character
+                        end
+                    end 
+                end
+                task.wait(1)
+            end
+        end)
+    else
+        for _, p in pairs(Players:GetPlayers()) do 
+            if p.Character and p.Character:FindFirstChild("MTRIET_ESP") then p.Character.MTRIET_ESP:Destroy() end 
         end
     end
+end})
+
+-- ==========================================
+-- 💎 TAB 3: MÁY LƯỢM ĐỒ
+-- ==========================================
+local TabDrop = Window:CreateTab("💎 Nhặt Đồ")
+
+TabDrop:CreateDropdown({
+    Name = "Chế Độ Nhặt (Kim Cương/Hư Không)",
+    Options = {"Tắt", "1. Bay lại nhặt", "2. Teleport nhặt", "3. Neo trên trời"},
+    CurrentOption = {"Tắt"},
+    Callback = function(Option)
+        if Option[1] == "Tắt" then 
+            AutoGomMode = 0
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                LocalPlayer.Character.HumanoidRootPart.Anchored = false
+            end
+        elseif Option[1] == "1. Bay lại nhặt" then 
+            AutoGomMode = 1
+        elseif Option[1] == "2. Teleport nhặt" then 
+            AutoGomMode = 2
+        elseif Option[1] == "3. Neo trên trời" then 
+            AutoGomMode = 3
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                AFK_SkyPos = LocalPlayer.Character.HumanoidRootPart.Position + Vector3.new(0, 500, 0)
+                LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(AFK_SkyPos)
+                LocalPlayer.Character.HumanoidRootPart.Anchored = true
+            end
+        end
+    end,
 })
 
-TabServer:CreateButton({
-    Name = "🔄 REJOIN SERVER NÀY", 
-    Callback = function() 
-        local ts = game:GetService("TeleportService")
-        local p = game:GetService("Players").LocalPlayer
-        ts:TeleportToPlaceInstance(game.PlaceId, game.JobId, p)
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if AutoGomMode == 0 then continue end
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if not hrp then continue end
+
+        for _, item in ipairs(workspace:GetDescendants()) do
+            local itemName = item.Name:lower()
+            if (itemName == "diamond" or itemName == "drop" or itemName:match("soul") or itemName:match("void")) and item:IsA("BasePart") then
+                local prompt = item:FindFirstChildWhichIsA("ProximityPrompt")
+                local touch = item:FindFirstChild("TouchInterest")
+
+                if (prompt or touch) then
+                    if AutoGomMode == 1 then
+                        hrp.CFrame = item.CFrame * CFrame.new(0, 2, 0)
+                        task.wait(0.2)
+                    elseif AutoGomMode == 2 then
+                        local old = hrp.CFrame
+                        hrp.CFrame = item.CFrame
+                        task.wait(0.05)
+                        hrp.CFrame = old
+                    elseif AutoGomMode == 3 then
+                        hrp.Anchored = false
+                        hrp.CFrame = item.CFrame
+                        task.wait(0.05)
+                    end
+
+                    if prompt then fireproximityprompt(prompt) end
+                    if touch and firetouchinterest then
+                        firetouchinterest(hrp, item, 0)
+                        task.wait()
+                        firetouchinterest(hrp, item, 1)
+                    end
+
+                    if AutoGomMode == 3 then
+                        hrp.CFrame = CFrame.new(AFK_SkyPos)
+                        hrp.Anchored = true
+                    end
+                end
+            end
+        end
     end
-})
+end)
 
 -- ==========================================
--- 🌌 TAB: COMBO BOSS
+-- 👹 TAB 4: COMBO DIỆT BOSS
 -- ==========================================
-local TabCombo = Window:CreateTab("🌌 Combo Boss")
-local ComboToggle 
+local TabBoss = Window:CreateTab("👹 Boss Slayer")
+local ComboToggle
 
-ComboToggle = TabCombo:CreateToggle({
-    Name = "🚀 Khởi chạy Combo (VP 2 & VP 3)", 
+ComboToggle = TabBoss:CreateToggle({
+    Name = "🚀 Kích Hoạt Triệu Hồi & Diệt Boss", 
     CurrentValue = false, 
     Callback = function(v)
-        _G.AutoVoid = v
+        AutoComboBoss = v
         if v then
             task.spawn(function()
-                while _G.AutoVoid do
+                while AutoComboBoss do
                     local char = LocalPlayer.Character
-                    if not char or not char:FindFirstChild("HumanoidRootPart") then break end
-                    local hrp = char.HumanoidRootPart
+                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                    if not hrp then break end
 
-                    -- BƯỚC 1: TỚI LẤY TRÁI TRƯỚC
-                    print("▶️ Bước 1: Lấy vật phẩm...")
+                    -- BƯỚC 1: TRIỆU HỒI / LẤY TRÁI
+                    print("▶️ Bước 1: Triệu hồi / Lấy vật phẩm...")
                     hrp.Anchored = false
                     hrp.CFrame = TOA_DO_1
-                    task.wait(3) -- Đợi rớt đồ vào túi
+                    task.wait(3) 
 
-                    -- CHỐT SỔ TÚI ĐỒ (Sau khi nhặt xong mới đếm)
+                    -- CHỐT SỔ TÚI ĐỒ (Lấy object để spam)
                     local allTools = {}
                     for _, t in ipairs(LocalPlayer:WaitForChild("Backpack"):GetChildren()) do
                         if t:IsA("Tool") then table.insert(allTools, t) end
@@ -115,42 +280,57 @@ ComboToggle = TabCombo:CreateToggle({
                     for _, t in ipairs(char:GetChildren()) do
                         if t:IsA("Tool") then table.insert(allTools, t) end
                     end
-                    
                     local ToolSo2 = allTools[2]
-                    local ToolSo3 = allTools[3]
 
-                    if not ToolSo2 or not ToolSo3 then
-                        Rayfield:Notify({Title = "Lỗi Túi Đồ", Content = "Lấy trái xong vẫn không đủ đồ!", Duration = 5})
-                        _G.AutoVoid = false
-                        ComboToggle:Set(false)
-                        break
+                    -- BƯỚC 2: KIỂM TRA SERVER ĐỂ DIỆT BOSS
+                    if game.JobId == TARGET_JOB_ID then
+                        print("🎯 Server Khớp! Đang tới khu vực Boss...")
+                        hrp.CFrame = TOA_DO_BOSS
+                        task.wait(5) -- Đợi 5 giây Boss xuất hiện
+
+                        local boss = workspace:FindFirstChild(BOSS_NAME, true)
+                        if boss and boss:FindFirstChild("HumanoidRootPart") then
+                            local bossHRP = boss.HumanoidRootPart
+                            bossHRP.Size = Vector3.new(60, 60, 60) -- Max Hitbox
+                            bossHRP.CanCollide = false
+                            
+                            print("⚔️ Bắt đầu Orbit và Spam đánh thường VP 2...")
+                            hrp.Anchored = true -- Giữ nguyên trọng lực (thăng bằng)
+                            
+                            -- Vòng lặp xoay quanh Boss và chém
+                            local startTime = tick()
+                            while AutoComboBoss and boss.Parent and (tick() - startTime < 15) do -- Orbit trong 15s hoặc đến khi Boss chết
+                                RunService.Heartbeat:Wait()
+                                orbitAngle = orbitAngle + math.rad(ORBIT_SPEED)
+                                
+                                -- Xoay tròn xung quanh Boss
+                                local offset = Vector3.new(math.cos(orbitAngle) * ORBIT_RADIUS, 5, math.sin(orbitAngle) * ORBIT_RADIUS)
+                                hrp.CFrame = CFrame.new(bossHRP.Position + offset, bossHRP.Position)
+                                
+                                -- Spam đánh thường VP 2
+                                if ToolSo2 then
+                                    char.Humanoid:EquipTool(ToolSo2)
+                                    pcall(function() ToolSo2:Activate() end) -- Mô phỏng chạm màn hình đánh thường
+                                end
+                            end
+                        else
+                            warn("⚠️ Không thấy Boss King!")
+                        end
+                    else
+                        print("⏩ Server Thường. Bỏ qua bước diệt Boss.")
+                        task.wait(1)
                     end
 
-                    -- BƯỚC 2
-                    print("▶️ Bước 2: Dùng chiêu VP 2...")
-                    hrp.CFrame = TOA_DO_2
-                    task.wait(0.1)
-                    hrp.Anchored = true 
-                    DungChieuE(ToolSo2)
-
-                    -- BƯỚC 3
-                    print("▶️ Bước 3: Dùng chiêu VP 3...")
-                    hrp.Anchored = false 
-                    hrp.CFrame = TOA_DO_3
-                    task.wait(0.1)
-                    hrp.Anchored = true 
-                    DungChieuE(ToolSo3)
-
-                    -- BƯỚC 4
-                    print("▶️ Bước 4: Về đích...")
+                    -- BƯỚC CUỐI: RÚT LUI
+                    print("▶️ Về đích an toàn...")
                     hrp.Anchored = false
-                    hrp.CFrame = TOA_DO_4
-                    task.wait(0.1)
+                    hrp.CFrame = TOA_DO_DICH
+                    task.wait(0.2)
                     hrp.Anchored = true 
                     
-                    _G.AutoVoid = false
+                    AutoComboBoss = false
                     ComboToggle:Set(false) 
-                    Rayfield:Notify({Title = "Hoàn tất", Content = "Đã xả xong chu trình an toàn.", Duration = 5})
+                    Rayfield:Notify({Title = "Hoàn tất!", Content = "Quy trình đã kết thúc.", Duration = 5})
                     break 
                 end
             end)
@@ -161,3 +341,96 @@ ComboToggle = TabCombo:CreateToggle({
         end
     end
 })
+
+-- ==========================================
+-- 🌐 TAB 5: SERVER & TIỆN ÍCH
+-- ==========================================
+local TabOther = Window:CreateTab("🌐 Tiện Ích")
+
+TabOther:CreateButton({
+    Name = "📋 COPY JOB ID SERVER NÀY", 
+    Callback = function() 
+        if setclipboard then
+            setclipboard(game.JobId)
+            Rayfield:Notify({Title = "Thành công!", Content = "Đã copy Job ID vào bộ nhớ.", Duration = 5})
+        else
+            print("Job ID: " .. tostring(game.JobId))
+            Rayfield:Notify({Title = "Lỗi", Content = "Mở F9 để copy.", Duration = 3})
+        end
+    end
+})
+
+TabOther:CreateButton({
+    Name = "🔄 REJOIN SERVER", 
+    Callback = function() 
+        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+    end
+})
+
+TabOther:CreateButton({
+    Name = "📍 COPY TỌA ĐỘ CỦA CHỊ ĐANG ĐỨNG", 
+    Callback = function() 
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local p = char.HumanoidRootPart.Position
+            local str = string.format("CFrame.new(%.1f, %.1f, %.1f)", p.X, p.Y, p.Z)
+            if setclipboard then setclipboard(str) end
+            Rayfield:Notify({Title = "Đã Copy!", Content = str, Duration = 5})
+        end
+    end
+})
+
+TabOther:CreateToggle({Name = "Hack Nhảy Vô Tận", CurrentValue = false, Callback = function(v) _G.InfJump = v end})
+UserInputService.JumpRequest:Connect(function() 
+    if _G.InfJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then 
+        LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping) 
+    end 
+end)
+
+TabOther:CreateButton({Name = "Lấy Gậy Dịch Chuyển (TP Tool)", Callback = function() 
+    local Tool = Instance.new("Tool", LocalPlayer.Backpack); Tool.Name = "Gậy TP VIP"; Tool.RequiresHandle = false
+    Tool.Activated:Connect(function() 
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then 
+            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(Mouse.Hit.Position + Vector3.new(0,3,0)) 
+        end 
+    end) 
+end})
+
+-- FLY MOBILE BẢN RÚT GỌN CHỐNG LAG
+TabOther:CreateButton({Name = "🚀 Mở Bảng Fly Mobile VIP", Callback = function() 
+    if LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("MTRIET_FlyGUI") then return end
+    local main = Instance.new("ScreenGui"); main.Name = "MTRIET_FlyGUI"; main.Parent = LocalPlayer.PlayerGui; main.ResetOnSpawn = false
+    local Frame = Instance.new("Frame", main); Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25); Frame.Position = UDim2.new(0.1, 0, 0.4, 0); Frame.Size = UDim2.new(0, 160, 0, 50); Frame.Draggable = true
+    local onof = Instance.new("TextButton", Frame); onof.Size = UDim2.new(1, 0, 1, 0); onof.Text = "BẬT FLY"; onof.TextColor3 = Color3.new(1,1,1); onof.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+    
+    local nowe = false
+    local speeds = 50
+    onof.MouseButton1Down:connect(function()
+        nowe = not nowe
+        if nowe then onof.Text = "TẮT FLY"; onof.BackgroundColor3 = Color3.fromRGB(200, 50, 50) else onof.Text = "BẬT FLY"; onof.BackgroundColor3 = Color3.fromRGB(0, 120, 215) end
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if not hum then return end
+        
+        if nowe then
+            hum:ChangeState(Enum.HumanoidStateType.Swimming)
+            local bg = Instance.new("BodyGyro", char.HumanoidRootPart); bg.P = 9e4; bg.maxTorque = Vector3.new(9e9, 9e9, 9e9); bg.cframe = char.HumanoidRootPart.CFrame
+            local bv = Instance.new("BodyVelocity", char.HumanoidRootPart); bv.velocity = Vector3.new(0,0.1,0); bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+            task.spawn(function()
+                while nowe do
+                    RunService.RenderStepped:Wait()
+                    if hum.MoveDirection.Magnitude > 0 then
+                        bv.velocity = Camera.CFrame.lookVector * speeds * (hum.MoveDirection.Z < 0 and 1 or -1)
+                        if hum.MoveDirection.X ~= 0 then bv.velocity = bv.velocity + (Camera.CFrame.RightVector * speeds * hum.MoveDirection.X) end
+                    else
+                        bv.velocity = Vector3.new(0,0.1,0)
+                    end
+                    bg.cframe = Camera.CFrame
+                end
+                bg:Destroy(); bv:Destroy()
+            end)
+        else
+            hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+        end
+    end)
+end})
