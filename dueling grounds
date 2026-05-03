@@ -1,8 +1,4 @@
--- ==========================================
--- TÊN SẢN PHẨM: MinT Arsenal Hub (Bản Tối Ưu - 14 Món)
--- TÁC GIẢ: Em trai làm mướn
--- ==========================================
-
+ 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local player = game:GetService("Players").LocalPlayer
 local TweenService = game:GetService("TweenService")
@@ -10,7 +6,7 @@ local Debris = game:GetService("Debris")
 local Camera = game.Workspace.CurrentCamera
 
 local Window = Rayfield:CreateWindow({
-    Name = "MinT Arsenal Hub 💣",
+    Name = "ANH TRIẾT Arsenal Hub 💣",
     LoadingTitle = "Đang rèn 14 loại vũ khí...",
     LoadingSubtitle = "Nhớ đừng spam gây lag máy",
     ConfigurationSaving = { Enabled = false },
