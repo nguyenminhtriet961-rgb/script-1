@@ -238,136 +238,110 @@ TabSkill:CreateButton({
 })
 
 -- ==========================================
--- TAB 2: GHOST MODE TIẾN HÓA 
+-- TAB 2: GHOST MODE TIẾN HÓA (ĐÃ CẬP NHẬT TÀNG HÌNH THẬT)
 -- ==========================================
-TabGhost:CreateSection("Pháp Bảo: Ảo Ảnh Hắc Ám")
+local NoclipConnection = nil
+
+TabGhost:CreateSection("Pháp Bảo: Ảo Ảnh Hắc Ám (Tàng Hình Thực Sự)")
 
 TabGhost:CreateButton({
-    Name = "Nhận: 👻 Ghost Mode [Tiến Hóa]",
+    Name = "Nhận: 👻 Ghost Mode [Real]",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
-        tool.Name = "👻 Ghost Mode [LV"..currentLevel.."]"
+        tool.Name = "👻 Ghost Mode [Tàng Hình]"
         tool.RequiresHandle = false
         
-        local isGhost = false
-        local ghostEffectConn
+        local isRealGhost = false
         
         tool.Activated:Connect(function()
-            isGhost = not isGhost
             local char = player.Character
-            if not char then return end
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
             local hum = char:FindFirstChild("Humanoid")
-            local root = char:FindFirstChild("HumanoidRootPart")
-            if not hum or not root then return end
             
-            if isGhost then
-                PlaySound(231917744, 0.8) 
+            isRealGhost = not isRealGhost
+            
+            if isRealGhost then
+                -- BẬT GHOST MODE (Tàng hình + Xuyên tường + Tốc độ)
+                PlaySound(231917744, 0.8)
                 
+                -- Làm mờ model ở máy mình cho có cảm giác
                 for _, p in ipairs(char:GetDescendants()) do 
                     if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.Transparency = 0.5 end 
                 end
                 
-                ghostEffectConn = RunService.RenderStepped:Connect(function()
-                    if not char or not hum then return end
-                    if currentLevel == 1 then
-                        hum.WalkSpeed = 0
-                        hum.JumpPower = 0
-                    elseif currentLevel == 2 then
-                        hum.WalkSpeed = 16
-                        hum.JumpPower = 50
-                    elseif currentLevel == 3 then
-                        hum.WalkSpeed = 45
-                        hum.JumpPower = 50
-                        if hum.MoveDirection.Magnitude > 0 then CreateGhostTrail(char) end
-                    elseif currentLevel == 4 then
-                        hum.WalkSpeed = 100
-                        hum.JumpPower = 100
-                        if hum.MoveDirection.Magnitude > 0 then CreateGhostTrail(char) end
-                        
-                        if math.random(1, 15) == 1 then
-                            local l = Instance.new("Part", workspace)
-                            l.Size = Vector3.new(1, math.random(20, 100), 1)
-                            l.Anchored = true; l.CanCollide = false; l.Material = Enum.Material.Neon
-                            l.Color = Color3.fromRGB(255, 255, 255)
-                            l.CFrame = root.CFrame * CFrame.new(math.random(-20,20), 20, math.random(-20,20))
-                            Debris:AddItem(l, 0.1)
-                            PlaySound(142070127, 1.2, 0.3)
+                -- Seat Glitch (Giấu model để người khác không thấy)
+                local savedpos = char.HumanoidRootPart.CFrame
+                task.wait()
+                char:MoveTo(Vector3.new(-25.95, 84, 3537.55)) -- Ném xác ra góc khuất map
+                task.wait(0.15)
+                local Seat = Instance.new("Seat")
+                Seat.Anchored, Seat.CanCollide, Seat.Name, Seat.Transparency = false, false, "invischair", 1
+                Seat.Position = Vector3.new(-25.95, 84, 3537.55)
+                Seat.Parent = workspace
+                local Weld = Instance.new("Weld", Seat)
+                Weld.Part0, Weld.Part1 = Seat, char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+                Seat.CFrame = savedpos -- Đưa hitbox về lại chỗ cũ
+                
+                -- Tăng tốc độ dựa vào Cấp Độ (Lv1=60, Lv2=80...)
+                if hum then
+                    hum.WalkSpeed = 40 + (currentLevel * 20) 
+                end
+                
+                -- Bật Noclip (Xuyên tường)
+                if NoclipConnection then NoclipConnection:Disconnect() end
+                NoclipConnection = RunService.Stepped:Connect(function()
+                    if player.Character then
+                        for _, part in ipairs(player.Character:GetDescendants()) do
+                            if part:IsA("BasePart") then part.CanCollide = false end
                         end
                     end
                 end)
-                Rayfield:Notify({Title = "Ghost Mode", Content = "Đã vào trạng thái linh hồn (Cấp "..currentLevel..")", Duration = 2})
+                
+                Rayfield:Notify({Title = "Ghost Mode", Content = "Đã bật: Tàng hình 100% + Xuyên tường + Chạy nhanh", Duration = 2})
             else
-                if ghostEffectConn then ghostEffectConn:Disconnect() end
+                -- TẮT GHOST MODE
+                -- Tắt xuyên tường
+                if NoclipConnection then 
+                    NoclipConnection:Disconnect() 
+                    NoclipConnection = nil 
+                end
+                
+                -- Tắt tàng hình & phục hồi
                 for _, p in ipairs(char:GetDescendants()) do 
                     if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.Transparency = 0 end 
                 end
-                hum.WalkSpeed = 16
-                hum.JumpPower = 50
-                Rayfield:Notify({Title = "Ghost Mode", Content = "Đã trở lại thực tại", Duration = 2})
+                if workspace:FindFirstChild("invischair") then workspace.invischair:Destroy() end
+                if hum then 
+                    hum:ChangeState(Enum.HumanoidStateType.GettingUp) 
+                    hum.WalkSpeed = 16
+                end
+                
+                Rayfield:Notify({Title = "Ghost Mode", Content = "Đã hiện hình lại", Duration = 2})
             end
         end)
         
+        -- Nếu đang tàng hình mà cất vật phẩm (Unequipped) thì tự động hiện hình để tránh kẹt lỗi
         tool.Unequipped:Connect(function()
-            isGhost = false
-            if ghostEffectConn then ghostEffectConn:Disconnect() end
-            local char = player.Character
-            if char and char:FindFirstChild("Humanoid") then
-                char.Humanoid.WalkSpeed = 16
-                char.Humanoid.JumpPower = 50
-                for _, p in ipairs(char:GetDescendants()) do 
-                    if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.Transparency = 0 end 
-                end
-            end
-        end)
-    end
-})
-
-TabGhost:CreateSection("Ảo Ảnh Hắc Ám VIP")
-TabGhost:CreateToggle({
-    Name = "Kích Hoạt Ghost Mode",
-    CurrentValue = false,
-    Callback = function(v)
-        ghostActive = v
-        local char = player.Character
-        if not char then return end
-        local hum = char:FindFirstChild("Humanoid")
-        local root = char:FindFirstChild("HumanoidRootPart")
-        if not hum or not root then return end
-        
-        if ghostActive then
-            for _, p in ipairs(char:GetDescendants()) do 
-                if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.Transparency = 0.5 end 
-            end
-            
-            ghostConn = RunService.RenderStepped:Connect(function()
-                if not char or not hum or not root then return end
-                if currentLevel == 1 then hum.WalkSpeed = 0 
-                elseif currentLevel == 2 then hum.WalkSpeed = 16 
-                elseif currentLevel == 3 then
-                    hum.WalkSpeed = 40 
-                    if hum.MoveDirection.Magnitude > 0 then CreateGhostTrail(char) end
-                elseif currentLevel == 4 then
-                    hum.WalkSpeed = 80 
-                    if hum.MoveDirection.Magnitude > 0 then CreateGhostTrail(char) end
-                    if math.random(1, 20) == 1 then
-                        PlaySound(142070127, 0.5, 0.5)
-                        local l = Instance.new("Part", workspace)
-                        l.Size = Vector3.new(1, 100, 1); l.Anchored = true; l.Material = Enum.Material.Neon
-                        l.CFrame = root.CFrame * CFrame.new(math.random(-30,30), 50, math.random(-30,30))
-                        Debris:AddItem(l, 0.1)
+            if isRealGhost then
+                local char = player.Character
+                if NoclipConnection then NoclipConnection:Disconnect(); NoclipConnection = nil end
+                if char then
+                    for _, p in ipairs(char:GetDescendants()) do 
+                        if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.Transparency = 0 end 
+                    end
+                    if workspace:FindFirstChild("invischair") then workspace.invischair:Destroy() end
+                    local hum = char:FindFirstChild("Humanoid")
+                    if hum then 
+                        hum:ChangeState(Enum.HumanoidStateType.GettingUp) 
+                        hum.WalkSpeed = 16
                     end
                 end
-            end)
-        else
-            if ghostConn then ghostConn:Disconnect() end
-            for _, p in ipairs(char:GetDescendants()) do 
-                if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.Transparency = 0 end 
+                isRealGhost = false
+                Rayfield:Notify({Title = "Ghost Mode", Content = "Bị cất vật phẩm, tự động hiện hình!", Duration = 2})
             end
-            hum.WalkSpeed = 16
-        end
+        end)
     end
 })
-
 -- ==========================================
 -- TAB 3: CẤM THUẬT & SÁT CHIÊU
 -- ==========================================
