@@ -1,0 +1,169 @@
+ 
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+
+-- Tạo Cửa sổ Menu chính
+local Window = OrionLib:MakeWindow({
+    Name = "MinT Hook Bypass Hub 🎯", 
+    HidePremium = false, 
+    SaveConfig = true, 
+    ConfigFolder = "MinTHookConfig"
+})
+
+-- Khởi tạo các Tab
+local CombatTab = Window:MakeTab({
+    Name = "Chiến Đấu",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local VisualTab = Window:MakeTab({
+    Name = "Hiển Thị",
+    Icon = "rbxassetid://4483362458",
+    PremiumOnly = false
+})
+
+-- ==========================================
+-- MODULE 1: HITBOX EXPANDER (Mở rộng thân thể địch)
+-- ==========================================
+_G.HitboxStatus = false
+_G.HitboxSize = 20 -- Kích thước mặc định là 20
+
+CombatTab:AddToggle({
+    Name = "Kích Hoạt Hitbox Khổng Lồ",
+    Default = false,
+    Callback = function(Value)
+        _G.HitboxStatus = Value
+        if not Value then
+            -- Trả lại kích thước cũ nếu tắt
+            for _, v in pairs(game:GetService("Players"):GetPlayers()) do
+                if v ~= game:GetService("Players").LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                    v.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
+                    v.Character.HumanoidRootPart.Transparency = 1
+                end
+            end
+        end
+    end    
+})
+
+CombatTab:AddSlider({
+    Name = "Chỉnh Kích Thước Hitbox",
+    Min = 5,
+    Max = 50,
+    Default = 20,
+    Color = Color3.fromRGB(255,255,255),
+    Increment = 1,
+    ValueName = "Size",
+    Callback = function(Value)
+        _G.HitboxSize = Value
+    end    
+})
+
+-- Vòng lặp chạy ngầm cho Hitbox
+task.spawn(function()
+    while task.wait(1) do
+        if _G.HitboxStatus then
+            pcall(function()
+                for _, v in pairs(game:GetService("Players"):GetPlayers()) do
+                    if v ~= game:GetService("Players").LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                        -- Ép kích thước to ra, chỉnh độ trong suốt để chị dễ nhìn
+                        v.Character.HumanoidRootPart.Size = Vector3.new(_G.HitboxSize, _G.HitboxSize, _G.HitboxSize)
+                        v.Character.HumanoidRootPart.Transparency = 0.6
+                        v.Character.HumanoidRootPart.CanCollide = false
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- ==========================================
+-- MODULE 2: AUTO DODGE (Logic Né Tránh Tự Động)
+-- ==========================================
+_G.AutoDodge = false
+
+CombatTab:AddToggle({
+    Name = "Tự Động Né Móc (Auto Dodge)",
+    Default = false,
+    Callback = function(Value)
+        _G.AutoDodge = Value
+    end    
+})
+
+-- Quét các vật thể sinh ra trong không gian game
+game.Workspace.ChildAdded:Connect(function(child)
+    if _G.AutoDodge then
+        pcall(function()
+            -- [!] Chú ý: Chị phải dùng Dark Dex để xem chính xác cái móc game đặt tên là gì.
+            -- Ở đây em ví dụ tên nó là "Hook" hoặc "Grapple"
+            if child.Name == "Hook" or child.Name == "Grapple" then
+                local player = game.Players.LocalPlayer
+                local char = player.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    -- Dịch chuyển nhân vật sang một bên 15 mét ngay lập tức
+                    char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(15, 0, 0)
+                    OrionLib:MakeNotification({
+                        Name = "Cảnh Báo!",
+                        Content = "Vừa né một cú móc thành công!",
+                        Image = "rbxassetid://4483345998",
+                        Time = 2
+                    })
+                end
+            end
+        end)
+    end
+end)
+
+-- ==========================================
+-- MODULE 3: ESP PLAYER (Phân biệt Địch/Ta)
+-- ==========================================
+_G.ESPStatus = false
+
+VisualTab:AddToggle({
+    Name = "Bật ESP (Nhìn Xuyên Tường)",
+    Default = false,
+    Callback = function(Value)
+        _G.ESPStatus = Value
+        if not Value then
+            -- Tắt ESP thì xóa hết viền sáng
+            for _, v in pairs(game.Workspace:GetDescendants()) do
+                if v:IsA("Highlight") and v.Name == "MinTESP" then
+                    v:Destroy()
+                end
+            end
+        end
+    end    
+})
+
+-- Vòng lặp vẽ ESP
+task.spawn(function()
+    while task.wait(0.5) do
+        if _G.ESPStatus then
+            pcall(function()
+                for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+                    if player ~= game:GetService("Players").LocalPlayer and player.Character then
+                        
+                        -- Kiểm tra xem đã vẽ viền cho đứa này chưa
+                        if not player.Character:FindFirstChild("MinTESP") then
+                            local highlight = Instance.new("Highlight")
+                            highlight.Name = "MinTESP"
+                            highlight.Parent = player.Character
+                            highlight.FillTransparency = 0.5
+                            highlight.OutlineTransparency = 0
+                            
+                            -- Phân biệt Địch/Ta theo Team
+                            if player.Team == game:GetService("Players").LocalPlayer.Team then
+                                highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Xanh lá (Đồng đội)
+                            else
+                                highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Đỏ (Kẻ địch)
+                            end
+                        end
+                        
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- Hoàn tất khởi tạo UI
+OrionLib:Init()
