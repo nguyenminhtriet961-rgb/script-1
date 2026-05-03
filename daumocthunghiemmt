@@ -1,76 +1,42 @@
--- ==========================================
--- TÊN SẢN PHẨM: MinT Hook Bypass Hub (Bản Kavo Siêu Nhẹ)
--- TÁC GIẢ: Em trai làm mướn cho bà chị MinT
--- ==========================================
-
--- Gọi thư viện Kavo UI (Load siêu tốc)
+ 
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-
--- Tạo Cửa sổ (Có các theme: DarkTheme, LightTheme, BloodTheme, Sentinel)
-local Window = Library.CreateLib("MinT Hook Bypass Hub 🎯", "DarkTheme")
+-- Chọn theme tối cho ngầu, chị có thể đổi thành "BloodTheme" hoặc "Ocean" nếu thích
+local Window = Library.CreateLib("MinT Hook Bypass Hub 🎯", "SentinelTheme")
 
 -- ==========================================
--- TẠO TAB CHIẾN ĐẤU
+-- TẠO CÁC TAB & SECTION
 -- ==========================================
-local CombatTab = Window:NewTab("⚔️ Chiến Đấu")
+local TabCombat = Window:NewTab("⚔️ Chiến Đấu")
+local SecHitbox = TabCombat:NewSection("Thiết Lập Hitbox")
+local SecDodge = TabCombat:NewSection("Hệ Thống Né Tránh")
 
--- SECTION 1: HITBOX
-local HitboxSection = CombatTab:NewSection("Mở Rộng Hitbox Địch")
+local TabVisual = Window:NewTab("👁️ Hiển Thị")
+local SecESP = TabVisual:NewSection("Hệ Thống Nhìn Xuyên Tường")
 
+-- ==========================================
+-- MODULE 1: HITBOX EXPANDER (Đã Fix lỗi CanCollide)
+-- ==========================================
 _G.HitboxStatus = false
 _G.HitboxSize = 20
 
-HitboxSection:NewToggle("Kích Hoạt Hitbox", "Phóng to khối cơ thể kẻ địch để dễ móc", function(state)
+SecHitbox:NewToggle("Kích Hoạt Hitbox", "Làm to mục tiêu", function(state)
     _G.HitboxStatus = state
     if not state then
-        -- Tắt đi thì thu nhỏ lại như cũ
+        -- FIXED: Khi tắt thì phải trả lại CanCollide về true để không làm hỏng game
         for _, v in pairs(game:GetService("Players"):GetPlayers()) do
             if v ~= game:GetService("Players").LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
                 v.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
                 v.Character.HumanoidRootPart.Transparency = 1
+                v.Character.HumanoidRootPart.CanCollide = true 
             end
         end
     end
 end)
 
-HitboxSection:NewSlider("Kích Thước Hitbox", "Tùy chỉnh độ to (Tối đa 50)", 50, 5, function(s)
+SecHitbox:NewSlider("Kích Thước Hitbox", "Tùy chỉnh độ to", 50, 5, function(s)
     _G.HitboxSize = s
 end)
 
--- SECTION 2: AUTO DODGE
-local DodgeSection = CombatTab:NewSection("Hệ Thống Né Tránh")
-
-_G.AutoDodge = false
-
-DodgeSection:NewToggle("Tự Động Né Móc", "Dịch chuyển ngang 15m khi phát hiện móc", function(state)
-    _G.AutoDodge = state
-end)
-
--- ==========================================
--- TẠO TAB HIỂN THỊ
--- ==========================================
-local VisualTab = Window:NewTab("👁️ Hiển Thị")
-local ESPSection = VisualTab:NewSection("Nhìn Xuyên Tường")
-
-_G.ESPStatus = false
-
-ESPSection:NewToggle("Bật ESP (Địch/Ta)", "Xanh lá: Đồng đội | Đỏ: Kẻ thù", function(state)
-    _G.ESPStatus = state
-    if not state then
-        -- Dọn dẹp viền sáng khi tắt
-        for _, v in pairs(game.Workspace:GetDescendants()) do
-            if v:IsA("Highlight") and v.Name == "MinTESP" then
-                v:Destroy()
-            end
-        end
-    end
-end)
-
--- ==========================================
--- CÁC VÒNG LẶP XỬ LÝ NGẦM
--- ==========================================
-
--- 1. Vòng lặp Hitbox
 task.spawn(function()
     while task.wait(1) do
         if _G.HitboxStatus then
@@ -87,24 +53,57 @@ task.spawn(function()
     end
 end)
 
--- 2. Vòng lặp Auto Dodge
+-- ==========================================
+-- MODULE 2: AUTO DODGE (Đã Fix lỗi né bóng ma)
+-- ==========================================
+_G.AutoDodge = false
+
+SecDodge:NewToggle("Tự Động Né Móc", "Chỉ né khi Hook ở gần", function(state)
+    _G.AutoDodge = state
+end)
+
 game.Workspace.ChildAdded:Connect(function(child)
     if _G.AutoDodge then
         pcall(function()
-            -- Bắt sự kiện sinh ra vật thể bay tên là Hook hoặc Grapple
             if child.Name == "Hook" or child.Name == "Grapple" then
                 local player = game.Players.LocalPlayer
                 local char = player.Character
                 if char and char:FindFirstChild("HumanoidRootPart") then
-                    -- Dịch chuyển né sang một bên
-                    char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(15, 0, 0)
+                    -- Đợi 0.1s để vật thể load vị trí
+                    task.wait(0.1) 
+                    local hookPos = child:IsA("BasePart") and child.Position or (child:FindFirstChild("Handle") and child.Handle.Position)
+                    
+                    if hookPos then
+                        -- FIXED: Tính toán khoảng cách, chỉ né khi nó cách mình dưới 40 studs
+                        local distance = (char.HumanoidRootPart.Position - hookPos).Magnitude
+                        if distance < 40 then
+                            -- Nhảy ngang sang phải 15 studs
+                            char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(15, 0, 0)
+                        end
+                    end
                 end
             end
         end)
     end
 end)
 
--- 3. Vòng lặp ESP
+-- ==========================================
+-- MODULE 3: ESP PLAYER (Đã Fix lỗi giật lag khi tắt)
+-- ==========================================
+_G.ESPStatus = false
+
+SecESP:NewToggle("Bật ESP", "Phân biệt Địch (Đỏ) / Ta (Xanh)", function(state)
+    _G.ESPStatus = state
+    if not state then
+        -- FIXED: Chỉ quét trong danh sách người chơi thay vì quét toàn bộ map
+        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("MinTESP") then
+                player.Character.MinTESP:Destroy()
+            end
+        end
+    end
+end)
+
 task.spawn(function()
     while task.wait(0.5) do
         if _G.ESPStatus then
@@ -119,9 +118,9 @@ task.spawn(function()
                             highlight.OutlineTransparency = 0
                             
                             if player.Team == game:GetService("Players").LocalPlayer.Team then
-                                highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Đồng đội
+                                highlight.FillColor = Color3.fromRGB(0, 255, 0)
                             else
-                                highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Kẻ thù
+                                highlight.FillColor = Color3.fromRGB(255, 0, 0)
                             end
                         end
                     end
@@ -130,5 +129,3 @@ task.spawn(function()
         end
     end
 end)
-
--- Chú ý: Kavo UI có nút thu gọn menu mặc định là phím RightControl (Ctrl phải).
