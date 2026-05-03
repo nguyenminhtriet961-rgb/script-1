@@ -1,4 +1,8 @@
- =========================================
+-- ==========================================
+-- TÊN SẢN PHẨM: MinT Hook Bypass Hub (Bản Tự Code Thuần)
+-- TÁC GIẢ: Em trai
+-- ĐẶC ĐIỂM: Kháng mọi loại lag, 100% chạy được trên Delta
+-- ==========================================
 
 -- Tạo GUI cơ bản
 local CoreGui = pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
