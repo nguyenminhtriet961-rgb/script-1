@@ -1,9 +1,9 @@
 -- ==========================================
--- TÊN SẢN PHẨM: ĐẠI ĐIỂN TIÊN ĐẠO SÁT CHIÊU (FULL VFX + SFX)
+-- TÊN SẢN PHẨM: ĐẠI ĐIỂN TIÊN ĐẠO SÁT CHIÊU (BẢN GUI THUẦN)
 -- TÁC GIẢ: Em trai làm mướn
+-- ĐẶC ĐIỂM: Kháng 100% lỗi không hiện Menu của Delta
 -- ==========================================
 
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local player = game:GetService("Players").LocalPlayer
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
@@ -13,19 +13,61 @@ local Camera = game.Workspace.CurrentCamera
 
 _G.IsCasting = false
 
-local Window = Rayfield:CreateWindow({
-    Name = "Tiên Đạo 12 Thức (Có Tiếng) 🔊",
-    LoadingTitle = "Đang tải hệ thống âm thanh...",
-    LoadingSubtitle = "Nhớ bật loa ngoài nhé chị!",
-    ConfigurationSaving = { Enabled = false },
-    KeySystem = false,
-})
+-- ==========================================
+-- TẠO GIAO DIỆN THUẦN (KHÔNG DÙNG LOADSTRING)
+-- ==========================================
+local CoreGui = pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui") or player:WaitForChild("PlayerGui")
+if CoreGui:FindFirstChild("MinTTuTienHub") then CoreGui.MinTTuTienHub:Destroy() end
 
-local TabChiTiet = Window:CreateTab("🔥 11 Chiêu Thức Đơn", nil)
-local TabToiThuong = Window:CreateTab("👑 Chiêu Cuối Cùng", nil)
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+ScreenGui.Name = "MinTTuTienHub"
+
+-- Nút Tắt/Mở (Góc trái)
+local ToggleBtn = Instance.new("TextButton", ScreenGui)
+ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
+ToggleBtn.Position = UDim2.new(0, 10, 0, 10)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.Text = "MinT"
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.TextSize = 16
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
+
+-- Bảng Menu Chính
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 260, 0, 350)
+MainFrame.Position = UDim2.new(0.5, -130, 0.5, -175)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundColor3 = Color3.fromRGB(40, 0, 0)
+Title.Font = Enum.Font.GothamBold
+Title.Text = "☠️ 12 SÁT CHIÊU TU TIÊN"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 14
+Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 8)
+
+local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
+ScrollFrame.Size = UDim2.new(1, -10, 1, -40)
+ScrollFrame.Position = UDim2.new(0, 5, 0, 35)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.ScrollBarThickness = 5
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 600)
+
+local UIList = Instance.new("UIListLayout", ScrollFrame)
+UIList.Padding = UDim.new(0, 5)
+UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
 
 -- ==========================================
--- HÀM HỖ TRỢ VFX & SFX (ÂM THANH)
+-- HÀM HỖ TRỢ VFX & SFX
 -- ==========================================
 local function Earthquake(intensity, duration)
     task.spawn(function()
@@ -39,28 +81,22 @@ end
 
 local function Shout(text, color)
     local char = player.Character
-    if char and char:FindFirstChild("Head") then
-        ChatService:Chat(char.Head, text, color)
-    end
+    if char and char:FindFirstChild("Head") then ChatService:Chat(char.Head, text, color) end
 end
 
--- Bộ máy phát âm thanh (Không bị lỗi bản quyền)
 local function PlaySound(id, volume, pitch, parent)
     local s = Instance.new("Sound")
     s.SoundId = "rbxassetid://" .. tostring(id)
-    s.Volume = volume or 1
-    s.Pitch = pitch or 1
-    s.Parent = parent or workspace
-    s:Play()
-    Debris:AddItem(s, 5) -- Tự xóa sau khi phát xong
+    s.Volume = volume or 1; s.Pitch = pitch or 1; s.Parent = parent or workspace
+    s:Play(); Debris:AddItem(s, 5)
 end
 
 -- ==========================================
--- 11 SÁT CHIÊU CƠ BẢN & NÂNG CAO
+-- DANH SÁCH 12 SÁT CHIÊU
 -- ==========================================
 local SátChiêuList = {
-    {"⚡ Thức 1: Lôi Thần Tật Ảnh", function(root)
-        PlaySound(2248511, 2, 1.2, root) -- Tiếng sét xé gió
+    {"⚡ Lôi Thần Tật Ảnh", function(root)
+        PlaySound(2248511, 2, 1.2, root) 
         local cc = Instance.new("ColorCorrectionEffect", Lighting)
         cc.Brightness, cc.Contrast, cc.TintColor = 0.5, 1, Color3.fromRGB(0, 255, 255)
         TweenService:Create(Camera, TweenInfo.new(0.1), {FieldOfView = 120}):Play()
@@ -71,9 +107,8 @@ local SátChiêuList = {
         TweenService:Create(Camera, TweenInfo.new(0.4), {FieldOfView = 70}):Play()
         cc:Destroy()
     end},
-    
-    {"🌌 Thức 2: Lỗ Đen Hư Không", function(root)
-        PlaySound(178452221, 3, 0.5, root) -- Tiếng hút gió trầm
+    {"🌌 Lỗ Đen Hư Không", function(root)
+        PlaySound(178452221, 3, 0.5, root) 
         local bh = Instance.new("Part", workspace)
         bh.Shape, bh.Size, bh.CFrame, bh.Anchored, bh.CanCollide, bh.Color, bh.Material = Enum.PartType.Ball, Vector3.new(1,1,1), root.CFrame * CFrame.new(0, 15, -30), true, false, Color3.new(0,0,0), Enum.Material.Neon
         local cc = Instance.new("ColorCorrectionEffect", Lighting)
@@ -81,14 +116,13 @@ local SátChiêuList = {
         TweenService:Create(bh, TweenInfo.new(2), {Size = Vector3.new(30,30,30)}):Play()
         Earthquake(2, 2)
         task.wait(2.5)
-        PlaySound(142070127, 2, 0.7, root) -- Tiếng nổ không gian sập
+        PlaySound(142070127, 2, 0.7, root) 
         TweenService:Create(bh, TweenInfo.new(0.2), {Size = Vector3.new(0,0,0)}):Play()
         TweenService:Create(cc, TweenInfo.new(0.5), {Brightness = 0, Saturation = 0}):Play()
         Debris:AddItem(bh, 0.5); Debris:AddItem(cc, 0.5)
     end},
-    
-    {"🩸 Thức 3: Sát Thần Lĩnh Vực", function(root)
-        PlaySound(12222208, 3, 0.8, root) -- Tiếng gầm gừ nổ vang
+    {"🩸 Sát Thần Lĩnh Vực", function(root)
+        PlaySound(12222208, 3, 0.8, root) 
         root.CFrame, root.Anchored = root.CFrame * CFrame.new(0, 30, 0), true 
         local cc = Instance.new("ColorCorrectionEffect", Lighting)
         TweenService:Create(cc, TweenInfo.new(1), {Brightness = -0.5, Contrast = 1, TintColor = Color3.fromRGB(255, 100, 100)}):Play()
@@ -97,30 +131,25 @@ local SátChiêuList = {
         TweenService:Create(dome, TweenInfo.new(1), {Size = Vector3.new(150, 150, 150), Transparency = 0.5}):Play()
         Earthquake(1, 4)
         task.wait(4)
-        PlaySound(2248511, 2, 0.5, root) -- Tiếng sấm tan biến
+        PlaySound(2248511, 2, 0.5, root) 
         TweenService:Create(dome, TweenInfo.new(1), {Size = Vector3.new(0, 0, 0)}):Play()
         TweenService:Create(cc, TweenInfo.new(1), {Brightness = 0, Contrast = 0, TintColor = Color3.fromRGB(255, 255, 255)}):Play()
         task.wait(1)
         root.Anchored = false; dome:Destroy(); cc:Destroy()
     end},
-
-    {"🔥 Thức 4: Cửu U Hỏa Trận", function(root)
-        PlaySound(142070127, 2, 1, root) -- Tiếng nổ lớn
-        Earthquake(3, 2)
+    {"🔥 Cửu U Hỏa Trận", function(root)
+        PlaySound(142070127, 2, 1, root); Earthquake(3, 2)
         for i = 1, 9 do
             local p = Instance.new("Part", workspace)
             p.Shape, p.Size, p.Anchored, p.CanCollide, p.Material, p.Color = Enum.PartType.Cylinder, Vector3.new(1, 0, 1), true, false, Enum.Material.Neon, Color3.fromRGB(255, 50, 0)
-            local angle = math.rad((i/9) * 360)
-            p.CFrame = root.CFrame * CFrame.new(math.cos(angle)*20, -3, math.sin(angle)*20)
+            p.CFrame = root.CFrame * CFrame.new(math.cos(math.rad((i/9)*360))*20, -3, math.sin(math.rad((i/9)*360))*20)
             TweenService:Create(p, TweenInfo.new(0.5), {Size = Vector3.new(10, 100, 10)}):Play()
-            Debris:AddItem(p, 3)
-            task.wait(0.1)
+            Debris:AddItem(p, 3); task.wait(0.1)
         end
         task.wait(2)
     end},
-
-    {"❄️ Thức 5: Băng Phong Vạn Dặm", function(root)
-        PlaySound(178452221, 2, 2, root) -- Tiếng rít the thé như băng
+    {"❄️ Băng Phong Vạn Dặm", function(root)
+        PlaySound(178452221, 2, 2, root) 
         local cc = Instance.new("ColorCorrectionEffect", Lighting)
         cc.TintColor = Color3.fromRGB(150, 200, 255)
         Earthquake(1, 1)
@@ -130,14 +159,12 @@ local SátChiêuList = {
         task.wait(2)
         cc:Destroy(); Debris:AddItem(ice, 1)
     end},
-
-    {"⚔️ Thức 6: Vạn Kiếm Quy Tông", function(root)
-        PlaySound(231917744, 2, 1.5, root) -- Tiếng vút kiếm
+    {"⚔️ Vạn Kiếm Quy Tông", function(root)
+        PlaySound(231917744, 2, 1.5, root) 
         for i = 1, 20 do
             local sword = Instance.new("Part", workspace)
             sword.Size, sword.Anchored, sword.CanCollide, sword.Material, sword.Color = Vector3.new(0.5, 0.5, 8), true, false, Enum.Material.Neon, Color3.fromRGB(255, 255, 0)
-            sword.CFrame = root.CFrame * CFrame.new(math.random(-15,15), math.random(5,15), math.random(5,15))
-            sword.CFrame = CFrame.lookAt(sword.Position, root.Position + root.CFrame.LookVector * 100)
+            sword.CFrame = CFrame.lookAt(root.CFrame * CFrame.new(math.random(-15,15), math.random(5,15), math.random(5,15)).Position, root.Position + root.CFrame.LookVector * 100)
             TweenService:Create(sword, TweenInfo.new(0.5), {CFrame = sword.CFrame * CFrame.new(0,0,-150)}):Play()
             Debris:AddItem(sword, 0.5)
             if i % 3 == 0 then PlaySound(231917744, 0.5, math.random(15, 20)/10, root) end
@@ -145,41 +172,34 @@ local SátChiêuList = {
         end
         task.wait(1)
     end},
-
-    {"☄️ Thức 7: Thiên Thạch Vẫn Lạc", function(root)
-        PlaySound(178452221, 3, 0.2, root) -- Tiếng vật thể rơi ầm ầm
+    {"☄️ Thiên Thạch Vẫn Lạc", function(root)
+        PlaySound(178452221, 3, 0.2, root) 
         local m = Instance.new("Part", workspace)
         m.Shape, m.Size, m.CFrame, m.Anchored, m.CanCollide, m.Material, m.Color = Enum.PartType.Ball, Vector3.new(50,50,50), root.CFrame * CFrame.new(0, 200, -50), true, false, Enum.Material.Neon, Color3.fromRGB(255, 100, 0)
         TweenService:Create(m, TweenInfo.new(1.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {CFrame = root.CFrame * CFrame.new(0,0,-50)}):Play()
         task.wait(1.4)
-        PlaySound(142070127, 4, 0.5, root) -- Nổ tung chói lọi
-        Earthquake(5, 1)
+        PlaySound(142070127, 4, 0.5, root); Earthquake(5, 1)
         local wave = Instance.new("Part", workspace)
         wave.Shape, wave.Size, wave.CFrame, wave.Anchored, wave.CanCollide, wave.Material, wave.Color = Enum.PartType.Ball, Vector3.new(1,1,1), m.CFrame, true, false, Enum.Material.Neon, Color3.fromRGB(255, 50, 0)
         TweenService:Create(wave, TweenInfo.new(0.5), {Size = Vector3.new(150,150,150), Transparency = 1}):Play()
-        Debris:AddItem(m, 0.1); Debris:AddItem(wave, 0.5)
-        task.wait(1)
+        Debris:AddItem(m, 0.1); Debris:AddItem(wave, 0.5); task.wait(1)
     end},
-
-    {"🌸 Thức 8: Phật Nộ Liên Hoa", function(root)
-        PlaySound(12222208, 2, 2, root) 
-        Earthquake(2, 2)
+    {"🌸 Phật Nộ Liên Hoa", function(root)
+        PlaySound(12222208, 2, 2, root); Earthquake(2, 2)
         for i = 1, 12 do
-            local petal = Instance.new("Part", workspace)
-            petal.Size, petal.Anchored, petal.CanCollide, petal.Material, petal.Color = Vector3.new(5, 1, 20), true, false, Enum.Material.Neon, Color3.fromRGB(255, 150, 200)
-            petal.CFrame = root.CFrame * CFrame.Angles(0, math.rad((i/12)*360), 0) * CFrame.new(0, -2, 10)
-            TweenService:Create(petal, TweenInfo.new(1), {CFrame = petal.CFrame * CFrame.Angles(math.rad(45), 0, 0), Transparency = 1}):Play()
-            Debris:AddItem(petal, 1)
+            local p = Instance.new("Part", workspace)
+            p.Size, p.Anchored, p.CanCollide, p.Material, p.Color = Vector3.new(5, 1, 20), true, false, Enum.Material.Neon, Color3.fromRGB(255, 150, 200)
+            p.CFrame = root.CFrame * CFrame.Angles(0, math.rad((i/12)*360), 0) * CFrame.new(0, -2, 10)
+            TweenService:Create(p, TweenInfo.new(1), {CFrame = p.CFrame * CFrame.Angles(math.rad(45), 0, 0), Transparency = 1}):Play()
+            Debris:AddItem(p, 1)
         end
         PlaySound(142070127, 3, 1.2, root)
         local nuke = Instance.new("Part", workspace)
         nuke.Shape, nuke.Size, nuke.CFrame, nuke.Anchored, nuke.CanCollide, nuke.Material, nuke.Color = Enum.PartType.Ball, Vector3.new(1,1,1), root.CFrame, true, false, Enum.Material.Neon, Color3.new(1,1,1)
         TweenService:Create(nuke, TweenInfo.new(0.5), {Size = Vector3.new(200,200,200), Transparency = 1}):Play()
-        Debris:AddItem(nuke, 0.5)
-        task.wait(1)
+        Debris:AddItem(nuke, 0.5); task.wait(1)
     end},
-
-    {"☯️ Thức 9: Thái Cực Đồ Lục", function(root)
+    {"☯️ Thái Cực Đồ Lục", function(root)
         PlaySound(178452221, 2, 0.4, root)
         local yin = Instance.new("Part", workspace)
         yin.Shape, yin.Size, yin.CFrame, yin.Anchored, yin.CanCollide, yin.Color = Enum.PartType.Cylinder, Vector3.new(1, 100, 100), root.CFrame * CFrame.Angles(0,0,math.rad(90)) * CFrame.new(0,-2,0), true, false, Color3.new(0,0,0)
@@ -189,93 +209,68 @@ local SátChiêuList = {
         task.wait(3)
         Debris:AddItem(yin, 0); cc:Destroy()
     end},
-
-    {"⏱️ Thức 10: Thời Không Trì Trệ", function(root)
-        PlaySound(2248511, 3, 0.2, root) -- Âm thanh giật cục bóp méo
+    {"⏱️ Thời Không Trì Trệ", function(root)
+        PlaySound(2248511, 3, 0.2, root) 
         local cc = Instance.new("ColorCorrectionEffect", Lighting)
         TweenService:Create(cc, TweenInfo.new(0.5), {Saturation = -1, Contrast = 0.5, TintColor = Color3.fromRGB(200, 200, 200)}):Play()
         local blur = Instance.new("BlurEffect", Lighting)
-        blur.Size = 20
-        Earthquake(0.5, 4)
+        blur.Size = 20; Earthquake(0.5, 4)
         task.wait(4)
-        PlaySound(231917744, 2, 2, root) -- Âm thanh trả lại bình thường
-        cc:Destroy(); blur:Destroy()
+        PlaySound(231917744, 2, 2, root); cc:Destroy(); blur:Destroy()
     end},
-
-    {"☠️ Thức 11: Huyết Quỷ Giáng Lâm", function(root)
-        PlaySound(12222208, 3, 0.4, root) -- Tiếng gầm quỷ dữ
+    {"☠️ Huyết Quỷ Giáng Lâm", function(root)
+        PlaySound(12222208, 3, 0.4, root) 
         local cc = Instance.new("ColorCorrectionEffect", Lighting)
         cc.TintColor, cc.Contrast = Color3.fromRGB(255, 0, 0), 1
         local aura = Instance.new("Part", workspace)
         aura.Shape, aura.Size, aura.CFrame, aura.Anchored, aura.CanCollide, aura.Material, aura.Color = Enum.PartType.Ball, Vector3.new(50,50,50), root.CFrame, true, false, Enum.Material.ForceField, Color3.new(0,0,0)
         TweenService:Create(Camera, TweenInfo.new(0.5), {FieldOfView = 50}):Play()
-        Earthquake(2, 3)
-        task.wait(3)
+        Earthquake(2, 3); task.wait(3)
         cc:Destroy(); aura:Destroy()
         TweenService:Create(Camera, TweenInfo.new(0.5), {FieldOfView = 70}):Play()
+    end},
+    {"💥 VẠN VẬT TẪN DIỆT (MAX)", function(root)
+        PlaySound(12222208, 5, 0.3, root) 
+        root.CFrame, root.Anchored = root.CFrame * CFrame.new(0, 50, 0), true
+        local cc = Instance.new("ColorCorrectionEffect", Lighting)
+        TweenService:Create(cc, TweenInfo.new(1), {Brightness = -0.8, Contrast = 2, TintColor = Color3.fromRGB(255, 50, 50), Saturation = 1}):Play()
+        local dome = Instance.new("Part", workspace)
+        dome.Shape, dome.Size, dome.CFrame, dome.Anchored, dome.CanCollide, dome.Material, dome.Color = Enum.PartType.Ball, Vector3.new(1,1,1), root.CFrame, true, false, Enum.Material.ForceField, Color3.fromRGB(0, 0, 0)
+        TweenService:Create(dome, TweenInfo.new(2), {Size = Vector3.new(300, 300, 300)}):Play()
+        Earthquake(5, 3); task.wait(3)
+        PlaySound(142070127, 5, 0.5, root) 
+        local supernova = Instance.new("Part", workspace)
+        supernova.Shape, supernova.Size, supernova.CFrame, supernova.Anchored, supernova.CanCollide, supernova.Material, supernova.Color = Enum.PartType.Ball, Vector3.new(1,1,1), root.CFrame, true, false, Enum.Material.Neon, Color3.new(1,1,1)
+        TweenService:Create(supernova, TweenInfo.new(0.5), {Size = Vector3.new(500, 500, 500), Transparency = 1}):Play()
+        TweenService:Create(dome, TweenInfo.new(0.5), {Size = Vector3.new(0,0,0)}):Play()
+        Earthquake(10, 1); task.wait(1)
+        root.Anchored = false; cc:Destroy(); dome:Destroy(); Debris:AddItem(supernova, 1)
     end}
 }
 
-for _, item in ipairs(SátChiêuList) do
-    TabChiTiet:CreateButton({
-        Name = item[1],
-        Callback = function()
-            local tool = Instance.new("Tool", player.Backpack)
-            tool.Name, tool.RequiresHandle = item[1], false
-            tool.Activated:Connect(function()
-                local char = player.Character
-                if not char or not char:FindFirstChild("HumanoidRootPart") or _G.IsCasting then return end
-                _G.IsCasting = true
-                local root = char.HumanoidRootPart
-                Shout(string.upper(item[1]:gsub(".*: ", "")) .. "!!!", Enum.ChatColor.Red)
-                item[2](root)
-                _G.IsCasting = false
-            end)
-        end
-    })
-end
-
 -- ==========================================
--- 12. CHIÊU CUỐI: VẠN VẬT TẪN DIỆT
+-- GẮN NÚT CHO TỪNG CHIÊU
 -- ==========================================
-TabToiThuong:CreateButton({
-    Name = "💥 Thức 12: VẠN VẬT TẪN DIỆT (COI CHỪNG NỔ LOA)",
-    Callback = function()
+for i, item in ipairs(SátChiêuList) do
+    local btn = Instance.new("TextButton", ScrollFrame)
+    btn.Size = UDim2.new(1, -10, 0, 40)
+    btn.BackgroundColor3 = (i == 12) and Color3.fromRGB(150, 0, 0) or Color3.fromRGB(50, 50, 50)
+    btn.Font = Enum.Font.GothamSemibold
+    btn.Text = item[1]
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 12
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
+    
+    btn.MouseButton1Click:Connect(function()
         local tool = Instance.new("Tool", player.Backpack)
-        tool.Name, tool.RequiresHandle = "💥 VẠN VẬT TẪN DIỆT", false
-        
+        tool.Name, tool.RequiresHandle = item[1], false
         tool.Activated:Connect(function()
             local char = player.Character
             if not char or not char:FindFirstChild("HumanoidRootPart") or _G.IsCasting then return end
             _G.IsCasting = true
-            local root = char.HumanoidRootPart
-            
-            Shout("TIÊN ĐẠO SÁT CHIÊU: VẠN VẬT TẪN DIỆT!!!", Enum.ChatColor.Red)
-            PlaySound(12222208, 5, 0.3, root) -- Âm thanh nổ bass dập
-            
-            root.CFrame, root.Anchored = root.CFrame * CFrame.new(0, 50, 0), true
-            local cc = Instance.new("ColorCorrectionEffect", Lighting)
-            TweenService:Create(cc, TweenInfo.new(1), {Brightness = -0.8, Contrast = 2, TintColor = Color3.fromRGB(255, 50, 50), Saturation = 1}):Play()
-            
-            local dome = Instance.new("Part", workspace)
-            dome.Shape, dome.Size, dome.CFrame, dome.Anchored, dome.CanCollide, dome.Material, dome.Color = Enum.PartType.Ball, Vector3.new(1,1,1), root.CFrame, true, false, Enum.Material.ForceField, Color3.fromRGB(0, 0, 0)
-            TweenService:Create(dome, TweenInfo.new(2), {Size = Vector3.new(300, 300, 300)}):Play()
-            
-            Earthquake(5, 3)
-            task.wait(3)
-            
-            PlaySound(142070127, 5, 0.5, root) -- Tiếng nổ lớn nhất
-            local supernova = Instance.new("Part", workspace)
-            supernova.Shape, supernova.Size, supernova.CFrame, supernova.Anchored, supernova.CanCollide, supernova.Material, supernova.Color = Enum.PartType.Ball, Vector3.new(1,1,1), root.CFrame, true, false, Enum.Material.Neon, Color3.new(1,1,1)
-            TweenService:Create(supernova, TweenInfo.new(0.5), {Size = Vector3.new(500, 500, 500), Transparency = 1}):Play()
-            TweenService:Create(dome, TweenInfo.new(0.5), {Size = Vector3.new(0,0,0)}):Play()
-            
-            Earthquake(10, 1)
-            task.wait(1)
-            
-            root.Anchored = false
-            cc:Destroy(); dome:Destroy(); Debris:AddItem(supernova, 1)
+            Shout(string.upper(item[1]:gsub(".*: ", "")) .. "!!!", Enum.ChatColor.Red)
+            item[2](char.HumanoidRootPart)
             _G.IsCasting = false
         end)
-    end
-})
+    end)
+end
