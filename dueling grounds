@@ -8,7 +8,7 @@ local ChatService = game:GetService("Chat")
 local player = Players.LocalPlayer
 local Camera = game.Workspace.CurrentCamera
 
--- Biến logic toàn cục
+-- Biến logic toàn cụcdđ
 local currentLevel = 1
 local ghostActive = false
 local ghostConn
