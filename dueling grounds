@@ -1,223 +1,534 @@
--- LOAD UI
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- ==========================================
+-- TÊN SẢN PHẨM: MINT EVOLUTION & DOOM HUB
+-- TÁC GIẢ: Em trai làm mướn
+-- ==========================================
 
--- SERVICES
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
+local ChatService = game:GetService("Chat")
 local player = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
+local Camera = game.Workspace.CurrentCamera
 
--- UI
+-- Biến logic toàn cục
+local currentLevel = 1
+local ghostActive = false
+local ghostConn
+
+-- ==========================================
+-- HÀM HỖ TRỢ (Đã fix lỗi thiếu hàm)
+-- ==========================================
+local function PlaySound(id, pitch, vol)
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
+    local s = Instance.new("Sound")
+    s.SoundId = "rbxassetid://" .. tostring(id)
+    s.Volume = vol or 2; s.Pitch = pitch or 1; s.Parent = player.Character.HumanoidRootPart
+    s:Play(); Debris:AddItem(s, 5)
+end
+
+local function CreateGhostTrail(char)
+    for _, part in pairs(char:GetChildren()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            local clone = part:Clone()
+            clone.Parent = workspace; clone.Anchored = true; clone.CanCollide = false
+            clone.Material = Enum.Material.ForceField; clone.Color = Color3.new(1, 1, 1)
+            TweenService:Create(clone, TweenInfo.new(0.5), {Transparency = 1}):Play()
+            Debris:AddItem(clone, 0.5)
+        end
+    end
+end
+
+local function Earthquake(duration, intensity)
+    task.spawn(function()
+        local start = tick()
+        while tick() - start < duration do
+            Camera.CFrame = Camera.CFrame * CFrame.new(
+                math.random(-10, 10) * 0.01 * intensity,
+                math.random(-10, 10) * 0.01 * intensity,
+                math.random(-10, 10) * 0.01 * intensity
+            )
+            task.wait()
+        end
+    end)
+end
+local HeavyScreenShake = Earthquake
+
+local function CreateParticleCore(cf)
+    local core = Instance.new("Part", workspace)
+    core.Size, core.Transparency, core.Anchored, core.CanCollide = Vector3.new(1,1,1), 1, true, false
+    core.CFrame = cf
+    return core
+end
+
+-- ==========================================
+-- KHỞI TẠO MENU RAYFIELD
+-- ==========================================
 local Window = Rayfield:CreateWindow({
-    Name = "MinT Ultimate Hub 🛠️",
-    LoadingTitle = "Đang tối ưu skill...",
-    LoadingSubtitle = "Full combo không bug",
+    Name = "MinT Evolution Hub 🛠️",
+    LoadingTitle = "Đang rèn giũa thần binh...",
+    LoadingSubtitle = "Bất tử mà đấm được người mới là xịn!",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
 
-local TabMain = Window:CreateTab("🗡️ Skill Chính", nil)
-local TabMax = Window:CreateTab("💥 Skill Max", nil)
-local TabDoom = Window:CreateTab("☠️ Tận Diệt", nil)
+local TabSkill = Window:CreateTab("🗡️ Kỹ Năng Cấp Độ", nil)
+local TabGhost = Window:CreateTab("👻 Ghost Tiến Hóa", nil)
+local TabDoom = Window:CreateTab("💀 Cấm Thuật (Sát Chiêu)", nil)
 
--- =================================
--- HÀM PHỤ TRỢ (FIX THIẾU)
--- =================================
-local function PlaySound(id, pitch, parent)
-    local s = Instance.new("Sound")
-    s.SoundId = "rbxassetid://"..id
-    s.Volume = 2
-    s.Pitch = pitch or 1
-    s.Parent = parent or workspace
-    s:Play()
-    Debris:AddItem(s,3)
-end
+-- ==========================================
+-- TAB 1: TIẾN HÓA KỸ NĂNG
+-- ==========================================
+TabSkill:CreateSection("Cài đặt Cấp Độ Chung")
+TabSkill:CreateSlider({
+    Name = "Chọn Cấp Độ (Level)",
+    Range = {1, 4},
+    Increment = 1,
+    CurrentValue = 1,
+    Callback = function(v) currentLevel = v end,
+})
 
-local function ScreenShake(power, time)
-    task.spawn(function()
-        for i = 1, time*20 do
-            Camera.CFrame *= CFrame.new(
-                math.random(-power,power)/10,
-                math.random(-power,power)/10,
-                0
-            )
-            task.wait(0.05)
-        end
-    end)
-end
-
-local function CreateCore(cf)
-    local p = Instance.new("Part", workspace)
-    p.Anchored = true
-    p.CanCollide = false
-    p.Transparency = 1
-    p.CFrame = cf
-    Debris:AddItem(p,5)
-    return p
-end
-
--- =================================
--- SKILL 1: LƯỚT FLASH
--- =================================
-TabMain:CreateButton({
-    Name = "⚡ Lướt Phong Thần",
+TabSkill:CreateButton({
+    Name = "Nhận: ⚡ Lướt Phong Thần",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
-        tool.RequiresHandle = false
-
+        tool.Name, tool.RequiresHandle = "⚡ Lướt Phong Thần", false
         tool.Activated:Connect(function()
-            local root = player.Character.HumanoidRootPart
-
-            PlaySound(2248511,1.2,root)
-
-            local dist = 120
-            local target = root.CFrame * CFrame.new(0,0,-dist)
-
-            TweenService:Create(Camera,TweenInfo.new(0.1),{FieldOfView = 120}):Play()
-            TweenService:Create(root,TweenInfo.new(0.2),{CFrame = target}):Play()
-
-            task.wait(0.2)
-            TweenService:Create(Camera,TweenInfo.new(0.3),{FieldOfView = 70}):Play()
+            local root = player.Character:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+            local dist = 50 + (currentLevel * 50) 
+            PlaySound(2248511, 1.2)
+            
+            local result = workspace:Raycast(root.Position, root.CFrame.LookVector * dist, RaycastParams.new())
+            local targetPos = result and result.Position or (root.CFrame * CFrame.new(0, 0, -dist)).Position
+            
+            TweenService:Create(Camera, TweenInfo.new(0.1), {FieldOfView = 100}):Play()
+            local tw = TweenService:Create(root, TweenInfo.new(0.2, Enum.EasingStyle.Sine), {CFrame = CFrame.new(targetPos)})
+            tw:Play()
+            
+            task.spawn(function()
+                for i = 1, 5 * currentLevel do
+                    local spark = Instance.new("Part", workspace)
+                    spark.Size = Vector3.new(0.2, 0.2, 10); spark.Anchored = true; spark.CanCollide = false
+                    spark.Material = Enum.Material.Neon; spark.Color = Color3.fromRGB(255, 200, 0)
+                    spark.CFrame = root.CFrame * CFrame.new(math.random(-5,5), math.random(-2,2), 0)
+                    Debris:AddItem(spark, 0.2)
+                    task.wait(0.02)
+                end
+            end)
+            tw.Completed:Wait()
+            TweenService:Create(Camera, TweenInfo.new(0.3), {FieldOfView = 70}):Play()
         end)
     end
 })
 
--- =================================
--- SKILL 2: BLACKHOLE
--- =================================
-TabMax:CreateButton({
-    Name = "🌌 Lỗ Đen",
+TabSkill:CreateButton({
+    Name = "Nhận: 🎈 Đạp Không Hành",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
-        tool.RequiresHandle = false
-
+        tool.Name, tool.RequiresHandle = "🎈 Đạp Không Hành", false
         tool.Activated:Connect(function()
-            local root = player.Character.HumanoidRootPart
-
-            local bh = Instance.new("Part", workspace)
-            bh.Shape = Enum.PartType.Ball
-            bh.Size = Vector3.new(1,1,1)
-            bh.Anchored = true
-            bh.Material = Enum.Material.Neon
-            bh.Color = Color3.new(0,0,0)
-            bh.CFrame = root.CFrame * CFrame.new(0,10,-20)
-
-            TweenService:Create(bh,TweenInfo.new(2),{
-                Size = Vector3.new(30,30,30)
-            }):Play()
-
-            ScreenShake(2,2)
-
+            local char = player.Character
+            if not char then return end
+            local root = char:FindFirstChild("HumanoidRootPart")
+            local hum = char:FindFirstChild("Humanoid")
+            if not root or not hum then return end
+            
+            PlaySound(178452221, 2)
+            local bv = Instance.new("BodyVelocity", root)
+            bv.MaxForce = Vector3.new(0, 100000, 0)
+            bv.Velocity = Vector3.new(0, 15 * currentLevel, 0)
+            
+            local wind = Instance.new("Part", char)
+            wind.Size, wind.Anchored, wind.CanCollide, wind.Material, wind.Color = Vector3.new(4,0.1,4), true, false, Enum.Material.ForceField, Color3.fromRGB(150, 255, 255)
+            wind.CFrame = root.CFrame * CFrame.new(0,-3,0)
+            TweenService:Create(wind, TweenInfo.new(2), {CFrame = wind.CFrame * CFrame.Angles(0,math.rad(360),0)}):Play()
+            
             task.wait(2)
-            bh:Destroy()
+            bv:Destroy()
+            Debris:AddItem(wind, 0)
         end)
     end
 })
 
--- =================================
--- SKILL 3: BÃO CÁT
--- =================================
-TabMax:CreateButton({
-    Name = "🌪️ Bão Cát",
+TabSkill:CreateButton({
+    Name = "Nhận: 👻 Quỷ Ảnh Xuyên Tường",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
-        tool.RequiresHandle = false
-
+        tool.Name, tool.RequiresHandle = "👻 Quỷ Ảnh Xuyên Tường", false
         tool.Activated:Connect(function()
-            local root = player.Character.HumanoidRootPart
-
-            local core = CreateCore(root.CFrame)
-
-            local particle = Instance.new("ParticleEmitter", core)
-            particle.Rate = 300
-            particle.Speed = NumberRange.new(50)
-            particle.Lifetime = NumberRange.new(2)
-
-            ScreenShake(1,3)
-
-            task.wait(3)
-            core:Destroy()
+            local char = player.Character
+            if not char then return end
+            PlaySound(231917744, 0.5)
+            for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end
+            task.wait(2 * currentLevel) 
+            for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = true end end
         end)
     end
 })
 
--- =================================
--- SKILL 4: SÁT THẦN LĨNH VỰC
--- =================================
-TabMax:CreateButton({
-    Name = "🩸 Sát Thần Lĩnh Vực",
+TabSkill:CreateButton({
+    Name = "Nhận: ✝️ Thánh Quang Hộ Thể",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
-        tool.RequiresHandle = false
-
+        tool.Name, tool.RequiresHandle = "✝️ Thánh Quang Hộ Thể", false
         tool.Activated:Connect(function()
-            local root = player.Character.HumanoidRootPart
-
-            root.Anchored = true
-            root.CFrame *= CFrame.new(0,30,0)
-
-            local dome = Instance.new("Part", workspace)
-            dome.Shape = Enum.PartType.Ball
-            dome.Anchored = true
-            dome.Size = Vector3.new(1,1,1)
-            dome.Material = Enum.Material.ForceField
-
-            TweenService:Create(dome,TweenInfo.new(1),{
-                Size = Vector3.new(150,150,150)
-            }):Play()
-
-            ScreenShake(2,5)
-
-            task.wait(5)
-
-            root.Anchored = false
-            dome:Destroy()
+            local root = player.Character:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+            PlaySound(142070127, 1.5)
+            local aura = Instance.new("Part", workspace)
+            aura.Shape, aura.Size, aura.Anchored, aura.CanCollide = Enum.PartType.Cylinder, Vector3.new(500 * currentLevel, 20, 20), true, false
+            aura.CFrame = root.CFrame * CFrame.Angles(0, 0, math.rad(90))
+            aura.Material, aura.Color = Enum.Material.Neon, Color3.fromRGB(255, 255, 0)
+            TweenService:Create(root, TweenInfo.new(1), {CFrame = root.CFrame * CFrame.new(0, 50 * currentLevel, 0)}):Play()
+            Debris:AddItem(aura, 5)
         end)
     end
 })
 
--- =================================
--- ULTIMATE: VẠN VẬT TẪN DIỆT
--- =================================
+TabSkill:CreateButton({
+    Name = "Nhận: 🗡️ Sát Thủ Phục Kích",
+    Callback = function()
+        local tool = Instance.new("Tool", player.Backpack)
+        tool.Name, tool.RequiresHandle = "🗡️ Sát Thủ Phục Kích", false
+        tool.Activated:Connect(function()
+            local root = player.Character:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+            local target = nil; local minDist = 200
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local dist = (p.Character.HumanoidRootPart.Position - root.Position).Magnitude
+                    if dist < minDist then minDist = dist; target = p.Character.HumanoidRootPart end
+                end
+            end
+            if target then
+                local smoke = Instance.new("Part", workspace)
+                smoke.Size, smoke.CFrame, smoke.Anchored, smoke.Material, smoke.Color = Vector3.new(5,5,5), root.CFrame, true, Enum.Material.Neon, Color3.new(0,0,0)
+                TweenService:Create(smoke, TweenInfo.new(0.5), {Size = Vector3.new(0,0,0)}):Play(); Debris:AddItem(smoke, 0.5)
+                
+                root.CFrame = target.CFrame * CFrame.new(0, 0, 3)
+                if currentLevel >= 3 then PlaySound(2248511, 2) end 
+                PlaySound(231917744, 1.5)
+            end
+        end)
+    end
+})
+
+TabSkill:CreateButton({
+    Name = "🧹 Dọn sạch túi đồ",
+    Callback = function()
+        for _, v in pairs(player.Backpack:GetChildren()) do v:Destroy() end
+        if player.Character then 
+            for _, v in pairs(player.Character:GetChildren()) do if v:IsA("Tool") then v:Destroy() end end 
+        end
+    end
+})
+
+-- ==========================================
+-- TAB 2: GHOST MODE TIẾN HÓA
+-- ==========================================
+TabGhost:CreateSection("Ảo Ảnh Hắc Ám VIP")
+TabGhost:CreateToggle({
+    Name = "Kích Hoạt Ghost Mode",
+    CurrentValue = false,
+    Callback = function(v)
+        ghostActive = v
+        local char = player.Character
+        if not char then return end
+        local hum = char:FindFirstChild("Humanoid")
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if not hum or not root then return end
+        
+        if ghostActive then
+            for _, p in ipairs(char:GetDescendants()) do 
+                if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.Transparency = 0.5 end 
+            end
+            
+            ghostConn = RunService.RenderStepped:Connect(function()
+                if not char or not hum or not root then return end
+                if currentLevel == 1 then
+                    hum.WalkSpeed = 0 
+                elseif currentLevel == 2 then
+                    hum.WalkSpeed = 16 
+                elseif currentLevel == 3 then
+                    hum.WalkSpeed = 40 
+                    if hum.MoveDirection.Magnitude > 0 then CreateGhostTrail(char) end
+                elseif currentLevel == 4 then
+                    hum.WalkSpeed = 80 
+                    if hum.MoveDirection.Magnitude > 0 then CreateGhostTrail(char) end
+                    if math.random(1, 20) == 1 then
+                        PlaySound(142070127, 0.5, 0.5)
+                        local l = Instance.new("Part", workspace)
+                        l.Size = Vector3.new(1, 100, 1); l.Anchored = true; l.Material = Enum.Material.Neon
+                        l.CFrame = root.CFrame * CFrame.new(math.random(-30,30), 50, math.random(-30,30))
+                        Debris:AddItem(l, 0.1)
+                    end
+                end
+            end)
+        else
+            if ghostConn then ghostConn:Disconnect() end
+            for _, p in ipairs(char:GetDescendants()) do 
+                if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.Transparency = 0 end 
+            end
+            hum.WalkSpeed = 16
+        end
+    end
+})
+
+-- ==========================================
+-- TAB 3: CẤM THUẬT & SÁT CHIÊU
+-- ==========================================
+TabDoom:CreateSection("Kỹ Năng Hủy Diệt Máy")
+
 TabDoom:CreateButton({
-    Name = "☠️ Vạn Vật Tẫn Diệt",
+    Name = "Nhận: 🌌 Lỗ Đen Hư Không",
     Callback = function()
-        local root = player.Character.HumanoidRootPart
+        local tool = Instance.new("Tool", player.Backpack)
+        tool.Name, tool.RequiresHandle = "🌌 Lỗ Đen", false
+        tool.Activated:Connect(function()
+            local root = player.Character:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+            local targetCFrame = root.CFrame * CFrame.new(0, 15, -30)
+            
+            local bh = Instance.new("Part", workspace)
+            bh.Size, bh.CFrame, bh.Anchored, bh.CanCollide, bh.Shape = Vector3.new(1,1,1), targetCFrame, true, false, Enum.PartType.Ball
+            bh.Material, bh.Color = Enum.Material.Neon, Color3.fromRGB(0, 0, 0)
+            
+            local aura = Instance.new("Part", workspace)
+            aura.Size, aura.CFrame, aura.Anchored, aura.CanCollide, aura.Shape = Vector3.new(2,2,2), targetCFrame, true, false, Enum.PartType.Ball
+            aura.Material, aura.Color = Enum.Material.ForceField, Color3.fromRGB(150, 0, 255)
+            
+            local cc = Instance.new("ColorCorrectionEffect", Lighting)
+            TweenService:Create(cc, TweenInfo.new(2), {Brightness = -0.5, Saturation = -1}):Play()
+            TweenService:Create(bh, TweenInfo.new(2), {Size = Vector3.new(25,25,25)}):Play()
+            TweenService:Create(aura, TweenInfo.new(2), {Size = Vector3.new(35,35,35)}):Play()
+            TweenService:Create(Camera, TweenInfo.new(2), {FieldOfView = 50}):Play()
+            HeavyScreenShake(1, 2.5)
+            
+            task.wait(2.5)
+            TweenService:Create(bh, TweenInfo.new(0.2), {Size = Vector3.new(0,0,0)}):Play()
+            TweenService:Create(aura, TweenInfo.new(0.2), {Size = Vector3.new(0,0,0)}):Play()
+            TweenService:Create(Camera, TweenInfo.new(0.2), {FieldOfView = 70}):Play()
+            TweenService:Create(cc, TweenInfo.new(0.5), {Brightness = 0, Saturation = 0}):Play()
+            Debris:AddItem(bh, 0.5); Debris:AddItem(aura, 0.5); Debris:AddItem(cc, 0.5)
+        end)
+    end
+})
 
+TabDoom:CreateButton({
+    Name = "Nhận: ⚡ Lôi Thần Tật Ảnh",
+    Callback = function()
+        local tool = Instance.new("Tool", player.Backpack)
+        tool.Name, tool.RequiresHandle = "⚡ Lôi Thần Tật Ảnh", false
+        local cd = false
+        tool.Activated:Connect(function()
+            local root = player.Character:FindFirstChild("HumanoidRootPart")
+            if not root or cd then return end
+            cd = true
+            
+            local cc = Instance.new("ColorCorrectionEffect", Lighting)
+            cc.Brightness = 0.5; cc.Contrast = 1; cc.TintColor = Color3.fromRGB(0, 255, 255)
+            local blur = Instance.new("BlurEffect", Lighting); blur.Size = 40
+            
+            TweenService:Create(Camera, TweenInfo.new(0.1, Enum.EasingStyle.Exponential), {FieldOfView = 120}):Play()
+            HeavyScreenShake(1, 0.3)
+            
+            local shockwave = Instance.new("Part", workspace)
+            shockwave.Size, shockwave.CFrame, shockwave.Anchored, shockwave.CanCollide, shockwave.Material = Vector3.new(1,1,1), root.CFrame, true, false, Enum.Material.Neon
+            shockwave.Color, shockwave.Shape = Color3.fromRGB(0, 255, 255), Enum.PartType.Ball
+            TweenService:Create(shockwave, TweenInfo.new(0.4), {Size = Vector3.new(30,30,30), Transparency = 1}):Play()
+            Debris:AddItem(shockwave, 0.4)
+
+            local raycastResult = workspace:Raycast(root.Position, root.CFrame.LookVector * 60, RaycastParams.new())
+            root.CFrame = raycastResult and CFrame.new(raycastResult.Position) or (root.CFrame * CFrame.new(0, 0, -60))
+            
+            TweenService:Create(Camera, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {FieldOfView = 70}):Play()
+            TweenService:Create(cc, TweenInfo.new(0.3), {Brightness = 0, Contrast = 0, TintColor = Color3.fromRGB(255, 255, 255)}):Play()
+            TweenService:Create(blur, TweenInfo.new(0.3), {Size = 0}):Play()
+            Debris:AddItem(cc, 0.4); Debris:AddItem(blur, 0.4)
+            task.wait(1.5); cd = false
+        end)
+    end
+})
+
+TabDoom:CreateButton({
+    Name = "Nhận: 🌪️ Bão Cát Tận Thế",
+    Callback = function()
+        local tool = Instance.new("Tool", player.Backpack)
+        tool.Name, tool.RequiresHandle = "🌪️ Bão Cát", false
+        tool.Activated:Connect(function()
+            local root = player.Character:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+            
+            local core = CreateParticleCore(root.CFrame)
+            local cc = Instance.new("ColorCorrectionEffect", Lighting)
+            TweenService:Create(cc, TweenInfo.new(1), {TintColor = Color3.fromRGB(200, 150, 50), Contrast = 0.5}):Play()
+            
+            local storm = Instance.new("ParticleEmitter", core)
+            storm.Texture = "rbxassetid://243660364"
+            storm.Color = ColorSequence.new(Color3.fromRGB(210, 180, 140))
+            storm.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 5), NumberSequenceKeypoint.new(1, 30)})
+            storm.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.2), NumberSequenceKeypoint.new(1, 1)})
+            storm.Lifetime, storm.Rate, storm.Speed = NumberRange.new(2, 4), 500, NumberRange.new(50, 100)
+            storm.SpreadAngle, storm.EmissionDirection = Vector2.new(180, 180), Enum.NormalId.Top
+            storm.Rotation, storm.RotSpeed = NumberRange.new(0, 360), NumberRange.new(-50, 50)
+            
+            HeavyScreenShake(4, 1)
+            task.wait(3)
+            storm.Enabled = false
+            TweenService:Create(cc, TweenInfo.new(2), {TintColor = Color3.fromRGB(255, 255, 255), Contrast = 0}):Play()
+            Debris:AddItem(core, 4); Debris:AddItem(cc, 2)
+        end)
+    end
+})
+
+TabDoom:CreateButton({
+    Name = "Nhận: 🩸 Sát Thần Lĩnh Vực",
+    Callback = function()
+        local tool = Instance.new("Tool", player.Backpack)
+        tool.Name, tool.RequiresHandle = "🩸 Sát Thần Lĩnh Vực", false
+        local cooldown = false
+        tool.Activated:Connect(function()
+            local char = player.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") or cooldown then return end
+            cooldown = true
+            local root = char.HumanoidRootPart
+            local head = char:FindFirstChild("Head")
+            
+            root.Velocity = Vector3.new(0, 0, 0)
+            root.CFrame = root.CFrame * CFrame.new(0, 30, 0)
+            root.Anchored = true 
+            
+            local cc = Instance.new("ColorCorrectionEffect", Lighting)
+            TweenService:Create(cc, TweenInfo.new(1), {Brightness = -0.5, Contrast = 1, TintColor = Color3.fromRGB(255, 100, 100)}):Play()
+            task.wait(0.5)
+            if head then ChatService:Chat(head, "SÁT THẦN LĨNH VỰC!!!", Enum.ChatColor.Red) end
+            task.wait(0.5)
+            
+            local dome = Instance.new("Part", workspace)
+            dome.Shape, dome.Size, dome.CFrame, dome.Anchored, dome.CanCollide = Enum.PartType.Ball, Vector3.new(5, 5, 5), root.CFrame, true, false
+            dome.Material, dome.Color = Enum.Material.ForceField, Color3.fromRGB(150, 0, 0)
+            TweenService:Create(dome, TweenInfo.new(1, Enum.EasingStyle.Exponential), {Size = Vector3.new(150, 150, 150), Transparency = 0.5}):Play()
+            TweenService:Create(Camera, TweenInfo.new(1), {FieldOfView = 90}):Play()
+            
+            local rainPart = Instance.new("Part", dome)
+            rainPart.Size, rainPart.CFrame, rainPart.Anchored, rainPart.CanCollide, rainPart.Transparency = Vector3.new(140, 1, 140), root.CFrame * CFrame.new(0, 70, 0), true, false, 1
+            
+            local bloodRain = Instance.new("ParticleEmitter", rainPart)
+            bloodRain.Texture, bloodRain.Color = "rbxassetid://243660364", ColorSequence.new(Color3.fromRGB(255, 0, 0))
+            bloodRain.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 2)})
+            bloodRain.Lifetime, bloodRain.Rate, bloodRain.Speed, bloodRain.EmissionDirection = NumberRange.new(2), 1000, NumberRange.new(100), Enum.NormalId.Bottom
+            
+            local startTime = tick()
+            task.spawn(function()
+                while tick() - startTime < 10 do
+                    local p1 = root.Position + Vector3.new(math.random(-60, 60), math.random(-60, 60), math.random(-60, 60))
+                    local p2 = root.Position + Vector3.new(math.random(-60, 60), math.random(-60, 60), math.random(-60, 60))
+                    local dist = (p1 - p2).Magnitude
+                    local bolt = Instance.new("Part", workspace)
+                    bolt.Size, bolt.CFrame, bolt.Anchored, bolt.CanCollide = Vector3.new(0.5, 0.5, dist), CFrame.lookAt(p1, p2) * CFrame.new(0, 0, -dist/2), true, false
+                    bolt.Material, bolt.Color = Enum.Material.Neon, Color3.fromRGB(255, 0, 50)
+                    Debris:AddItem(bolt, 0.1)
+                    
+                    Camera.CFrame = Camera.CFrame * CFrame.new(math.random(-1,1), math.random(-1,1), math.random(-1,1)) * 0.2
+                    task.wait(0.1)
+                end
+            end)
+            
+            task.wait(10)
+            bloodRain.Enabled = false
+            TweenService:Create(dome, TweenInfo.new(1), {Size = Vector3.new(0, 0, 0)}):Play()
+            TweenService:Create(cc, TweenInfo.new(1), {Brightness = 0, Contrast = 0, TintColor = Color3.fromRGB(255, 255, 255)}):Play()
+            TweenService:Create(Camera, TweenInfo.new(1), {FieldOfView = 70}):Play()
+            
+            task.wait(1)
+            root.Anchored = false 
+            dome:Destroy(); cc:Destroy()
+            task.wait(2); cooldown = false
+        end)
+    end
+})
+
+TabDoom:CreateButton({
+    Name = "Kích Hoạt: 💀 VẠN VẬT TẪN DIỆT",
+    Callback = function()
+        local char = player.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+        local root = char.HumanoidRootPart
+        local head = char:FindFirstChild("Head")
+        
+        local cc = Instance.new("ColorCorrectionEffect", Lighting)
+        TweenService:Create(cc, TweenInfo.new(2), {Brightness = -0.8, Contrast = 2, TintColor = Color3.fromRGB(255, 50, 50), Saturation = 1}):Play()
+        local blur = Instance.new("BlurEffect", Lighting)
+        TweenService:Create(blur, TweenInfo.new(2), {Size = 30}):Play()
+        
+        root.Velocity = Vector3.new(0,0,0)
+        root.CFrame = root.CFrame * CFrame.new(0, 50, 0)
         root.Anchored = true
-        root.CFrame *= CFrame.new(0,50,0)
-
+        
+        if head then ChatService:Chat(head, "TIÊN ĐẠO SÁT CHIÊU: VẠN VẬT TẪN DIỆT!!!", Enum.ChatColor.Red) end
+        Earthquake(1, 2)
+        task.wait(2)
+        
         local dome = Instance.new("Part", workspace)
-        dome.Shape = Enum.PartType.Ball
-        dome.Size = Vector3.new(1,1,1)
-        dome.Anchored = true
-        dome.Material = Enum.Material.Neon
-
-        TweenService:Create(dome,TweenInfo.new(2),{
-            Size = Vector3.new(300,300,300)
-        }):Play()
-
-        ScreenShake(5,5)
-
+        dome.Shape, dome.Size, dome.CFrame, dome.Anchored, dome.CanCollide = Enum.PartType.Ball, Vector3.new(1, 1, 1), root.CFrame, true, false
+        dome.Material, dome.Color = Enum.Material.ForceField, Color3.fromRGB(0, 0, 0)
+        
+        TweenService:Create(dome, TweenInfo.new(2, Enum.EasingStyle.Exponential), {Size = Vector3.new(300, 300, 300)}):Play()
+        TweenService:Create(Camera, TweenInfo.new(1), {FieldOfView = 120}):Play()
+        
+        local bhAura = Instance.new("ParticleEmitter", dome)
+        bhAura.Texture, bhAura.Color = "rbxassetid://243660364", ColorSequence.new(Color3.fromRGB(150, 0, 255))
+        bhAura.Size, bhAura.Rate, bhAura.Speed = NumberSequence.new(50), 500, NumberRange.new(-100) 
+        
+        Earthquake(3, 3)
+        task.wait(3)
+        
+        local rainPart = Instance.new("Part", dome)
+        rainPart.Size, rainPart.CFrame, rainPart.Anchored, rainPart.CanCollide, rainPart.Transparency = Vector3.new(300, 1, 300), root.CFrame * CFrame.new(0, 140, 0), true, false, 1
+        local bloodRain = Instance.new("ParticleEmitter", rainPart)
+        bloodRain.Texture, bloodRain.Color = "rbxassetid://243660364", ColorSequence.new(Color3.fromRGB(255, 0, 0))
+        bloodRain.Size, bloodRain.Lifetime, bloodRain.Rate, bloodRain.Speed, bloodRain.EmissionDirection = NumberSequence.new(3), NumberRange.new(3), 2000, NumberRange.new(150), Enum.NormalId.Bottom
+        
+        local startTime = tick()
+        task.spawn(function()
+            while tick() - startTime < 5 do
+                local p1 = root.Position + Vector3.new(math.random(-100, 100), math.random(-100, 100), math.random(-100, 100))
+                local p2 = root.Position + Vector3.new(math.random(-100, 100), math.random(-100, 100), math.random(-100, 100))
+                local dist = (p1 - p2).Magnitude
+                local bolt = Instance.new("Part", workspace)
+                bolt.Size, bolt.CFrame, bolt.Anchored, bolt.CanCollide = Vector3.new(2, 2, dist), CFrame.lookAt(p1, p2) * CFrame.new(0, 0, -dist/2), true, false
+                bolt.Material, bolt.Color = Enum.Material.Neon, Color3.fromRGB(0, 255, 255)
+                Debris:AddItem(bolt, 0.05)
+                task.wait(0.05)
+            end
+        end)
+        
+        Earthquake(5, 5)
         task.wait(5)
-
-        local boom = Instance.new("Part", workspace)
-        boom.Shape = Enum.PartType.Ball
-        boom.Size = Vector3.new(1,1,1)
-        boom.Anchored = true
-
-        TweenService:Create(boom,TweenInfo.new(0.5),{
-            Size = Vector3.new(500,500,500),
-            Transparency = 1
-        }):Play()
-
+        
+        bloodRain.Enabled = false
+        bhAura.Enabled = false
+        
+        local supernova = Instance.new("Part", workspace)
+        supernova.Shape, supernova.Size, supernova.CFrame, supernova.Anchored, supernova.CanCollide = Enum.PartType.Ball, Vector3.new(1,1,1), root.CFrame, true, false
+        supernova.Material, supernova.Color = Enum.Material.Neon, Color3.fromRGB(255, 255, 255)
+        
+        TweenService:Create(supernova, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Size = Vector3.new(500, 500, 500), Transparency = 1}):Play()
+        TweenService:Create(dome, TweenInfo.new(0.5), {Size = Vector3.new(0,0,0)}):Play()
+        TweenService:Create(cc, TweenInfo.new(2), {Brightness = 1, Contrast = 0, TintColor = Color3.fromRGB(255, 255, 255), Saturation = 0}):Play()
+        TweenService:Create(Camera, TweenInfo.new(1), {FieldOfView = 70}):Play()
+        
+        Earthquake(1, 8)
         task.wait(1)
-
+        
         root.Anchored = false
-        dome:Destroy()
-        boom:Destroy()
+        TweenService:Create(cc, TweenInfo.new(1), {Brightness = 0}):Play()
+        TweenService:Create(blur, TweenInfo.new(1), {Size = 0}):Play()
+        
+        Debris:AddItem(supernova, 1); Debris:AddItem(dome, 1); Debris:AddItem(cc, 2); Debris:AddItem(blur, 2)
+        Rayfield:Notify({Title = "Sống sót!", Content = "Chúc mừng, điện thoại chưa bị văng!", Duration = 3})
     end
 })
