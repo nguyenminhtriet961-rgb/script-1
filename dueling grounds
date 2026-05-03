@@ -1,8 +1,4 @@
--- ==========================================
--- TÊN SẢN PHẨM: MINT PRAGMATIC ARSENAL (UPDATE DẠNG GHOST)
--- TÁC GIẢ: Em trai làm mướn
--- ==========================================
-
+ 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -12,12 +8,13 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local Camera = game.Workspace.CurrentCamera
 
-_G.IsCasting = false
+-- Bỏ luôn biến khóa an toàn
+-- _G.IsCasting = false 
 
 local Window = Rayfield:CreateWindow({
     Name = "MinT Thực Dụng Hub 🛠️",
-    LoadingTitle = "Đang fix bug requirement của chị...",
-    LoadingSubtitle = "Ghost khác với Tàng hình nhé!",
+    LoadingTitle = "Đang gỡ bỏ giới hạn...",
+    LoadingSubtitle = "Spam nổ máy ráng chịu nha chị!",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
@@ -47,12 +44,8 @@ local function CreateGhostTrail(char)
     end
 end
 
-local function NotifyCD(name, time)
-    Rayfield:Notify({Title = "⏳ Đang Hồi Chiêu", Content = name .. " cần " .. time .. " giây!", Duration = 2})
-end
-
 -- ==========================================
--- 6 VẬT PHẨM (ĐÃ UPDATE DẠNG GHOST)
+-- 6 VẬT PHẨM (0 GIÂY HỒI CHIÊU)
 -- ==========================================
 local Arsenal = {
     {"⚡ Lướt Phong Thần", function(root, char)
@@ -64,7 +57,7 @@ local Arsenal = {
         local tw = TweenService:Create(root, TweenInfo.new(0.2, Enum.EasingStyle.Sine), {CFrame = targetCFrame})
         tw:Play(); tw.Completed:Wait()
         TweenService:Create(Camera, TweenInfo.new(0.3), {FieldOfView = 70}):Play()
-    end, 3, false},
+    end},
 
     {"🎈 Đạp Không Hành", function(root, char, hum)
         PlaySound(178452221, 2, root)
@@ -75,11 +68,11 @@ local Arsenal = {
         wind.CFrame = root.CFrame * CFrame.new(0,-3,0)
         TweenService:Create(wind, TweenInfo.new(2), {CFrame = wind.CFrame * CFrame.Angles(0,math.rad(360),0)}):Play()
         task.wait(2); hum.WalkSpeed = 16; bv:Destroy(); Debris:AddItem(wind, 0)
-    end, 5, false},
+    end},
 
     {"👻 Quỷ Ảnh Xuyên Tường", function(root, char)
         local result = workspace:Raycast(root.Position, root.CFrame.LookVector * 4, RaycastParams.new())
-        if not result then return false end 
+        if not result then return end 
         PlaySound(231917744, 0.5, root)
         local oldMat = {}
         for _, v in pairs(char:GetChildren()) do
@@ -90,8 +83,7 @@ local Arsenal = {
         for _, v in pairs(char:GetChildren()) do
             if v:IsA("BasePart") then v.Material = oldMat[v] or Enum.Material.Plastic; v.CanCollide = true end
         end
-        return true
-    end, 8, false},
+    end},
 
     {"✝️ Thánh Quang Hộ Thể", function(root, char, hum)
         PlaySound(142070127, 1.5, root); root.Anchored = true
@@ -102,7 +94,7 @@ local Arsenal = {
         task.wait(5); root.Anchored = false
         TweenService:Create(aura, TweenInfo.new(0.5), {Transparency = 1, Size = Vector3.new(100,0,0)}):Play()
         Debris:AddItem(aura, 0.5)
-    end, 15, false},
+    end},
 
     {"🗡️ Sát Thủ Phục Kích", function(root, char)
         local target = nil; local minDist = 150
@@ -118,19 +110,15 @@ local Arsenal = {
             smoke.Size, smoke.CFrame, smoke.Anchored, smoke.Material, smoke.Color = Vector3.new(5,5,5), root.CFrame, true, Enum.Material.Neon, Color3.new(0,0,0)
             TweenService:Create(smoke, TweenInfo.new(0.5), {Size = Vector3.new(0,0,0)}):Play(); Debris:AddItem(smoke, 0.5)
             root.CFrame = target.CFrame * CFrame.new(0, 0, 4)
-            PlaySound(231917744, 1.5, root); return true
-        else
-            Rayfield:Notify({Title = "Thất bại", Content = "Không tìm thấy kẻ địch!", Duration = 2}); return false 
+            PlaySound(231917744, 1.5, root)
         end
-    end, 10, false},
+    end},
 
-    -- ĐÃ UPDATE: Biến thành Ghost (Bán trong suốt) thay vì Tàng hình hoàn toàn
     {"🌫️ Ảo Ảnh Hắc Ám (VIP)", function(root, char, hum)
         PlaySound(178452221, 0.5, root)
         local cc = Instance.new("ColorCorrectionEffect", Lighting)
         cc.Saturation = -1; cc.Contrast = 0.2; cc.TintColor = Color3.fromRGB(150, 150, 150)
         
-        -- Tạo khói đen bám theo người
         local smokeParticle = Instance.new("ParticleEmitter", root)
         smokeParticle.Texture = "rbxassetid://243660364" 
         smokeParticle.Color = ColorSequence.new(Color3.fromRGB(30, 30, 30))
@@ -138,14 +126,11 @@ local Arsenal = {
         smokeParticle.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 1)})
         smokeParticle.Lifetime = NumberRange.new(0.5, 1); smokeParticle.Rate = 50; smokeParticle.Speed = NumberRange.new(2, 5)
         
-        -- Chuyển cơ thể sang dạng Ghost mờ ảo (Transparency = 0.6)
-        local oldTrans = {}
-        local oldMat = {}
+        local oldTrans = {}; local oldMat = {}
         for _, v in pairs(char:GetDescendants()) do
             if v:IsA("BasePart") then
                 oldTrans[v] = v.Transparency; oldMat[v] = v.Material
-                v.Transparency = 0.6 -- Mờ mờ nhân ảnh
-                v.Material = Enum.Material.ForceField -- Thêm hiệu ứng tĩnh điện nhấp nháy
+                v.Transparency = 0.6; v.Material = Enum.Material.ForceField 
             elseif v:IsA("Decal") then
                 oldTrans[v] = v.Transparency; v.Transparency = 0.6
             end
@@ -154,16 +139,13 @@ local Arsenal = {
         local timer = 0
         local connection = RunService.RenderStepped:Connect(function(dt)
             timer = timer + dt
-            -- CHỈ tạo tàn ảnh trắng khi nhân vật đang di chuyển
             if timer > 0.1 and hum.MoveDirection.Magnitude > 0 then 
-                CreateGhostTrail(char)
-                timer = 0 
+                CreateGhostTrail(char); timer = 0 
             end
         end)
         
-        task.wait(5) -- Trạng thái Ghost duy trì 5 giây
+        task.wait(5)
         
-        -- Hủy hiệu ứng, trả lại cơ thể bình thường
         connection:Disconnect(); cc:Destroy(); smokeParticle.Enabled = false; Debris:AddItem(smokeParticle, 1)
         for v, trans in pairs(oldTrans) do
             if v and v.Parent then 
@@ -171,17 +153,17 @@ local Arsenal = {
                 if v:IsA("BasePart") and oldMat[v] then v.Material = oldMat[v] end
             end
         end
-    end, 20, false}
+    end}
 }
 
 -- ==========================================
--- GẮN VÀO MENU
+-- GẮN VÀO MENU (KHÔNG CÓ THỜI GIAN HỒI)
 -- ==========================================
-TabMain:CreateSection("Vũ khí có Cooldown")
+TabMain:CreateSection("Vũ khí Spam (Cẩn thận văng game)")
 
 for _, item in ipairs(Arsenal) do
     TabMain:CreateButton({
-        Name = "Nhận: " .. item[1] .. " (CD: " .. item[3] .. "s)",
+        Name = "Nhận: " .. item[1] .. " (Không Hồi Chiêu)",
         Callback = function()
             if not player.Backpack:FindFirstChild(item[1]) then
                 local tool = Instance.new("Tool", player.Backpack)
@@ -189,17 +171,10 @@ for _, item in ipairs(Arsenal) do
                 tool.Activated:Connect(function()
                     local char = player.Character
                     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-                    if item[4] then NotifyCD(item[1], item[3]); return end
                     
-                    item[4] = true
-                    local success = item[2](char.HumanoidRootPart, char, char:FindFirstChild("Humanoid"))
-                    
-                    if success == false then item[4] = false; return end
-                    
+                    -- Chạy trực tiếp, không khóa, không đếm ngược
                     task.spawn(function()
-                        task.wait(item[3])
-                        item[4] = false
-                        Rayfield:Notify({Title = "Đã Hồi Xong", Content = item[1] .. " đã sẵn sàng!", Duration = 2})
+                        item[2](char.HumanoidRootPart, char, char:FindFirstChild("Humanoid"))
                     end)
                 end)
             end
