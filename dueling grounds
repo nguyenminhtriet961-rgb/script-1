@@ -1,183 +1,123 @@
 -- ==========================================
--- TÊN SẢN PHẨM: MinT Arsenal - BẢN HỦY DIỆT ĐỒ HỌA (PARTICLES ONLY)
+-- TÊN SẢN PHẨM: SÁT THẦN LĨNH VỰC (BẢN TU TIÊN)
 -- TÁC GIẢ: Em trai làm mướn
 -- ==========================================
 
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local player = game:GetService("Players").LocalPlayer
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
+local ChatService = game:GetService("Chat")
 local Lighting = game:GetService("Lighting")
 local Camera = game.Workspace.CurrentCamera
 
-local Window = Rayfield:CreateWindow({
-    Name = "MinT Arsenal (Particles) 💥",
-    LoadingTitle = "Chuẩn bị vắt kiệt RAM...",
-    LoadingSubtitle = "Không xài 'gạch nhựa' nữa!",
-    ConfigurationSaving = { Enabled = false },
-    KeySystem = false,
-})
+-- Tạo Tool
+local tool = Instance.new("Tool", player.Backpack)
+tool.Name = "🩸 Sát Thần Lĩnh Vực"
+tool.RequiresHandle = false
+local cooldown = false
 
-local TabMax = Window:CreateTab("👑 Tuyệt Trần (Hạt)", nil)
-
--- Hàm tạo lõi phát hạt tàng hình
-local function CreateParticleCore(cframe)
-    local core = Instance.new("Part", workspace)
-    core.Size, core.CFrame, core.Anchored, core.CanCollide, core.Transparency = Vector3.new(1,1,1), cframe, true, false, 1
-    return core
+-- Hàm tạo tia sét ngẫu nhiên
+local function CreateLightning(domeCenter, radius)
+    local p1 = domeCenter + Vector3.new(math.random(-radius, radius), math.random(-radius, radius), math.random(-radius, radius))
+    local p2 = domeCenter + Vector3.new(math.random(-radius, radius), math.random(-radius, radius), math.random(-radius, radius))
+    
+    local distance = (p1 - p2).Magnitude
+    local bolt = Instance.new("Part", workspace)
+    bolt.Size = Vector3.new(0.5, 0.5, distance)
+    bolt.CFrame = CFrame.lookAt(p1, p2) * CFrame.new(0, 0, -distance/2)
+    bolt.Anchored = true
+    bolt.CanCollide = false
+    bolt.Material = Enum.Material.Neon
+    bolt.Color = Color3.fromRGB(255, 0, 50) -- Sét màu đỏ máu
+    
+    -- Xóa tia sét cực nhanh để tạo cảm giác chớp nháy
+    Debris:AddItem(bolt, 0.1)
 end
 
--- ==========================================
--- 1. Bão Cát Sa Mạc (Sandstorm) - Gây mù tạm thời
--- ==========================================
-TabMax:CreateButton({
-    Name = "🌪️ Bão Cát Tận Thế",
-    Callback = function()
-        local tool = Instance.new("Tool", player.Backpack)
-        tool.Name, tool.RequiresHandle = "🌪️ Bão Cát Tận Thế", false
-        
-        tool.Activated:Connect(function()
-            local char = player.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            
-            local core = CreateParticleCore(char.HumanoidRootPart.CFrame)
-            
-            -- Đổi màu trời
-            local cc = Instance.new("ColorCorrectionEffect", Lighting)
-            TweenService:Create(cc, TweenInfo.new(1), {TintColor = Color3.fromRGB(200, 150, 50), Contrast = 0.5}):Play()
-            
-            -- Tạo gió lốc bằng Particles
-            local storm = Instance.new("ParticleEmitter", core)
-            storm.Texture = "rbxassetid://243660364" -- Vệt mờ
-            storm.Color = ColorSequence.new(Color3.fromRGB(210, 180, 140))
-            storm.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 5), NumberSequenceKeypoint.new(1, 30)})
-            storm.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.2), NumberSequenceKeypoint.new(1, 1)})
-            storm.Lifetime = NumberRange.new(2, 4)
-            storm.Rate = 500 -- Vắt kiệt máy là đây
-            storm.Speed = NumberRange.new(50, 100)
-            storm.SpreadAngle = Vector2.new(180, 180) -- Bắn ra mọi hướng
-            storm.EmissionDirection = Enum.NormalId.Top
-            storm.Rotation = NumberRange.new(0, 360)
-            storm.RotSpeed = NumberRange.new(-50, 50)
-            
-            -- Rung màn hình nhẹ nhưng liên tục
-            task.spawn(function()
-                for i = 1, 40 do
-                    Camera.CFrame = Camera.CFrame * CFrame.new(math.random(-1,1), math.random(-1,1), math.random(-1,1))
-                    task.wait(0.1)
-                end
-            end)
-            
-            task.wait(3)
-            storm.Enabled = false
-            TweenService:Create(cc, TweenInfo.new(2), {TintColor = Color3.fromRGB(255, 255, 255), Contrast = 0}):Play()
-            Debris:AddItem(core, 4)
-            Debris:AddItem(cc, 2)
-        end)
+tool.Activated:Connect(function()
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") or cooldown then return end
+    cooldown = true
+    
+    local root = char.HumanoidRootPart
+    local head = char:FindFirstChild("Head")
+    
+    -- 1. Đẩy nhân vật bay lên trời 30 studs
+    root.Velocity = Vector3.new(0, 0, 0)
+    root.CFrame = root.CFrame * CFrame.new(0, 30, 0)
+    root.Anchored = true -- Khóa trên không trung
+    
+    -- 2. Rung màn hình nhẹ & Hiệu ứng tối sầm vũ trụ
+    local cc = Instance.new("ColorCorrectionEffect", Lighting)
+    TweenService:Create(cc, TweenInfo.new(1), {Brightness = -0.5, Contrast = 1, TintColor = Color3.fromRGB(255, 100, 100)}):Play()
+    
+    task.wait(0.5)
+    
+    -- 3. Hét lên tên Lĩnh Vực (Bong bóng chat đỏ)
+    if head then
+        ChatService:Chat(head, "SÁT THẦN LĨNH VỰC!!!", Enum.ChatColor.Red)
     end
-})
-
--- ==========================================
--- 2. Quả Cầu Sinh Mệnh (Cây Thế Giới)
--- ==========================================
-TabMax:CreateButton({
-    Name = "🌿 Miền Đất Hứa",
-    Callback = function()
-        local tool = Instance.new("Tool", player.Backpack)
-        tool.Name, tool.RequiresHandle = "🌿 Miền Đất Hứa", false
-        
-        tool.Activated:Connect(function()
-            local char = player.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            
-            local core = CreateParticleCore(char.HumanoidRootPart.CFrame * CFrame.new(0, -3, 0))
-            
-            -- Đổi không gian sang tone thần tiên
-            local bloom = Instance.new("BloomEffect", Lighting)
-            bloom.Intensity = 1.5
-            bloom.Size = 24
-            
-            -- Hiệu ứng bung búp mầm xanh
-            local aura = Instance.new("ParticleEmitter", core)
-            aura.Texture = "rbxassetid://1084964658" -- Hạt sáng tròn
-            aura.Color = ColorSequence.new(Color3.fromRGB(50, 255, 100))
-            aura.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.5, 2), NumberSequenceKeypoint.new(1, 0)})
-            aura.Lifetime = NumberRange.new(3, 5)
-            aura.Rate = 200
-            aura.Speed = NumberRange.new(5, 10)
-            aura.EmissionDirection = Enum.NormalId.Top
-            aura.SpreadAngle = Vector2.new(90, 90) -- Bung lên trên như cái phễu
-            
-            -- Hạt đom đóm bay lơ lửng
-            local firefly = Instance.new("ParticleEmitter", core)
-            firefly.Texture = "rbxassetid://1084964658"
-            firefly.Color = ColorSequence.new(Color3.fromRGB(200, 255, 150))
-            firefly.Size = NumberSequence.new(0.5)
-            firefly.Lifetime = NumberRange.new(4, 6)
-            firefly.Rate = 50
-            firefly.Speed = NumberRange.new(2, 5)
-            firefly.Acceleration = Vector3.new(0, 2, 0)
-            
-            task.wait(4)
-            aura.Enabled = false
-            firefly.Enabled = false
-            TweenService:Create(bloom, TweenInfo.new(2), {Intensity = 0, Size = 0}):Play()
-            Debris:AddItem(core, 6)
-            Debris:AddItem(bloom, 2)
-        end)
-    end
-})
-
--- ==========================================
--- 3. Cột Sáng Phán Quyết
--- ==========================================
-TabMax:CreateButton({
-    Name = "✝️ Phán Quyết Thiên Thần",
-    Callback = function()
-        local tool = Instance.new("Tool", player.Backpack)
-        tool.Name, tool.RequiresHandle = "✝️ Phán Quyết Thiên Thần", false
-        
-        tool.Activated:Connect(function()
-            local char = player.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            
-            -- Đẩy lên trời
-            char.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0)
-            task.wait(0.5)
-            char.HumanoidRootPart.Anchored = true -- Giữ lơ lửng
-            
-            local core = CreateParticleCore(char.HumanoidRootPart.CFrame * CFrame.new(0, -2, 0))
-            
-            -- Camera rung bần bật
-            task.spawn(function()
-                for i = 1, 20 do Camera.CFrame = Camera.CFrame * CFrame.new(math.random(-2,2), math.random(-2,2), 0) task.wait(0.05) end
-            end)
-            
-            -- Cột sáng chiếu từ trên xuống
-            local beam = Instance.new("ParticleEmitter", core)
-            beam.Texture = "rbxassetid://1351185340" -- Hạt beam dọc
-            beam.Color = ColorSequence.new(Color3.fromRGB(255, 255, 200))
-            beam.Size = NumberSequence.new(10)
-            beam.Lifetime = NumberRange.new(1)
-            beam.Rate = 50
-            beam.Speed = NumberRange.new(-200) -- Bắn từ trên xuống
-            beam.EmissionDirection = Enum.NormalId.Top
-            
-            -- Vòng sáng bung ra
-            local ring = Instance.new("ParticleEmitter", core)
-            ring.Texture = "rbxassetid://243660364"
-            ring.Color = ColorSequence.new(Color3.fromRGB(255, 200, 0))
-            ring.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 40)})
-            ring.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)})
-            ring.Lifetime = NumberRange.new(0.5)
-            ring.Rate = 10
-            ring.Speed = NumberRange.new(0)
-            
-            task.wait(1.5)
-            char.HumanoidRootPart.Anchored = false
-            beam.Enabled = false
-            ring.Enabled = false
-            Debris:AddItem(core, 1)
-        end)
-    end
-})
+    
+    task.wait(0.5)
+    
+    -- 4. Tạo Không Gian Lĩnh Vực (Dome)
+    local dome = Instance.new("Part", workspace)
+    dome.Shape = Enum.PartType.Ball
+    dome.Size = Vector3.new(5, 5, 5)
+    dome.CFrame = root.CFrame
+    dome.Anchored = true
+    dome.CanCollide = false
+    dome.Material = Enum.Material.ForceField
+    dome.Color = Color3.fromRGB(150, 0, 0)
+    
+    -- Cú nổ mở rộng Lĩnh Vực
+    TweenService:Create(dome, TweenInfo.new(1, Enum.EasingStyle.Exponential), {Size = Vector3.new(150, 150, 150), Transparency = 0.5}):Play()
+    TweenService:Create(Camera, TweenInfo.new(1), {FieldOfView = 90}):Play()
+    
+    -- 5. Tạo Mưa Máu (Blood Rain)
+    local rainPart = Instance.new("Part", dome)
+    rainPart.Size = Vector3.new(140, 1, 140)
+    rainPart.CFrame = root.CFrame * CFrame.new(0, 70, 0) -- Nằm tít trên đỉnh Dome
+    rainPart.Anchored = true
+    rainPart.CanCollide = false
+    rainPart.Transparency = 1
+    
+    local bloodRain = Instance.new("ParticleEmitter", rainPart)
+    bloodRain.Texture = "rbxassetid://243660364" -- Vệt thẳng
+    bloodRain.Color = ColorSequence.new(Color3.fromRGB(255, 0, 0))
+    bloodRain.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 2)})
+    bloodRain.Lifetime = NumberRange.new(2)
+    bloodRain.Rate = 1000 -- Đổ mưa xối xả
+    bloodRain.Speed = NumberRange.new(100)
+    bloodRain.EmissionDirection = Enum.NormalId.Bottom -- Trút xuống dưới
+    
+    -- 6. Vòng lặp duy trì Sét giật trong 10 giây
+    local startTime = tick()
+    task.spawn(function()
+        while tick() - startTime < 10 do
+            -- Cứ mỗi 0.1s đánh 1 tia sét ngẫu nhiên quanh Lĩnh Vực
+            CreateLightning(root.Position, 60)
+            -- Màn hình giật nhẹ liên tục
+            Camera.CFrame = Camera.CFrame * CFrame.new(math.random(-1,1), math.random(-1,1), math.random(-1,1)) * 0.2
+            task.wait(0.1)
+        end
+    end)
+    
+    -- Chờ đủ 10 giây
+    task.wait(10)
+    
+    -- 7. Thu hồi Lĩnh Vực
+    bloodRain.Enabled = false
+    TweenService:Create(dome, TweenInfo.new(1), {Size = Vector3.new(0, 0, 0)}):Play()
+    TweenService:Create(cc, TweenInfo.new(1), {Brightness = 0, Contrast = 0, TintColor = Color3.fromRGB(255, 255, 255)}):Play()
+    TweenService:Create(Camera, TweenInfo.new(1), {FieldOfView = 70}):Play()
+    
+    task.wait(1)
+    
+    root.Anchored = false -- Thả chị rơi xuống đất lại
+    dome:Destroy()
+    cc:Destroy()
+    
+    task.wait(2) -- Cooldown để khỏi spam
+    cooldown = false
+end)
