@@ -1,8 +1,4 @@
--- ==========================================
--- TÊN SẢN PHẨM: MINT PRAGMATIC ARSENAL (BẢN TỐI HẬU)
--- TÁC GIẢ: Em trai làm mướn
--- ĐẶC ĐIỂM: The Flash Dash, Thánh Quang xuyên trời, Ma Bất Tử!
--- ==========================================
+
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
