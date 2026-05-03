@@ -1,4 +1,3 @@
- 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -15,7 +14,7 @@ local ghostActive = false
 local ghostConn
 
 -- ==========================================
--- HÀM HỖ TRỢ (Đã fix lỗi thiếu hàm)
+-- HÀM HỖ TRỢ
 -- ==========================================
 local function PlaySound(id, pitch, vol)
     if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
@@ -149,33 +148,37 @@ TabSkill:CreateButton({
     end
 })
 
-  {"👻 Quỷ Ảnh Xuyên Tường", function(root, char)
+-- ĐÃ FIX LỖI Ở ĐÂY
+TabSkill:CreateButton({
+    Name = "Nhận: 👻 Quỷ Ảnh Xuyên Tường",
+    Callback = function()
+        local tool = Instance.new("Tool", player.Backpack)
+        tool.Name, tool.RequiresHandle = "👻 Quỷ Ảnh Xuyên Tường", false
+        tool.Activated:Connect(function()
+            local char = player.Character
+            if not char then return end
+            local root = char:FindFirstChild("HumanoidRootPart")
+            if not root then return end
 
-        local result = workspace:Raycast(root.Position, root.CFrame.LookVector * 4, RaycastParams.new())
+            local result = workspace:Raycast(root.Position, root.CFrame.LookVector * 4, RaycastParams.new())
+            if not result then return end 
 
-        if not result then return end 
+            PlaySound(231917744, 0.5)
 
-        PlaySound(231917744, 0.5, root)
+            local oldMat = {}
+            for _, v in pairs(char:GetChildren()) do
+                if v:IsA("BasePart") then oldMat[v] = v.Material; v.Material = Enum.Material.ForceField; v.CanCollide = false end
+            end
 
-        local oldMat = {}
+            local tw = TweenService:Create(root, TweenInfo.new(1.5, Enum.EasingStyle.Linear), {CFrame = root.CFrame * CFrame.new(0, 0, -8)})
+            tw:Play(); tw.Completed:Wait()
 
-        for _, v in pairs(char:GetChildren()) do
-
-            if v:IsA("BasePart") then oldMat[v] = v.Material; v.Material = Enum.Material.ForceField; v.CanCollide = false end
-
-        end
-
-        local tw = TweenService:Create(root, TweenInfo.new(1.5, Enum.EasingStyle.Linear), {CFrame = root.CFrame * CFrame.new(0, 0, -8)})
-
-        tw:Play(); tw.Completed:Wait()
-
-        for _, v in pairs(char:GetChildren()) do
-
-            if v:IsA("BasePart") then v.Material = oldMat[v] or Enum.Material.Plastic; v.CanCollide = true end
-
-        end
-
-    end},
+            for _, v in pairs(char:GetChildren()) do
+                if v:IsA("BasePart") then v.Material = oldMat[v] or Enum.Material.Plastic; v.CanCollide = true end
+            end
+        end)
+    end
+})
 
 TabSkill:CreateButton({
     Name = "Nhận: ✝️ Thánh Quang Hộ Thể",
@@ -223,8 +226,19 @@ TabSkill:CreateButton({
         end)
     end
 })
+
+TabSkill:CreateButton({
+    Name = "🧹 Dọn sạch túi đồ",
+    Callback = function()
+        for _, v in pairs(player.Backpack:GetChildren()) do v:Destroy() end
+        if player.Character then 
+            for _, v in pairs(player.Character:GetChildren()) do if v:IsA("Tool") then v:Destroy() end end 
+        end
+    end
+})
+
 -- ==========================================
--- TAB 2: GHOST MODE TIẾN HÓA (ĐÃ CHUYỂN THÀNH ITEM)
+-- TAB 2: GHOST MODE TIẾN HÓA 
 -- ==========================================
 TabGhost:CreateSection("Pháp Bảo: Ảo Ảnh Hắc Ám")
 
@@ -247,39 +261,29 @@ TabGhost:CreateButton({
             if not hum or not root then return end
             
             if isGhost then
-                -- BẮT ĐẦU TRẠNG THÁI GHOST
-                PlaySound(231917744, 0.8) -- Âm thanh kích hoạt
+                PlaySound(231917744, 0.8) 
                 
-                -- Làm mờ nhân vật
                 for _, p in ipairs(char:GetDescendants()) do 
-                    if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then 
-                        p.Transparency = 0.5 
-                    end 
+                    if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.Transparency = 0.5 end 
                 end
                 
                 ghostEffectConn = RunService.RenderStepped:Connect(function()
                     if not char or not hum then return end
-                    
                     if currentLevel == 1 then
-                        -- CẤP 1: Đứng yên không thể di chuyển
                         hum.WalkSpeed = 0
                         hum.JumpPower = 0
                     elseif currentLevel == 2 then
-                        -- CẤP 2: Di chuyển bình thường
                         hum.WalkSpeed = 16
                         hum.JumpPower = 50
                     elseif currentLevel == 3 then
-                        -- CẤP 3: Chạy nhanh + Tạo bóng ma (Trail)
                         hum.WalkSpeed = 45
                         hum.JumpPower = 50
                         if hum.MoveDirection.Magnitude > 0 then CreateGhostTrail(char) end
                     elseif currentLevel == 4 then
-                        -- CẤP 4: Siêu tốc độ + Sấm sét tận thế
                         hum.WalkSpeed = 100
                         hum.JumpPower = 100
                         if hum.MoveDirection.Magnitude > 0 then CreateGhostTrail(char) end
                         
-                        -- Hiệu ứng sét đánh xung quanh khi di chuyển
                         if math.random(1, 15) == 1 then
                             local l = Instance.new("Part", workspace)
                             l.Size = Vector3.new(1, math.random(20, 100), 1)
@@ -291,15 +295,11 @@ TabGhost:CreateButton({
                         end
                     end
                 end)
-                
                 Rayfield:Notify({Title = "Ghost Mode", Content = "Đã vào trạng thái linh hồn (Cấp "..currentLevel..")", Duration = 2})
             else
-                -- TẮT TRẠNG THÁI GHOST
                 if ghostEffectConn then ghostEffectConn:Disconnect() end
                 for _, p in ipairs(char:GetDescendants()) do 
-                    if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then 
-                        p.Transparency = 0 
-                    end 
+                    if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.Transparency = 0 end 
                 end
                 hum.WalkSpeed = 16
                 hum.JumpPower = 50
@@ -307,7 +307,6 @@ TabGhost:CreateButton({
             end
         end)
         
-        -- Khi vứt tool hoặc đổi sang item khác thì tự tắt hiệu ứng để tránh lỗi WalkSpeed
         tool.Unequipped:Connect(function()
             isGhost = false
             if ghostEffectConn then ghostEffectConn:Disconnect() end
@@ -322,19 +321,7 @@ TabGhost:CreateButton({
         end)
     end
 })
-TabSkill:CreateButton({
-    Name = "🧹 Dọn sạch túi đồ",
-    Callback = function()
-        for _, v in pairs(player.Backpack:GetChildren()) do v:Destroy() end
-        if player.Character then 
-            for _, v in pairs(player.Character:GetChildren()) do if v:IsA("Tool") then v:Destroy() end end 
-        end
-    end
-})
 
--- ==========================================
--- TAB 2: GHOST MODE TIẾN HÓA
--- ==========================================
 TabGhost:CreateSection("Ảo Ảnh Hắc Ám VIP")
 TabGhost:CreateToggle({
     Name = "Kích Hoạt Ghost Mode",
@@ -354,10 +341,8 @@ TabGhost:CreateToggle({
             
             ghostConn = RunService.RenderStepped:Connect(function()
                 if not char or not hum or not root then return end
-                if currentLevel == 1 then
-                    hum.WalkSpeed = 0 
-                elseif currentLevel == 2 then
-                    hum.WalkSpeed = 16 
+                if currentLevel == 1 then hum.WalkSpeed = 0 
+                elseif currentLevel == 2 then hum.WalkSpeed = 16 
                 elseif currentLevel == 3 then
                     hum.WalkSpeed = 40 
                     if hum.MoveDirection.Magnitude > 0 then CreateGhostTrail(char) end
