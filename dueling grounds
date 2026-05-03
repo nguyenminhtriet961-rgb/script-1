@@ -1,7 +1,6 @@
 -- ==========================================
--- TÊN SẢN PHẨM: ĐẠI ĐIỂN TIÊN ĐẠO SÁT CHIÊU (BẢN GUI THUẦN)
+-- TÊN SẢN PHẨM: ĐẠI ĐIỂN TIÊN ĐẠO SÁT CHIÊU (BẢN ÉP BUỘC HIỂN THỊ)
 -- TÁC GIẢ: Em trai làm mướn
--- ĐẶC ĐIỂM: Kháng 100% lỗi không hiện Menu của Delta
 -- ==========================================
 
 local player = game:GetService("Players").LocalPlayer
@@ -14,13 +13,18 @@ local Camera = game.Workspace.CurrentCamera
 _G.IsCasting = false
 
 -- ==========================================
--- TẠO GIAO DIỆN THUẦN (KHÔNG DÙNG LOADSTRING)
+-- TẠO GIAO DIỆN VÀO THẲNG PLAYERGUI (BỎ QUA COREGUI ĐỂ CHỐNG LỖI DELTA)
 -- ==========================================
-local CoreGui = pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui") or player:WaitForChild("PlayerGui")
-if CoreGui:FindFirstChild("MinTTuTienHub") then CoreGui.MinTTuTienHub:Destroy() end
+local PlayerGui = player:WaitForChild("PlayerGui")
 
-local ScreenGui = Instance.new("ScreenGui", CoreGui)
+-- Xóa bản cũ nếu lỡ bấm 2 lần
+if PlayerGui:FindFirstChild("MinTTuTienHub") then 
+    PlayerGui.MinTTuTienHub:Destroy() 
+end
+
+local ScreenGui = Instance.new("ScreenGui", PlayerGui)
 ScreenGui.Name = "MinTTuTienHub"
+ScreenGui.ResetOnSpawn = false -- Giữ menu khi chị chết/hồi sinh
 
 -- Nút Tắt/Mở (Góc trái)
 local ToggleBtn = Instance.new("TextButton", ScreenGui)
@@ -66,9 +70,7 @@ ToggleBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
--- ==========================================
--- HÀM HỖ TRỢ VFX & SFX
--- ==========================================
+-- Hàm hỗ trợ
 local function Earthquake(intensity, duration)
     task.spawn(function()
         local start = tick()
@@ -249,7 +251,7 @@ local SátChiêuList = {
 }
 
 -- ==========================================
--- GẮN NÚT CHO TỪNG CHIÊU
+-- GẮN NÚT
 -- ==========================================
 for i, item in ipairs(SátChiêuList) do
     local btn = Instance.new("TextButton", ScrollFrame)
