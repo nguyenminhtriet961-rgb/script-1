@@ -1,6 +1,7 @@
 -- ==========================================
--- TÊN SẢN PHẨM: ĐẠI ĐIỂN TIÊN ĐẠO SÁT CHIÊU (BẢN ÉP BUỘC HIỂN THỊ)
+-- TÊN SẢN PHẨM: ĐẠI ĐIỂN TIÊN ĐẠO SÁT CHIÊU (BẢN KHÔNG CẦN MENU)
 -- TÁC GIẢ: Em trai làm mướn
+-- ĐẶC ĐIỂM: Chạy là nhét thẳng đồ vào túi, bất chấp Delta lỏ!
 -- ==========================================
 
 local player = game:GetService("Players").LocalPlayer
@@ -13,64 +14,8 @@ local Camera = game.Workspace.CurrentCamera
 _G.IsCasting = false
 
 -- ==========================================
--- TẠO GIAO DIỆN VÀO THẲNG PLAYERGUI (BỎ QUA COREGUI ĐỂ CHỐNG LỖI DELTA)
+-- HÀM HỖ TRỢ VFX & SFX
 -- ==========================================
-local PlayerGui = player:WaitForChild("PlayerGui")
-
--- Xóa bản cũ nếu lỡ bấm 2 lần
-if PlayerGui:FindFirstChild("MinTTuTienHub") then 
-    PlayerGui.MinTTuTienHub:Destroy() 
-end
-
-local ScreenGui = Instance.new("ScreenGui", PlayerGui)
-ScreenGui.Name = "MinTTuTienHub"
-ScreenGui.ResetOnSpawn = false -- Giữ menu khi chị chết/hồi sinh
-
--- Nút Tắt/Mở (Góc trái)
-local ToggleBtn = Instance.new("TextButton", ScreenGui)
-ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
-ToggleBtn.Position = UDim2.new(0, 10, 0, 10)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-ToggleBtn.Font = Enum.Font.GothamBold
-ToggleBtn.Text = "MinT"
-ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleBtn.TextSize = 16
-Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
-
--- Bảng Menu Chính
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 260, 0, 350)
-MainFrame.Position = UDim2.new(0.5, -130, 0.5, -175)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-MainFrame.Active = true
-MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
-
-local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.BackgroundColor3 = Color3.fromRGB(40, 0, 0)
-Title.Font = Enum.Font.GothamBold
-Title.Text = "☠️ 12 SÁT CHIÊU TU TIÊN"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 14
-Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 8)
-
-local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
-ScrollFrame.Size = UDim2.new(1, -10, 1, -40)
-ScrollFrame.Position = UDim2.new(0, 5, 0, 35)
-ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.ScrollBarThickness = 5
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 600)
-
-local UIList = Instance.new("UIListLayout", ScrollFrame)
-UIList.Padding = UDim.new(0, 5)
-UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-ToggleBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
-end)
-
--- Hàm hỗ trợ
 local function Earthquake(intensity, duration)
     task.spawn(function()
         local start = tick()
@@ -251,20 +196,12 @@ local SátChiêuList = {
 }
 
 -- ==========================================
--- GẮN NÚT
+-- BƠM THẲNG 12 SÁT CHIÊU VÀO TÚI ĐỒ
 -- ==========================================
-for i, item in ipairs(SátChiêuList) do
-    local btn = Instance.new("TextButton", ScrollFrame)
-    btn.Size = UDim2.new(1, -10, 0, 40)
-    btn.BackgroundColor3 = (i == 12) and Color3.fromRGB(150, 0, 0) or Color3.fromRGB(50, 50, 50)
-    btn.Font = Enum.Font.GothamSemibold
-    btn.Text = item[1]
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.TextSize = 12
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
-    
-    btn.MouseButton1Click:Connect(function()
-        local tool = Instance.new("Tool", player.Backpack)
+for _, item in ipairs(SátChiêuList) do
+    -- Kiểm tra chống trùng lặp nếu chạy script nhiều lần
+    if not player.Backpack:FindFirstChild(item[1]) and not (player.Character and player.Character:FindFirstChild(item[1])) then
+        local tool = Instance.new("Tool")
         tool.Name, tool.RequiresHandle = item[1], false
         tool.Activated:Connect(function()
             local char = player.Character
@@ -274,5 +211,25 @@ for i, item in ipairs(SátChiêuList) do
             item[2](char.HumanoidRootPart)
             _G.IsCasting = false
         end)
+        tool.Parent = player.Backpack
+    end
+end
+
+-- ==========================================
+-- CÔNG CỤ DỌN RÁC (CHỔI QUÉT)
+-- ==========================================
+if not player.Backpack:FindFirstChild("🧹 DỌN SẠCH CHIÊU THỨC") then
+    local clearTool = Instance.new("Tool")
+    clearTool.Name, clearTool.RequiresHandle = "🧹 DỌN SẠCH CHIÊU THỨC", false
+    clearTool.Activated:Connect(function()
+        for _, v in pairs(player.Backpack:GetChildren()) do 
+            if v:IsA("Tool") and (v.Name:find("Thức") or v.Name:find("🧹")) then v:Destroy() end 
+        end
+        if player.Character then
+            for _, v in pairs(player.Character:GetChildren()) do
+                if v:IsA("Tool") and (v.Name:find("Thức") or v.Name:find("🧹")) then v:Destroy() end 
+            end
+        end
     end)
+    clearTool.Parent = player.Backpack
 end
