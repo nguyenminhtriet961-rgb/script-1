@@ -1,4 +1,8 @@
- 
+-- ==========================================
+-- TÊN SẢN PHẨM: MinT Arsenal Tier System (20+ Skills)
+-- TÁC GIẢ: Em trai (Làm mướn nhưng có tâm)
+-- ==========================================
+
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local player = game:GetService("Players").LocalPlayer
 local TweenService = game:GetService("TweenService")
@@ -6,200 +10,170 @@ local Debris = game:GetService("Debris")
 local Camera = game.Workspace.CurrentCamera
 
 local Window = Rayfield:CreateWindow({
-    Name = "ANH TRIẾT Arsenal Hub 💣",
-    LoadingTitle = "Đang rèn 14 loại vũ khí...",
-    LoadingSubtitle = "Nhớ đừng spam gây lag máy",
+    Name = "MinT Tier Arsenal ⚔️",
+    LoadingTitle = "Đang khởi tạo 20 kỹ năng tối thượng...",
+    LoadingSubtitle = "Đẹp tuyệt trần nhưng nhẹ máy",
     ConfigurationSaving = { Enabled = false },
-    Discord = { Enabled = false },
     KeySystem = false,
 })
 
-local TabArsenal = Window:CreateTab("🎒 Kho Đồ", nil)
+-- Các Tab phân cấp
+local TabTier1 = Window:CreateTab("🔰 Cấp 1 (Thực Dụng)", nil)
+local TabTier4 = Window:CreateTab("👑 Cấp 4 (Tuyệt Trần)", nil)
+local TabManage = Window:CreateTab("⚙️ Quản Lý", nil)
 
--- Hàm kiểm tra tránh spam rác hòm đồ
-local function CheckTool(toolName)
-    local char = player.Character
-    if player.Backpack:FindFirstChild(toolName) or (char and char:FindFirstChild(toolName)) then
-        Rayfield:Notify({Title = "Lỗi!", Content = "Chị đã có món này rồi!", Duration = 2})
-        return true
-    end
-    return false
+-- ==========================================
+-- HÀM BỔ TRỢ HIỆU ỨNG (VFX ENGINE)
+-- ==========================================
+local function ScreenShake(intensity, duration)
+    task.spawn(function()
+        local start = tick()
+        while tick() - start < duration do
+            local offset = Vector3.new(math.random(-1,1), math.random(-1,1), math.random(-1,1)) * intensity
+            Camera.CFrame = Camera.CFrame * CFrame.new(offset)
+            task.wait()
+        end
+    end)
+end
+
+local function CreateEffectPart(cf, size, color, material, duration)
+    local p = Instance.new("Part", workspace)
+    p.Anchored, p.CanCollide, p.Size, p.CFrame = true, false, size, cf
+    p.Color, p.Material = color, material
+    TweenService:Create(p, TweenInfo.new(duration), {Size = Vector3.new(0,0,0), Transparency = 1}):Play()
+    Debris:AddItem(p, duration)
+    return p
 end
 
 -- ==========================================
--- HỆ THỐNG VŨ KHÍ CHÍNH (CÓ VFX RIÊNG)
+-- CẤP 1: 10 KỸ NĂNG THỰC DỤNG
 -- ==========================================
-TabArsenal:CreateSection("🔥 Vũ Khí Đặc Quyền")
+local Tier1List = {
+    {"⚡ Lướt Sơ Cấp", function(r) r.CFrame *= CFrame.new(0,0,-30) end},
+    {"🌀 Nhảy Gió", function(r) r.Velocity = Vector3.new(0,100,0) end},
+    {"🛡️ Giáp Năng Lượng", function(r, c) Instance.new("ForceField", c) end},
+    {"👟 Chạy Nhanh", function(r, c, h) h.WalkSpeed = 60 task.wait(3) h.WalkSpeed = 16 end},
+    {"🎈 Khinh Công", function(r) local b = Instance.new("BodyVelocity", r) b.Velocity = Vector3.new(0,15,0) Debris:AddItem(b,2) end},
+    {"🌑 Khói Đen", function(r) local s = Instance.new("Smoke", r) Debris:AddItem(s,3) end},
+    {"✨ Hồi Phục Ảo", function(r) local s = Instance.new("Sparkles", r) Debris:AddItem(s,2) end},
+    {"📍 Đánh Dấu", function(r) CreateEffectPart(r.CFrame, Vector3.new(5,5,5), Color3.fromRGB(255,255,0), "Neon", 5) end},
+    {"🧊 Đóng Băng Nhẹ", function(r) r.Anchored = true task.wait(2) r.Anchored = false end},
+    {"🔥 Vòng Lửa", function(r) local f = Instance.new("Fire", r) f.Size = 10 Debris:AddItem(f,3) end}
+}
 
--- 1. TIA CHỚP (ĐÃ THÊM PROCEDURAL ANIMATION)
-TabArsenal:CreateButton({
-    Name = "⚡ Tia Chớp MinT (Lướt + Camera Anim)",
-    Callback = function()
-        if CheckTool("⚡ Tia Chớp MinT") then return end
-        local tool = Instance.new("Tool", player.Backpack)
-        tool.Name, tool.RequiresHandle = "⚡ Tia Chớp MinT", false
-        local cooldown = false
-
-        tool.Activated:Connect(function()
-            local char = player.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            if cooldown then return end
-            cooldown = true
-            
-            local root = char.HumanoidRootPart
-            
-            -- [ANIMATION CAMERA MƯỢT]
-            local blur = Instance.new("BlurEffect", Camera)
-            blur.Size = 24
-            TweenService:Create(Camera, TweenInfo.new(0.2, Enum.EasingStyle.Cubic), {FieldOfView = 100}):Play()
-            
-            local raycastResult = game.Workspace:Raycast(root.Position, root.CFrame.LookVector * 50, RaycastParams.new())
-            root.CFrame = raycastResult and CFrame.new(raycastResult.Position) or (root.CFrame * CFrame.new(0, 0, -50))
-            
-            -- Trả camera về bình thường
-            task.wait(0.2)
-            TweenService:Create(Camera, TweenInfo.new(0.3, Enum.EasingStyle.Cubic), {FieldOfView = 70}):Play()
-            TweenService:Create(blur, TweenInfo.new(0.3), {Size = 0}):Play()
-            Debris:AddItem(blur, 0.4)
-            
-            task.wait(1)
-            cooldown = false
-        end)
-    end,
-})
-
--- ==========================================
--- HỆ THỐNG 10 VẬT PHẨM MỚI (TỐI ƯU BẰNG TABLE LẶP)
--- ==========================================
-TabArsenal:CreateSection("🛠️ 10 Vật Phẩm Phụ Trợ (Mới)")
-
--- Danh sách 10 kỹ năng được viết dưới dạng mảng để tiết kiệm RAM
-local extraTools = {
-    {"👻 Áo Choàng Tàng Hình", function(root, char)
-        for _, v in pairs(char:GetDescendants()) do
-            if v:IsA("BasePart") or v:IsA("Decal") then v.Transparency = 1 end
+for _, item in ipairs(Tier1List) do
+    TabTier1:CreateButton({
+        Name = item[1],
+        Callback = function()
+            local tool = Instance.new("Tool", player.Backpack)
+            tool.Name, tool.RequiresHandle = item[1], false
+            tool.Activated:Connect(function()
+                local char = player.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    item[2](char.HumanoidRootPart, char, char:FindFirstChild("Humanoid"))
+                end
+            end)
         end
+    })
+end
+
+-- ==========================================
+-- CẤP 4: 10 KỸ NĂNG TUYỆT TRẦN (VFX KHỦNG)
+-- ==========================================
+local Tier4List = {
+    {"🌌 Ma Trận MinT (Lướt Siêu Cấp)", function(r) 
+        ScreenShake(0.5, 0.4)
+        local blur = Instance.new("BlurEffect", Camera)
+        blur.Size = 50
+        for i=1, 5 do 
+            CreateEffectPart(r.CFrame, Vector3.new(10,10,10), Color3.fromRGB(0,255,255), "ForceField", 0.5)
+            r.CFrame *= CFrame.new(0,0,-15)
+            task.wait(0.05)
+        end
+        TweenService:Create(blur, TweenInfo.new(0.5), {Size = 0}):Play()
+        Debris:AddItem(blur, 0.5)
+    end},
+    {"☄️ Thiên Thạch Giáng Trần", function(r)
+        local ball = CreateEffectPart(r.CFrame * CFrame.new(0,50,0), Vector3.new(15,15,15), Color3.fromRGB(255,100,0), "Neon", 1)
+        TweenService:Create(ball, TweenInfo.new(0.5), {CFrame = r.CFrame}):Play()
+        task.wait(0.5)
+        ScreenShake(2, 0.5)
+        CreateEffectPart(r.CFrame, Vector3.new(40,2,40), Color3.fromRGB(255,50,0), "Neon", 1)
+    end},
+    {"🌸 Vũ Điệu Cánh Hoa", function(r)
+        for i=1, 12 do
+            local p = CreateEffectPart(r.CFrame * CFrame.Angles(0, math.rad(i*30), 0) * CFrame.new(0,0,10), Vector3.new(2,2,2), Color3.fromRGB(255,150,200), "Neon", 2)
+            p.Anchored = false
+        end
+    end},
+    {"👁️ Không Gian Ảo (Tàng Hình Xịn)", function(r, c)
+        for _, v in pairs(c:GetDescendants()) do if v:IsA("BasePart") then TweenService:Create(v, TweenInfo.new(0.5), {Transparency = 0.9}):Play() end end
+        local cc = Instance.new("ColorCorrectionEffect", Camera)
+        cc.Saturation = -1
         task.wait(5)
-        for _, v in pairs(char:GetDescendants()) do
-            if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then v.Transparency = 0 end
-            if v:IsA("Decal") then v.Transparency = 0 end
+        cc:Destroy()
+        for _, v in pairs(c:GetDescendants()) do if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then v.Transparency = 0 end end
+    end},
+    {"⚡ Lôi Thần Nộ", function(r)
+        for i=1, 10 do
+            CreateEffectPart(r.CFrame * CFrame.new(math.random(-20,20), 20, math.random(-20,20)), Vector3.new(1, 40, 1), Color3.fromRGB(255,255,255), "Neon", 0.3)
+            ScreenShake(0.3, 0.1)
+            task.wait(0.1)
         end
     end},
-    {"👟 Giày Cuồng Phong (Tốc chạy)", function(root, char, hum)
-        hum.WalkSpeed = 100
-        task.wait(3)
-        hum.WalkSpeed = 16
+    {"🌑 Hắc Kỷ Nguyên (Bom Mù Xịn)", function(r)
+        local sky = Instance.new("Part", workspace)
+        sky.Size, sky.CFrame, sky.Anchored, sky.CanCollide, sky.Material, sky.Color = Vector3.new(100,100,100), r.CFrame, true, false, "ForceField", Color3.new(0,0,0)
+        TweenService:Create(sky, TweenInfo.new(1), {Size = Vector3.new(1,1,1), Transparency = 1}):Play()
+        Debris:AddItem(sky, 1)
     end},
-    {"🛡️ Lá Chắn Bất Tử", function(root, char)
-        local ff = Instance.new("ForceField", char)
-        Debris:AddItem(ff, 5)
+    {"🧊 Hàn Băng Tuyệt Diệt", function(r)
+        ScreenShake(1, 0.5)
+        local ice = CreateEffectPart(r.CFrame, Vector3.new(1,1,1), Color3.fromRGB(0,255,255), "Ice", 2)
+        TweenService:Create(ice, TweenInfo.new(0.5), {Size = Vector3.new(30,10,30)}):Play()
     end},
-    {"❄️ Đóng Băng Bản Thân (Né đòn)", function(root, char)
-        root.Anchored = true
-        local ice = Instance.new("Part", root)
-        ice.Size = Vector3.new(5, 6, 5)
-        ice.Material, ice.Color = Enum.Material.Ice, Color3.fromRGB(150, 200, 255)
-        ice.Transparency, ice.Anchored, ice.CFrame = 0.5, true, root.CFrame
-        Debris:AddItem(ice, 3)
-        task.wait(3)
-        root.Anchored = false
+    {"👑 Hào Quang Nữ Vương", function(r)
+        local p = CreateEffectPart(r.CFrame * CFrame.new(0,10,0), Vector3.new(5,5,5), Color3.fromRGB(255,215,0), "Neon", 3)
+        p.Shape = "Ball"
+        Instance.new("Sparkles", p)
     end},
-    {"🔥 Hỏa Nộ (Vòng Lửa)", function(root, char)
-        local fire = Instance.new("Fire", root)
-        fire.Size = 15
-        Debris:AddItem(fire, 5)
+    {"🎭 Phân Thân Tối Thượng", function(r, c)
+        for i=1, 3 do
+            local cl = CreateEffectPart(r.CFrame * CFrame.new(i*5, 0, 0), Vector3.new(4,6,1), Color3.new(1,1,1), "ForceField", 3)
+            cl.Transparency = 0.5
+        end
     end},
-    {"🎈 Thuốc Khinh Công (Bay lơ lửng)", function(root, char)
-        local bv = Instance.new("BodyVelocity", root)
-        bv.Velocity = Vector3.new(0, 20, 0)
-        bv.MaxForce = Vector3.new(0, 100000, 0)
-        Debris:AddItem(bv, 3)
-    end},
-    {"💚 Hồi Máu Ảo (Troll)", function(root, char, hum)
-        local spark = Instance.new("Sparkles", root)
-        spark.SparkleColor = Color3.fromRGB(0, 255, 0)
-        Debris:AddItem(spark, 2)
-        -- Chỉ là hiệu ứng xanh lá, không hồi máu thật vì vướng server
-    end},
-    {"🎲 Dịch Chuyển Hỗn Loạn", function(root, char)
-        local rx, rz = math.random(-50, 50), math.random(-50, 50)
-        root.CFrame = root.CFrame * CFrame.new(rx, 50, rz)
-    end},
-    {"🌀 Bão Trọng Lực (Đẩy lùi)", function(root, char)
-        local blast = Instance.new("Part", workspace)
-        blast.Size, blast.Shape = Vector3.new(1,1,1), Enum.PartType.Ball
-        blast.Material, blast.Color = Enum.Material.ForceField, Color3.fromRGB(255, 50, 255)
-        blast.CFrame, blast.Anchored, blast.CanCollide = root.CFrame, true, false
-        TweenService:Create(blast, TweenInfo.new(0.5), {Size = Vector3.new(30, 30, 30), Transparency = 1}):Play()
-        Debris:AddItem(blast, 0.5)
-    end},
-    {"📉 Đột Tử (Tự hủy nghệ thuật)", function(root, char, hum)
-        local exp = Instance.new("Explosion", workspace)
-        exp.Position = root.Position
-        hum.Health = 0
+    {"💥 Vụ Nổ BigBang", function(r)
+        local b = CreateEffectPart(r.CFrame, Vector3.new(1,1,1), Color3.new(1,1,1), "Neon", 1)
+        b.Shape = "Ball"
+        TweenService:Create(b, TweenInfo.new(0.5), {Size = Vector3.new(100,100,100)}):Play()
+        ScreenShake(3, 0.8)
     end}
 }
 
--- Trình tạo tự động 10 nút vật phẩm
-for i, item in ipairs(extraTools) do
-    TabArsenal:CreateButton({
+for _, item in ipairs(Tier4List) do
+    TabTier4:CreateButton({
         Name = item[1],
         Callback = function()
-            if CheckTool(item[1]) then return end
             local tool = Instance.new("Tool", player.Backpack)
             tool.Name, tool.RequiresHandle = item[1], false
-            local cd = false
-            
             tool.Activated:Connect(function()
                 local char = player.Character
-                if char and char:FindFirstChild("HumanoidRootPart") and not cd then
-                    cd = true
-                    -- Gọi hàm kỹ năng
+                if char and char:FindFirstChild("HumanoidRootPart") then
                     item[2](char.HumanoidRootPart, char, char:FindFirstChild("Humanoid"))
-                    task.wait(2) -- Cooldown cơ bản
-                    cd = false
                 end
             end)
-        end,
+        end
     })
 end
--- ==========================================
--- CHỨC NĂNG: DỌN KHO (XÓA VẬT PHẨM DO SCRIPT TẠO)
--- ==========================================
-TabArsenal:CreateSection("🧹 Quản Lý Túi Đồ")
 
-TabArsenal:CreateButton({
-    Name = "Xóa Tất Cả Vật Phẩm MinT",
+-- ==========================================
+-- QUẢN LÝ
+-- ==========================================
+TabManage:CreateButton({
+    Name = "🧹 Xóa Sạch Kho Đồ MinT",
     Callback = function()
-        local backpack = player.Backpack
-        local char = player.Character
-        local count = 0
-
-        -- Hàm quét và xóa
-        local function clear(container)
-            for _, item in pairs(container:GetChildren()) do
-                if item:IsA("Tool") then
-                    -- Chỉ xóa những món có icon hoặc tên đặc biệt mình đã đặt
-                    if item.Name:find("⚡") or item.Name:find("🌪️") or item.Name:find("👥") or 
-                       item.Name:find("🌑") or item.Name:find("👻") or item.Name:find("👟") or 
-                       item.Name:find("🛡️") or item.Name:find("❄️") or item.Name:find("🔥") or 
-                       item.Name:find("🎈") or item.Name:find("💚") or item.Name:find("🎲") or 
-                       item.Name:find("🌀") or item.Name:find("📉") then
-                        item:Destroy()
-                        count = count + 1
-                    end
-                end
-            end
-        end
-
-        clear(backpack)
-        if char then clear(char) end
-
-        Rayfield:Notify({
-            Title = "Đã Dọn Dẹp!",
-            Content = "Đã tống khứ " .. count .. " món đồ chơi rác rưởi.",
-            Duration = 3,
-            Image = 4483362458,
-        })
-    end,
+        for _, v in pairs(player.Backpack:GetChildren()) do v:Destroy() end
+        if player.Character then for _, v in pairs(player.Character:GetChildren()) do if v:IsA("Tool") then v:Destroy() end end end
+    end
 })
