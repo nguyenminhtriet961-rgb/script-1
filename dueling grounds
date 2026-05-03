@@ -1,97 +1,39 @@
 -- ==========================================
--- TÊN SẢN PHẨM: MinT Hook Bypass Hub (Bản Tự Code Thuần)
--- TÁC GIẢ: Em trai
--- ĐẶC ĐIỂM: Kháng mọi loại lag, 100% chạy được trên Delta
+-- TÊN SẢN PHẨM: MinT Hook Bypass Hub (Bản Fluent Cuối Cùng)
+-- TÁC GIẢ: Em trai làm mướn
+-- LƯU Ý: Nếu bản này vẫn không chạy, chị cần kiểm tra lại phần mềm Executor của mình.
 -- ==========================================
 
--- Tạo GUI cơ bản
-local CoreGui = pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
--- Xóa bản cũ nếu chạy lại script
-if CoreGui:FindFirstChild("MinTCustomHub") then
-    CoreGui.MinTCustomHub:Destroy()
-end
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MinTCustomHub"
-ScreenGui.Parent = CoreGui
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
--- Nút Thu Gọn (Góc trái trên cùng)
-local ToggleMenuBtn = Instance.new("TextButton")
-ToggleMenuBtn.Parent = ScreenGui
-ToggleMenuBtn.BackgroundColor3 = Color3.fromRGB(220, 20, 60)
-ToggleMenuBtn.Position = UDim2.new(0, 20, 0, 20)
-ToggleMenuBtn.Size = UDim2.new(0, 60, 0, 60)
-ToggleMenuBtn.Font = Enum.Font.GothamBold
-ToggleMenuBtn.Text = "MinT"
-ToggleMenuBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleMenuBtn.TextSize = 20
-ToggleMenuBtn.UICorner = Instance.new("UICorner")
-ToggleMenuBtn.UICorner.CornerRadius = UDim.new(0, 10)
-ToggleMenuBtn.Parent = ScreenGui
-
--- Khung Menu Chính
-local MainFrame = Instance.new("Frame")
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-MainFrame.Position = UDim2.new(0.5, -125, 0.5, -150)
-MainFrame.Size = UDim2.new(0, 250, 0, 300)
-MainFrame.Active = true
-MainFrame.Draggable = true -- Hỗ trợ kéo thả tự do
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 8)
-MainCorner.Parent = MainFrame
-
--- Tiêu đề Menu
-local Title = Instance.new("TextLabel")
-Title.Parent = MainFrame
-Title.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Font = Enum.Font.GothamBold
-Title.Text = "🎯 Bypass Hub"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 18
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 8)
-TitleCorner.Parent = Title
-
--- Hàm tạo nút chức năng
-local function createToggle(text, yPos)
-    local btn = Instance.new("TextButton")
-    btn.Parent = MainFrame
-    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
-    btn.Position = UDim2.new(0.1, 0, 0, yPos)
-    btn.Size = UDim2.new(0.8, 0, 0, 45)
-    btn.Font = Enum.Font.GothamSemibold
-    btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-    btn.TextSize = 16
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 6)
-    btnCorner.Parent = btn
-    return btn
-end
-
-local HitboxBtn = createToggle("Hitbox: TẮT", 60)
-local DodgeBtn = createToggle("Auto Dodge: TẮT", 120)
-local ESPBtn = createToggle("ESP Player: TẮT", 180)
-
--- Chức năng Đóng/Mở Menu
-ToggleMenuBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
-end)
+local Window = Fluent:CreateWindow({
+    Title = "MinT Hook Bypass Hub 🎯",
+    SubTitle = "By Em Trai",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = false, -- Tắt Acrylic để nhẹ máy hơn
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.RightControl -- Bấm Ctrl phải để ẩn/hiện
+})
 
 -- ==========================================
--- LOGIC HITBOX (Đã sửa lỗi vật lý)
+-- TẠO CÁC TAB
+-- ==========================================
+local Tabs = {
+    Combat = Window:AddTab({ Title = "Chiến Đấu", Icon = "swords" }),
+    Visual = Window:AddTab({ Title = "Hiển Thị", Icon = "eye" })
+}
+
+-- ==========================================
+-- MODULE 1: HITBOX EXPANDER
 -- ==========================================
 _G.HitboxStatus = false
-HitboxBtn.MouseButton1Click:Connect(function()
-    _G.HitboxStatus = not _G.HitboxStatus
-    HitboxBtn.Text = "Hitbox: " .. (_G.HitboxStatus and "BẬT" or "TẮT")
-    HitboxBtn.BackgroundColor3 = _G.HitboxStatus and Color3.fromRGB(46, 139, 87) or Color3.fromRGB(60, 60, 65)
-    
-    if not _G.HitboxStatus then
+_G.HitboxSize = 20
+
+local ToggleHitbox = Tabs.Combat:AddToggle("HitboxToggle", {Title = "Kích Hoạt Hitbox", Default = false })
+ToggleHitbox:OnChanged(function(Value)
+    _G.HitboxStatus = Value
+    if not Value then
         for _, v in pairs(game:GetService("Players"):GetPlayers()) do
             if v ~= game:GetService("Players").LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
                 v.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
@@ -102,13 +44,25 @@ HitboxBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+Tabs.Combat:AddSlider("HitboxSize", {
+    Title = "Kích Thước Hitbox",
+    Description = "Kéo để chỉnh độ to (Studs)",
+    Default = 20,
+    Min = 5,
+    Max = 50,
+    Rounding = 0,
+    Callback = function(Value)
+        _G.HitboxSize = Value
+    end
+})
+
 task.spawn(function()
     while task.wait(1) do
         if _G.HitboxStatus then
             pcall(function()
                 for _, v in pairs(game:GetService("Players"):GetPlayers()) do
                     if v ~= game:GetService("Players").LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                        v.Character.HumanoidRootPart.Size = Vector3.new(20, 20, 20)
+                        v.Character.HumanoidRootPart.Size = Vector3.new(_G.HitboxSize, _G.HitboxSize, _G.HitboxSize)
                         v.Character.HumanoidRootPart.Transparency = 0.6
                         v.Character.HumanoidRootPart.CanCollide = false
                     end
@@ -119,13 +73,13 @@ task.spawn(function()
 end)
 
 -- ==========================================
--- LOGIC AUTO DODGE (Đã sửa lỗi khoảng cách)
+-- MODULE 2: AUTO DODGE
 -- ==========================================
 _G.AutoDodge = false
-DodgeBtn.MouseButton1Click:Connect(function()
-    _G.AutoDodge = not _G.AutoDodge
-    DodgeBtn.Text = "Auto Dodge: " .. (_G.AutoDodge and "BẬT" or "TẮT")
-    DodgeBtn.BackgroundColor3 = _G.AutoDodge and Color3.fromRGB(46, 139, 87) or Color3.fromRGB(60, 60, 65)
+
+local ToggleDodge = Tabs.Combat:AddToggle("DodgeToggle", {Title = "Tự Động Né Móc", Default = false })
+ToggleDodge:OnChanged(function(Value)
+    _G.AutoDodge = Value
 end)
 
 game.Workspace.ChildAdded:Connect(function(child)
@@ -142,6 +96,11 @@ game.Workspace.ChildAdded:Connect(function(child)
                         local distance = (char.HumanoidRootPart.Position - hookPos).Magnitude
                         if distance < 40 then
                             char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(15, 0, 0)
+                            Fluent:Notify({
+                                Title = "Cảnh Báo!",
+                                Content = "Vừa né móc thành công!",
+                                Duration = 2
+                            })
                         end
                     end
                 end
@@ -151,15 +110,14 @@ game.Workspace.ChildAdded:Connect(function(child)
 end)
 
 -- ==========================================
--- LOGIC ESP (Đã sửa lỗi vòng lặp)
+-- MODULE 3: ESP PLAYER
 -- ==========================================
 _G.ESPStatus = false
-ESPBtn.MouseButton1Click:Connect(function()
-    _G.ESPStatus = not _G.ESPStatus
-    ESPBtn.Text = "ESP Player: " .. (_G.ESPStatus and "BẬT" or "TẮT")
-    ESPBtn.BackgroundColor3 = _G.ESPStatus and Color3.fromRGB(46, 139, 87) or Color3.fromRGB(60, 60, 65)
-    
-    if not _G.ESPStatus then
+
+local ToggleESP = Tabs.Visual:AddToggle("ESPToggle", {Title = "Bật ESP (Đỏ: Địch, Xanh: Ta)", Default = false })
+ToggleESP:OnChanged(function(Value)
+    _G.ESPStatus = Value
+    if not Value then
         for _, player in pairs(game:GetService("Players"):GetPlayers()) do
             if player.Character and player.Character:FindFirstChild("MinTESP") then
                 player.Character.MinTESP:Destroy()
@@ -193,3 +151,5 @@ task.spawn(function()
         end
     end
 end)
+
+Window:SelectTab(1)
