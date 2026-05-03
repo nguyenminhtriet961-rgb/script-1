@@ -1,41 +1,72 @@
- 
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
--- Chọn theme tối cho ngầu, chị có thể đổi thành "BloodTheme" hoặc "Ocean" nếu thích
-local Window = Library.CreateLib("MinT Hook Bypass Hub 🎯", "SentinelTheme")
+-- ==========================================
+-- TÊN SẢN PHẨM: MinT Hook Bypass Hub (Bản Orion Xịn Xò)
+-- TÁC GIẢ: Em trai làm mướn
+-- ==========================================
+
+-- Gọi thư viện Orion
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexsoftware/Orion/main/source')))()
+
+-- Tạo Cửa sổ Menu chính (Có sẵn nút thu gọn trên góc)
+local Window = OrionLib:MakeWindow({
+    Name = "MinT Hook Bypass Hub 🎯", 
+    HidePremium = false, 
+    SaveConfig = true, 
+    ConfigFolder = "MinTHook",
+    IntroText = "Đang tải hệ thống Bypass..."
+})
 
 -- ==========================================
--- TẠO CÁC TAB & SECTION
+-- TẠO CÁC TAB
 -- ==========================================
-local TabCombat = Window:NewTab("⚔️ Chiến Đấu")
-local SecHitbox = TabCombat:NewSection("Thiết Lập Hitbox")
-local SecDodge = TabCombat:NewSection("Hệ Thống Né Tránh")
+local TabCombat = Window:MakeTab({
+    Name = "Chiến Đấu",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
 
-local TabVisual = Window:NewTab("👁️ Hiển Thị")
-local SecESP = TabVisual:NewSection("Hệ Thống Nhìn Xuyên Tường")
+local TabVisual = Window:MakeTab({
+    Name = "Hiển Thị",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
 
 -- ==========================================
--- MODULE 1: HITBOX EXPANDER (Đã Fix lỗi CanCollide)
+-- MODULE 1: HITBOX EXPANDER
 -- ==========================================
 _G.HitboxStatus = false
 _G.HitboxSize = 20
 
-SecHitbox:NewToggle("Kích Hoạt Hitbox", "Làm to mục tiêu", function(state)
-    _G.HitboxStatus = state
-    if not state then
-        -- FIXED: Khi tắt thì phải trả lại CanCollide về true để không làm hỏng game
-        for _, v in pairs(game:GetService("Players"):GetPlayers()) do
-            if v ~= game:GetService("Players").LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                v.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
-                v.Character.HumanoidRootPart.Transparency = 1
-                v.Character.HumanoidRootPart.CanCollide = true 
+TabCombat:AddSection({Name = "Thiết Lập Hitbox"})
+
+TabCombat:AddToggle({
+    Name = "Kích Hoạt Hitbox",
+    Default = false,
+    Callback = function(Value)
+        _G.HitboxStatus = Value
+        if not Value then
+            for _, v in pairs(game:GetService("Players"):GetPlayers()) do
+                if v ~= game:GetService("Players").LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                    v.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
+                    v.Character.HumanoidRootPart.Transparency = 1
+                    v.Character.HumanoidRootPart.CanCollide = true 
+                end
             end
         end
-    end
-end)
+    end    
+})
 
-SecHitbox:NewSlider("Kích Thước Hitbox", "Tùy chỉnh độ to", 50, 5, function(s)
-    _G.HitboxSize = s
-end)
+TabCombat:AddSlider({
+    Name = "Kích Thước Hitbox",
+    Min = 5,
+    Max = 50,
+    Default = 20,
+    Color = Color3.fromRGB(255,255,255),
+    Increment = 1,
+    ValueName = "Studs",
+    Callback = function(Value)
+        _G.HitboxSize = Value
+    end    
+})
 
 task.spawn(function()
     while task.wait(1) do
@@ -54,13 +85,19 @@ task.spawn(function()
 end)
 
 -- ==========================================
--- MODULE 2: AUTO DODGE (Đã Fix lỗi né bóng ma)
+-- MODULE 2: AUTO DODGE
 -- ==========================================
 _G.AutoDodge = false
 
-SecDodge:NewToggle("Tự Động Né Móc", "Chỉ né khi Hook ở gần", function(state)
-    _G.AutoDodge = state
-end)
+TabCombat:AddSection({Name = "Hệ Thống Né Tránh"})
+
+TabCombat:AddToggle({
+    Name = "Tự Động Né Móc",
+    Default = false,
+    Callback = function(Value)
+        _G.AutoDodge = Value
+    end    
+})
 
 game.Workspace.ChildAdded:Connect(function(child)
     if _G.AutoDodge then
@@ -69,16 +106,19 @@ game.Workspace.ChildAdded:Connect(function(child)
                 local player = game.Players.LocalPlayer
                 local char = player.Character
                 if char and char:FindFirstChild("HumanoidRootPart") then
-                    -- Đợi 0.1s để vật thể load vị trí
                     task.wait(0.1) 
                     local hookPos = child:IsA("BasePart") and child.Position or (child:FindFirstChild("Handle") and child.Handle.Position)
                     
                     if hookPos then
-                        -- FIXED: Tính toán khoảng cách, chỉ né khi nó cách mình dưới 40 studs
                         local distance = (char.HumanoidRootPart.Position - hookPos).Magnitude
                         if distance < 40 then
-                            -- Nhảy ngang sang phải 15 studs
                             char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(15, 0, 0)
+                            OrionLib:MakeNotification({
+                                Name = "Cảnh Báo!",
+                                Content = "Vừa né một cú móc thành công!",
+                                Image = "rbxassetid://4483345998",
+                                Time = 2
+                            })
                         end
                     end
                 end
@@ -88,21 +128,26 @@ game.Workspace.ChildAdded:Connect(function(child)
 end)
 
 -- ==========================================
--- MODULE 3: ESP PLAYER (Đã Fix lỗi giật lag khi tắt)
+-- MODULE 3: ESP PLAYER
 -- ==========================================
 _G.ESPStatus = false
 
-SecESP:NewToggle("Bật ESP", "Phân biệt Địch (Đỏ) / Ta (Xanh)", function(state)
-    _G.ESPStatus = state
-    if not state then
-        -- FIXED: Chỉ quét trong danh sách người chơi thay vì quét toàn bộ map
-        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-            if player.Character and player.Character:FindFirstChild("MinTESP") then
-                player.Character.MinTESP:Destroy()
+TabVisual:AddSection({Name = "Hệ Thống Nhìn Xuyên Tường"})
+
+TabVisual:AddToggle({
+    Name = "Bật ESP (Đỏ: Địch, Xanh: Ta)",
+    Default = false,
+    Callback = function(Value)
+        _G.ESPStatus = Value
+        if not Value then
+            for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+                if player.Character and player.Character:FindFirstChild("MinTESP") then
+                    player.Character.MinTESP:Destroy()
+                end
             end
         end
-    end
-end)
+    end    
+})
 
 task.spawn(function()
     while task.wait(0.5) do
@@ -129,3 +174,6 @@ task.spawn(function()
         end
     end
 end)
+
+-- Khởi tạo UI (Bắt buộc với Orion)
+OrionLib:Init()
