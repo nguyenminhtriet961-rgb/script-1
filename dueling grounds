@@ -1,218 +1,51 @@
 --[[
-    👑 MTRIET ULTIMATE - V21 MODULAR EDITION 👑
-    - Tách biệt hoàn toàn: Tab Triệu Hồi riêng, Tab Đánh Boss riêng.
-    - Chị MinT có thể bật tắt từng giai đoạn tùy ý.
-    - Fix: Giữ nguyên cơ chế đóng băng, khóa túi đồ và Orbit 10s/10s.
+    👑 MTRIET EXPERIMENTAL - NO COOLDOWN BYPASS 👑
+    - Chức năng: Lục soát bộ nhớ (getgc) để ép thời gian hồi chiêu về 0.
+    - Cảnh báo: Chỉ hoạt động với các game code cooldown ở Client.
 ]]
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local VIM = game:GetService("VirtualInputManager")
-local LocalPlayer = Players.LocalPlayer
-
--- =======================================================
--- 🎯 TỌA ĐỘ CHIẾN LƯỢC:
--- =======================================================
-local TOA_DO_1 = CFrame.new(732.4, 22.5, -113.8)   -- Nhặt trái Void
-local TOA_DO_2 = CFrame.new(1379.3, -115.2, 64.4)  -- Xả VP 2
-local TOA_DO_3 = CFrame.new(1334.2, -115.2, 70.1)  -- Xả VP 3
-local TOA_DO_KHONG_GIAN = CFrame.new(391.8, 1285.3, 180.6) -- Khu vực Boss King
-
-local BOSS_NAME = "King"
-local ORBIT_SPEED = 7
-local ORBIT_RADIUS = 12
-
--- Hàm xử lý vật phẩm an toàn
-local function DungVatPham(myTool, mode)
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("Humanoid") or not myTool then return end
-    
-    char.Humanoid:UnequipTools()
-    task.wait(0.2)
-    char.Humanoid:EquipTool(myTool)
-    task.wait(0.3)
-    
-    if mode == "SkillE" then
-        pcall(function()
-            VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-            task.wait(0.1)
-            VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-        end)
-        task.wait(3) 
-    elseif mode == "SpamAtk" then
-        pcall(function() myTool:Activate() end)
-    end
-end
-
--- =======================================================
--- 🎨 GIAO DIỆN RAYFIELD
--- =======================================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-    Name = "📱 V21 MODULAR HUB",
-    LoadingTitle = "Đang nạp phân hệ...",
-    LoadingSubtitle = "Triệu Hồi và Đánh Boss Tách Rời",
+    Name = "📱 MTRIET BYPASS",
+    LoadingTitle = "Đang nạp hệ thống...",
+    LoadingSubtitle = "Thử nghiệm No Cooldown",
     ConfigurationSaving = { Enabled = false }, 
     KeySystem = false 
 })
 
--- ==========================================
--- 🔮 MODULE 1: TRIỆU HỒI TỰ ĐỘNG
--- ==========================================
-local TabTrieuHoi = Window:CreateTab("🔮 Triệu Hồi")
-local TrieuHoiToggle 
+local TabHack = Window:CreateTab("⚡ Hack Cooldown")
 
-TrieuHoiToggle = TabTrieuHoi:CreateToggle({
-    Name = "🚀 Chạy Chuỗi Triệu Hồi (B1 -> B3)", 
-    CurrentValue = false, 
-    Callback = function(v)
-        _G.AutoTrieuHoi = v
-        if v then
-            task.spawn(function()
-                while _G.AutoTrieuHoi do
-                    local char = LocalPlayer.Character
-                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                    if not hrp then break end
-
-                    print("▶️ B1: Đi nhặt vật phẩm...")
-                    hrp.Anchored = false
-                    hrp.CFrame = TOA_DO_1
-                    task.wait(3) 
-
-                    -- Quét túi đồ
-                    local allTools = {}
-                    for _, t in ipairs(LocalPlayer:WaitForChild("Backpack"):GetChildren()) do if t:IsA("Tool") then table.insert(allTools, t) end end
-                    for _, t in ipairs(char:GetChildren()) do if t:IsA("Tool") then table.insert(allTools, t) end end
-                    
-                    local ToolSo2 = allTools[2]
-                    local ToolSo3 = allTools[3]
-
-                    if not ToolSo2 or not ToolSo3 then
-                        Rayfield:Notify({Title = "Lỗi", Content = "Không đủ 3 món đồ để xả chiêu!", Duration = 5})
-                        _G.AutoTrieuHoi = false; TrieuHoiToggle:Set(false); break
-                    end
-
-                    print("▶️ B2: Triệu hồi (VP 2)...")
-                    hrp.CFrame = TOA_DO_2
-                    task.wait(0.1); hrp.Anchored = true 
-                    DungVatPham(ToolSo2, "SkillE")
-
-                    print("▶️ B3: Triệu hồi (VP 3)...")
-                    hrp.Anchored = false; hrp.CFrame = TOA_DO_3
-                    task.wait(0.1); hrp.Anchored = true 
-                    DungVatPham(ToolSo3, "SkillE")
-
-                    print("✅ Triệu hồi hoàn tất!")
-                    hrp.Anchored = false
-                    _G.AutoTrieuHoi = false
-                    TrieuHoiToggle:Set(false) -- Tự tắt công tắc sau khi làm xong
-                    break 
+TabHack:CreateButton({
+    Name = "🔨 Ép Hồi Chiêu Về 0 (Quét Bộ Nhớ)", 
+    Callback = function()
+        local count = 0
+        -- Quét toàn bộ Garbage Collector (Bộ nhớ tạm của game)
+        for _, v in pairs(getgc(true)) do
+            if type(v) == "table" then
+                -- Tìm các biến thường được Dev dùng để làm hồi chiêu
+                if rawget(v, "Cooldown") then 
+                    v.Cooldown = 0 
+                    count = count + 1
                 end
-            end)
-        else
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                LocalPlayer.Character.HumanoidRootPart.Anchored = false
+                if rawget(v, "Debounce") then 
+                    v.Debounce = 0 
+                    count = count + 1
+                end
+                if rawget(v, "WaitTime") then 
+                    v.WaitTime = 0 
+                    count = count + 1
+                end
+                if rawget(v, "Tick") then 
+                    v.Tick = 0 
+                    count = count + 1
+                end
             end
         end
-    end
-})
-
--- ==========================================
--- 👹 MODULE 2: ĐÁNH BOSS KING (10s/10s)
--- ==========================================
-local TabBoss = Window:CreateTab("👹 Đánh Boss")
-
-TabBoss:CreateToggle({
-    Name = "⚔️ Bật Auto Diệt King (10s Nghỉ 10s)", 
-    CurrentValue = false, 
-    Callback = function(v)
-        _G.AutoBoss = v
-        if v then
-            task.spawn(function()
-                local char = LocalPlayer.Character
-                local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                if not hrp then return end
-
-                print("▶️ Đang lên Tọa độ Không Gian...")
-                hrp.Anchored = false
-                hrp.CFrame = TOA_DO_KHONG_GIAN
-                task.wait(2)
-
-                while _G.AutoBoss do
-                    -- Quét lại đồ ô số 2 mỗi lần lặp để đảm bảo không bị lỗi
-                    local currentTools = {}
-                    for _, t in ipairs(LocalPlayer:WaitForChild("Backpack"):GetChildren()) do if t:IsA("Tool") then table.insert(currentTools, t) end end
-                    for _, t in ipairs(LocalPlayer.Character:GetChildren()) do if t:IsA("Tool") then table.insert(currentTools, t) end end
-                    local ToolSo2 = currentTools[2]
-
-                    local boss = workspace:FindFirstChild(BOSS_NAME, true)
-                    
-                    if boss and boss:FindFirstChild("HumanoidRootPart") and boss:FindFirstChild("Humanoid") and boss.Humanoid.Health > 0 then
-                        local bossHRP = boss.HumanoidRootPart
-                        bossHRP.Size = Vector3.new(100, 100, 100) 
-                        bossHRP.CanCollide = false
-                        
-                        -- PHÂN ĐOẠN 1: TẤN CÔNG (10 GIÂY)
-                        print("⚔️ VÀO PHOM: Chém King 10s...")
-                        local attackStart = tick()
-                        hrp.Anchored = false 
-                        while _G.AutoBoss and boss.Parent and (tick() - attackStart < 10) do
-                            RunService.Heartbeat:Wait()
-                            orbitAngle = orbitAngle + math.rad(ORBIT_SPEED)
-                            local offset = Vector3.new(math.cos(orbitAngle) * ORBIT_RADIUS, 6, math.sin(orbitAngle) * ORBIT_RADIUS)
-                            hrp.CFrame = CFrame.new(bossHRP.Position + offset, bossHRP.Position)
-                            hrp.Velocity = Vector3.zero 
-                            
-                            if ToolSo2 then
-                                DungVatPham(ToolSo2, "SpamAtk")
-                            end
-                        end
-                        
-                        if not _G.AutoBoss then break end
-
-                        -- PHÂN ĐOẠN 2: HỒI MÁU (10 GIÂY)
-                        print("❤️ RÚT LUI: Bay lên trời hồi máu 10s...")
-                        local skyPos = hrp.Position + Vector3.new(0, 180, 0)
-                        hrp.CFrame = CFrame.new(skyPos)
-                        task.wait(0.1)
-                        hrp.Anchored = true 
-                        task.wait(10)
-                    else
-                        print("⏳ Không thấy King. Đang chờ...")
-                        task.wait(2)
-                    end
-                end
-            end)
+        
+        if count > 0 then
+            Rayfield:Notify({Title = "Thành công", Content = "Đã bẻ khóa " .. count .. " biến hồi chiêu!", Duration = 5})
         else
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                LocalPlayer.Character.HumanoidRootPart.Anchored = false
-            end
-        end
-    end
-})
-
--- ==========================================
--- 🌐 TAB 3: TIỆN ÍCH
--- ==========================================
-local TabOther = Window:CreateTab("⏳ Tiện Ích")
-
-TabOther:CreateButton({
-    Name = "📋 COPY JOB ID SERVER NÀY", 
-    Callback = function() 
-        if setclipboard then setclipboard(game.JobId) end
-        Rayfield:Notify({Title = "Đã Copy!", Content = "Job ID đã lưu vào bộ nhớ.", Duration = 3})
-    end
-})
-
-TabOther:CreateButton({
-    Name = "📍 COPY TỌA ĐỘ CỦA CHỊ ĐANG ĐỨNG", 
-    Callback = function() 
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            local p = char.HumanoidRootPart.Position
-            local str = string.format("CFrame.new(%.1f, %.1f, %.1f)", p.X, p.Y, p.Z)
-            if setclipboard then setclipboard(str) end
-            Rayfield:Notify({Title = "Đã Copy!", Content = str, Duration = 5})
+            Rayfield:Notify({Title = "Thất bại", Content = "Không tìm thấy biến hồi chiêu ở Client.", Duration = 5})
         end
     end
 })
