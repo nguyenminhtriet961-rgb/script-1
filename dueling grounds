@@ -163,3 +163,43 @@ for i, item in ipairs(extraTools) do
         end,
     })
 end
+-- ==========================================
+-- CHỨC NĂNG: DỌN KHO (XÓA VẬT PHẨM DO SCRIPT TẠO)
+-- ==========================================
+TabArsenal:CreateSection("🧹 Quản Lý Túi Đồ")
+
+TabArsenal:CreateButton({
+    Name = "Xóa Tất Cả Vật Phẩm MinT",
+    Callback = function()
+        local backpack = player.Backpack
+        local char = player.Character
+        local count = 0
+
+        -- Hàm quét và xóa
+        local function clear(container)
+            for _, item in pairs(container:GetChildren()) do
+                if item:IsA("Tool") then
+                    -- Chỉ xóa những món có icon hoặc tên đặc biệt mình đã đặt
+                    if item.Name:find("⚡") or item.Name:find("🌪️") or item.Name:find("👥") or 
+                       item.Name:find("🌑") or item.Name:find("👻") or item.Name:find("👟") or 
+                       item.Name:find("🛡️") or item.Name:find("❄️") or item.Name:find("🔥") or 
+                       item.Name:find("🎈") or item.Name:find("💚") or item.Name:find("🎲") or 
+                       item.Name:find("🌀") or item.Name:find("📉") then
+                        item:Destroy()
+                        count = count + 1
+                    end
+                end
+            end
+        end
+
+        clear(backpack)
+        if char then clear(char) end
+
+        Rayfield:Notify({
+            Title = "Đã Dọn Dẹp!",
+            Content = "Đã tống khứ " .. count .. " món đồ chơi rác rưởi.",
+            Duration = 3,
+            Image = 4483362458,
+        })
+    end,
+})
