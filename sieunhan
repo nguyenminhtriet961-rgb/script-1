@@ -170,7 +170,7 @@ TabTrans:CreateButton({
     Name = "Nhận: 🌀 không gian lĩnh vực",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
-        tool.Name, tool.RequiresHandle = "🌀 Cổng Không Gian", false
+        tool.Name, tool.RequiresHandle = "🌀 không gian lĩnh vực", false
         
         tool.Activated:Connect(function()
             local char = player.Character
@@ -337,7 +337,7 @@ TabTrans:CreateButton({
     Name = "Nhận: 🌀 Cổng Sát Thủ Xuyên Không",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
-        tool.Name, tool.RequiresHandle = "🌀 Cổng Không Gian", false
+        tool.Name, tool.RequiresHandle = "🌀  sát thủ xuyên không gian", false
         local isCasting = false
         
         tool.Activated:Connect(function()
