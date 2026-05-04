@@ -1,8 +1,4 @@
--- ==========================================
--- TÊN SẢN PHẨM: MINT MA THẦN V4 (BẢN CHÁY MÁY + DỊCH CHUYỂN THEO TÊN)
--- TÁC GIẢ: Em trai làm mướn
--- ==========================================
-
+ 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -15,7 +11,7 @@ local mouse = player:GetMouse()
 
 local Window = Rayfield:CreateWindow({
     Name = "MinT Ma Thần Hub 🔮",
-    LoadingTitle = "Đang rèn nổ máy...",
+    LoadingTitle = "Đang load bản cuối cùng...",
     LoadingSubtitle = "Học VSTEP đi chị gái Dược 4!",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
@@ -296,37 +292,53 @@ TabTrans:CreateButton({
 -- ==========================================
 -- 4. U BỘ XUYÊN TƯỜNG (CHẬM & NGẦU)
 -- ==========================================
--- ĐÃ FIX LỖI Ở ĐÂY
-TabSkill:CreateButton({
-    Name = "Nhận: 👻 Quỷ Ảnh Xuyên Tường",
+TabTrans:CreateButton({
+    Name = "Nhận: 👻 U Bộ Xuyên Tường (Bật/Tắt)",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
-        tool.Name, tool.RequiresHandle = "👻 Quỷ Ảnh Xuyên Tường", false
+        tool.Name, tool.RequiresHandle = "👻 U Bộ Xuyên Tường", false
+        
         tool.Activated:Connect(function()
             local char = player.Character
-            if not char then return end
-            local root = char:FindFirstChild("HumanoidRootPart")
-            if not root then return end
-
-            local result = workspace:Raycast(root.Position, root.CFrame.LookVector * 4, RaycastParams.new())
-            if not result then return end 
-
-            PlaySound(231917744, 0.5)
-
-            local oldMat = {}
-            for _, v in pairs(char:GetChildren()) do
-                if v:IsA("BasePart") then oldMat[v] = v.Material; v.Material = Enum.Material.ForceField; v.CanCollide = false end
-            end
-
-            local tw = TweenService:Create(root, TweenInfo.new(1.5, Enum.EasingStyle.Linear), {CFrame = root.CFrame * CFrame.new(0, 0, -8)})
-            tw:Play(); tw.Completed:Wait()
-
-            for _, v in pairs(char:GetChildren()) do
-                if v:IsA("BasePart") then v.Material = oldMat[v] or Enum.Material.Plastic; v.CanCollide = true end
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            if not _G.IsMaThan then return end
+            
+            local hum = char:FindFirstChild("Humanoid")
+            _G.NoclipSlow = not _G.NoclipSlow
+            
+            if _G.NoclipSlow then
+                Rayfield:Notify({Title = "U Bộ", Content = "Bật đi xuyên tường. Tốc độ bò trườn!", Duration = 2})
+                PlaySound(178452221, 0.3, 2)
+                hum.WalkSpeed = 6 
+                
+                for _, v in pairs(char:GetDescendants()) do 
+                    if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then 
+                        v.Color = Color3.new(0,0,0)
+                        v.Transparency = 0.7 
+                    end 
+                end
+                
+                noclipConn = RunService.Stepped:Connect(function()
+                    for _, v in pairs(char:GetDescendants()) do
+                        if v:IsA("BasePart") then v.CanCollide = false end
+                    end
+                end)
+            else
+                Rayfield:Notify({Title = "U Bộ", Content = "Đã tắt xuyên tường.", Duration = 2})
+                if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
+                hum.WalkSpeed = 50 
+                
+                for _, v in pairs(char:GetDescendants()) do 
+                    if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then 
+                        v.Color = Color3.new(1,1,1)
+                        v.Transparency = 0 
+                    end 
+                end
             end
         end)
     end
 })
+
 -- ==========================================
 -- 5. CỔNG KHÔNG GIAN (ĐI VÀ VỀ LĨNH VỰC)
 -- ==========================================
@@ -428,7 +440,7 @@ TabTrans:CreateButton({
             
             PlaySound(142070127, 0.5, 3)
             local portal1CF = root.CFrame * CFrame.new(0, -2, -6)
-            local p1, a1 = SpawnFloorPortal(portal1CF, Color3.fromRGB(0, 150, 255))
+            local p1, a1 = SpawnFrontPortal(root.Position, root.CFrame.LookVector, Color3.fromRGB(0, 150, 255))
             task.spawn(function() for i=1, 10 do StrikeLightning(p1.Position, 15, Color3.fromRGB(0, 150, 255)); task.wait(0.1) end end)
             
             hum.WalkSpeed = 0 
@@ -442,7 +454,7 @@ TabTrans:CreateButton({
             task.wait(0.5) 
             
             local portal2CF = target.CFrame * CFrame.new(0, -2, 6) * CFrame.Angles(0, math.rad(180), 0)
-            local p2, a2 = SpawnFloorPortal(portal2CF, Color3.fromRGB(0, 150, 255))
+            local p2, a2 = SpawnFrontPortal(portal2CF.Position, (target.Position - portal2CF.Position).Unit, Color3.fromRGB(0, 150, 255))
             PlaySound(142070127, 0.8, 3)
             
             task.spawn(function() for i=1, 10 do StrikeLightning(p2.Position, 15, Color3.fromRGB(0, 150, 255)); task.wait(0.1) end end)
@@ -460,7 +472,7 @@ TabTrans:CreateButton({
 })
 
 -- ==========================================
--- 7. CỔNG XUYÊN KHÔNG 100M (DỰNG ĐỨNG TRƯỚC MẶT)
+-- 7. CỔNG XUYÊN KHÔNG 100M (XUYÊN TƯỜNG)
 -- ==========================================
 TabTrans:CreateButton({
     Name = "Nhận: 🌀 Cổng Xuyên Không (100m)",
@@ -568,7 +580,6 @@ TabTrans:CreateButton({
             isCasting = true
             PlaySound(142070127, 0.5, 3)
             
-            -- Cổng vào trước mặt
             local dashDirection = root.CFrame.LookVector
             local p1, a1 = SpawnFrontPortal(root.Position, dashDirection, Color3.fromRGB(255, 0, 0)) -- Cổng màu đỏ máu
             task.spawn(function() for i=1, 10 do StrikeLightning(p1.Position, 15, Color3.fromRGB(255, 0, 0)); task.wait(0.1) end end)
@@ -583,7 +594,6 @@ TabTrans:CreateButton({
             local blur = Instance.new("BlurEffect", Lighting); blur.Size = 40
             task.wait(0.5) 
             
-            -- Cổng ra sau lưng Target
             local portal2CF = target.CFrame * CFrame.new(0, -2, 6) * CFrame.Angles(0, math.rad(180), 0)
             local p2, a2 = SpawnFrontPortal(portal2CF.Position, (target.Position - portal2CF.Position).Unit, Color3.fromRGB(255, 0, 0))
             PlaySound(142070127, 0.8, 3)
@@ -602,11 +612,35 @@ TabTrans:CreateButton({
 })
 
 -- ==========================================
--- 9. DỌN DẸP
+-- 9. DỌN DẸP & HỦY TẤT CẢ
 -- ==========================================
 TabTrans:CreateButton({
-    Name = "🧹 Dọn Dẹp Túi Đồ",
+    Name = "🧹 Xóa Túi Đồ & Hủy Ma Thần",
     Callback = function()
+        _G.IsMaThan = false
+        _G.InPortalRealm = false
+        hoverActive = false
+        RunService:UnbindFromRenderStep("HoverPadSync")
+        if hoverPad then hoverPad:Destroy() end
+        if player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("HoverGUI") then player.PlayerGui.HoverGUI:Destroy() end
+        
+        local char = player.Character
+        if char then
+            local hum = char:FindFirstChild("Humanoid")
+            local root = char:FindFirstChild("HumanoidRootPart")
+            if hum then hum.WalkSpeed = 16; hum.HipHeight = 0 end
+            if root then 
+                if root:FindFirstChild("V4AuraWhite") then root.V4AuraWhite:Destroy() end
+                if root:FindFirstChild("V4AuraBlack") then root.V4AuraBlack:Destroy() end
+            end
+        end
+        if ghostMovementConn then ghostMovementConn:Disconnect() end
+        if realmConn then realmConn:Disconnect() end
+        if noclipConn then noclipConn:Disconnect() end
+        if Lighting:FindFirstChild("MaThanCC") then Lighting.MaThanCC:Destroy() end
+        if Lighting:FindFirstChild("PortalBlur") then Lighting.PortalBlur:Destroy() end
+        if workspace:FindFirstChild("PortalFloor") then workspace.PortalFloor:Destroy() end
         for _, v in pairs(player.Backpack:GetChildren()) do v:Destroy() end
+        Rayfield:Notify({Title = "Thông báo", Content = "Đã dọn dẹp sạch sẽ!", Duration = 2})
     end
 })
