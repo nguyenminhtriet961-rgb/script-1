@@ -1,6 +1,6 @@
--- ==========================================vv
--- TÊN SẢN PHẨM: MINT MA THẦN V4 (BẢN TỐI THƯỢNG)
--- TÁC GIẢ: Em trai làm mướn
+-- ==========================================
+-- TÊN SẢN PHẨM: MINT MA THẦN V4 (MASTER EDITION)
+-- TÁC GIẢ: Em trai làm mướn dọn rác
 -- ==========================================
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -15,7 +15,7 @@ local mouse = player:GetMouse()
 
 local Window = Rayfield:CreateWindow({
     Name = "MinT Ma Thần Hub 🔮",
-    LoadingTitle = "Đang triệu hồi cổng không gian...",
+    LoadingTitle = "Đang dọn rác code cho bà chị...",
     LoadingSubtitle = "Học VSTEP đi chị gái Vĩnh Long!",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
@@ -23,8 +23,16 @@ local Window = Rayfield:CreateWindow({
 
 local TabTrans = Window:CreateTab("🔮 Ma Thần V4", nil)
 
+-- Biến toàn cục
 _G.IsMaThan = false
+_G.InPortalRealm = false
+_G.PortalSavedPos = nil
 local ghostMovementConn
+local realmConn
+local hoverActive = false
+local hoverPad = nil
+local hoverHeight = 0
+local gui
 
 -- ==========================================
 -- HÀM HỖ TRỢ VFX & AUDIO
@@ -50,61 +58,47 @@ local function CreateGhostTrail(char, duration, color)
     end
 end
 
--- Tia sét ngẫu nhiên
+-- Tia sét
 local function StrikeLightning(center, radius, color)
     local p1 = center + Vector3.new(math.random(-radius, radius), math.random(-radius, radius), math.random(-radius, radius))
     local p2 = center + Vector3.new(math.random(-radius, radius), math.random(-radius, radius), math.random(-radius, radius))
-    local dist = (p1 - p2).Magnitude
+    local dist = math.max((p1 - p2).Magnitude, 0.1)
     local bolt = Instance.new("Part", workspace)
     bolt.Size = Vector3.new(0.5, 0.5, dist); bolt.CFrame = CFrame.lookAt(p1, p2) * CFrame.new(0, 0, -dist/2)
     bolt.Anchored = true; bolt.CanCollide = false; bolt.Material = Enum.Material.Neon; bolt.Color = color or Color3.fromRGB(0, 150, 255)
     Debris:AddItem(bolt, 0.1)
 end
 
--- Gợn sóng vòng rỗng (Torus) siêu to
+-- Gợn sóng vòng rỗng
 local function CreateRingRipple(pos)
     for i = 1, 3 do
         task.spawn(function()
             local ring = Instance.new("Part", workspace)
             ring.Anchored = true; ring.CanCollide = false
-            ring.Transparency = 0.3; ring.Material = Enum.Material.Neon
-            ring.Color = Color3.fromRGB(200, 255, 255)
-            
-            -- Xoay ngang mặt đất và dâng lên tí để không bị cắm xuống đất
+            ring.Transparency = 0.3; ring.Material = Enum.Material.Neon; ring.Color = Color3.fromRGB(200, 255, 255)
             ring.CFrame = CFrame.new(pos) * CFrame.new(0, 0.5, 0) * CFrame.Angles(math.rad(90), 0, 0)
             
-            -- Ép Mesh nhẫn (Torus)
             local mesh = Instance.new("SpecialMesh", ring)
-            mesh.MeshId = "rbxassetid://3270017" 
-            mesh.Scale = Vector3.new(10, 10, 0.1) -- Vòng siêu mỏng
+            mesh.MeshId = "rbxassetid://3270017"; mesh.Scale = Vector3.new(10, 10, 0.1)
             
-            -- Tween lan rộng gấp 5 lần và mờ dần
-            local twMesh = TweenService:Create(mesh, TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                Scale = Vector3.new(150, 150, 0.1)
-            })
-            local twTrans = TweenService:Create(ring, TweenInfo.new(0.8), {Transparency = 1})
-            
-            twMesh:Play(); twTrans:Play()
+            TweenService:Create(mesh, TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Scale = Vector3.new(150, 150, 0.1)}):Play()
+            TweenService:Create(ring, TweenInfo.new(0.8), {Transparency = 1}):Play()
             Debris:AddItem(ring, 0.8)
         end)
         task.wait(0.2)
     end
 end
 
--- Tạo Cổng Không Gian
+-- Tạo Cổng
 local function SpawnPortal(cframe, color)
     local portal = Instance.new("Part", workspace)
     portal.Shape = Enum.PartType.Cylinder; portal.Size = Vector3.new(0.1, 12, 12)
     portal.CFrame = cframe * CFrame.Angles(0, 0, math.rad(90))
-    portal.Anchored = true; portal.CanCollide = false
-    portal.Material = Enum.Material.Neon; portal.Color = Color3.new(0,0,0)
+    portal.Anchored = true; portal.CanCollide = false; portal.Material = Enum.Material.Neon; portal.Color = Color3.new(0,0,0)
     
     local aura = Instance.new("Part", workspace)
-    aura.Shape = Enum.PartType.Cylinder; aura.Size = Vector3.new(0.05, 13, 13)
-    aura.CFrame = portal.CFrame
-    aura.Anchored = true; aura.CanCollide = false
-    aura.Material = Enum.Material.Neon; aura.Color = color or Color3.fromRGB(0, 150, 255)
-    
+    aura.Shape = Enum.PartType.Cylinder; aura.Size = Vector3.new(0.05, 13, 13); aura.CFrame = portal.CFrame
+    aura.Anchored = true; aura.CanCollide = false; aura.Material = Enum.Material.Neon; aura.Color = color or Color3.fromRGB(0, 150, 255)
     return portal, aura
 end
 
@@ -122,11 +116,12 @@ TabTrans:CreateButton({
             if not char or not char:FindFirstChild("HumanoidRootPart") then return end
             local root = char.HumanoidRootPart
             local hum = char:FindFirstChild("Humanoid")
-            
             if _G.IsMaThan then return end
             _G.IsMaThan = true
             
-            for _, anim in pairs(hum:GetPlayingAnimationTracks()) do anim:Stop() end
+            local animator = hum:FindFirstChildOfClass("Animator")
+            if animator then for _, anim in pairs(animator:GetPlayingAnimationTracks()) do anim:Stop() end end
+            
             PlaySound(142070127, 0.4, 3); PlaySound(178452221, 0.5, 2); PlaySound(2248511, 0.2, 1.5)
             
             local cc = Instance.new("ColorCorrectionEffect", Lighting)
@@ -134,9 +129,8 @@ TabTrans:CreateButton({
             TweenService:Create(cc, TweenInfo.new(1), {Saturation = -1, Contrast = 0.2, TintColor = Color3.fromRGB(200, 200, 200)}):Play()
             
             root.Anchored = true
-            local twTransform = TweenService:Create(root, TweenInfo.new(1.5, Enum.EasingStyle.Exponential), {CFrame = root.CFrame * CFrame.new(0, 8, 0) * CFrame.Angles(0, math.rad(360*2), 0)})
-            twTransform:Play(); twTransform.Completed:Wait()
-            root.Anchored = false
+            TweenService:Create(root, TweenInfo.new(1.5, Enum.EasingStyle.Exponential), {CFrame = root.CFrame * CFrame.new(0, 8, 0) * CFrame.Angles(0, math.rad(360*2), 0)}):Play()
+            task.wait(1.5); root.Anchored = false
             
             hum.HipHeight = 5; hum.WalkSpeed = 50 
             
@@ -156,124 +150,179 @@ TabTrans:CreateButton({
             ghostMovementConn = RunService.RenderStepped:Connect(function(dt)
                 timer = timer + dt
                 if timer > 0.1 and hum.MoveDirection.Magnitude > 0 then 
-                    CreateGhostTrail(char, 0.6, Color3.fromRGB(150, 200, 200))
-                    timer = 0 
+                    CreateGhostTrail(char, 0.6, Color3.fromRGB(150, 200, 200)); timer = 0 
                 end
             end)
         end)
     end
 })
+
 -- ==========================================
--- 3. CỔNG KHÔNG GIAN (ĐI VÀ VỀ)
+-- 2. THIÊN KHÔNG BỘ (LƠ LỬNG + 2 NÚT LÊN/XUỐNG)
 -- ==========================================
 TabTrans:CreateButton({
-    Name = "Nhận: 🌀 không gian lĩnh vực",
+    Name = "Nhận: ☁️ Thiên Không Bộ",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
-        tool.Name, tool.RequiresHandle = "🌀 không gian lĩnh vực", false
+        tool.Name, tool.RequiresHandle = "☁️ Thiên Không Bộ", false
         
         tool.Activated:Connect(function()
             local char = player.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            if not _G.IsMaThan then return end
+            if not char or not char:FindFirstChild("HumanoidRootPart") or not _G.IsMaThan then return end
+            
+            hoverActive = not hoverActive
+            
+            if hoverActive then
+                Rayfield:Notify({Title = "Thiên Không Bộ", Content = "Bật lơ lửng. Dùng nút Lên/Xuống.", Duration = 2})
+                local root = char.HumanoidRootPart
+                hoverHeight = root.Position.Y
+                
+                hoverPad = Instance.new("Part", workspace)
+                hoverPad.Size = Vector3.new(6, 1, 6); hoverPad.Anchored = true; hoverPad.Transparency = 1 
+                hoverPad.CFrame = CFrame.new(root.Position.X, hoverHeight - 3.5, root.Position.Z)
+                
+                RunService:BindToRenderStep("HoverPadSync", Enum.RenderPriority.Camera.Value, function()
+                    if hoverPad and char:FindFirstChild("HumanoidRootPart") then
+                        local r = char.HumanoidRootPart
+                        hoverPad.CFrame = CFrame.new(r.Position.X, hoverHeight - 3.5, r.Position.Z)
+                    end
+                end)
+                
+                if not player:FindFirstChild("PlayerGui") then return end
+                gui = Instance.new("ScreenGui", player.PlayerGui); gui.Name = "HoverGUI"
+                
+                local upBtn = Instance.new("TextButton", gui)
+                upBtn.Size = UDim2.new(0, 80, 0, 80); upBtn.Position = UDim2.new(1, -100, 0.5, -90)
+                upBtn.Text = "LÊN"; upBtn.Font = Enum.Font.GothamBold; upBtn.TextSize = 20; upBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); upBtn.TextColor3 = Color3.fromRGB(255, 255, 255); upBtn.BackgroundTransparency = 0.3; Instance.new("UICorner", upBtn).CornerRadius = UDim.new(0, 40)
+                
+                local downBtn = Instance.new("TextButton", gui)
+                downBtn.Size = UDim2.new(0, 80, 0, 80); downBtn.Position = UDim2.new(1, -100, 0.5, 10)
+                downBtn.Text = "XUỐNG"; downBtn.Font = Enum.Font.GothamBold; downBtn.TextSize = 20; downBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); downBtn.TextColor3 = Color3.fromRGB(255, 255, 255); downBtn.BackgroundTransparency = 0.3; Instance.new("UICorner", downBtn).CornerRadius = UDim.new(0, 40)
+                
+                local holdingUp, holdingDown = false, false
+                upBtn.MouseButton1Down:Connect(function() holdingUp = true end); upBtn.MouseButton1Up:Connect(function() holdingUp = false end); upBtn.MouseLeave:Connect(function() holdingUp = false end)
+                downBtn.MouseButton1Down:Connect(function() holdingDown = true end); downBtn.MouseButton1Up:Connect(function() holdingDown = false end); downBtn.MouseLeave:Connect(function() holdingDown = false end)
+                
+                task.spawn(function()
+                    while hoverActive do
+                        if holdingUp then hoverHeight = hoverHeight + 1.5 end
+                        if holdingDown then hoverHeight = hoverHeight - 1.5 end
+                        task.wait(0.05)
+                    end
+                end)
+            else
+                Rayfield:Notify({Title = "Thiên Không Bộ", Content = "Đã tắt lơ lửng.", Duration = 2})
+                RunService:UnbindFromRenderStep("HoverPadSync")
+                if hoverPad then hoverPad:Destroy(); hoverPad = nil end
+                if gui then gui:Destroy() end
+            end
+        end)
+    end
+})
+
+-- ==========================================
+-- 3. BƯỚC NHẢY KHÔNG GIAN
+-- ==========================================
+TabTrans:CreateButton({
+    Name = "Nhận: ⚡ Bước Nhảy Không Gian",
+    Callback = function()
+        local tool = Instance.new("Tool", player.Backpack)
+        tool.Name, tool.RequiresHandle = "⚡ Bước Nhảy", false
+        
+        tool.Activated:Connect(function()
+            local char = player.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") or not _G.IsMaThan then return end
+            
+            local root = char.HumanoidRootPart
+            PlaySound(231917744, 0.8, 2)
+            
+            local targetPos = mouse.Hit and mouse.Hit.Position or (root.Position + root.CFrame.LookVector * 50)
+            local direction = (targetPos - root.Position)
+            if direction.Magnitude > 50 then direction = direction.Unit * 50 end
+            targetPos = root.Position + direction
+            
+            local actualDist = math.max((targetPos - root.Position).Magnitude, 0.1)
+            TweenService:Create(Camera, TweenInfo.new(0.1, Enum.EasingStyle.Exponential), {FieldOfView = 110}):Play()
+            
+            local beam = Instance.new("Part", workspace)
+            beam.Size = Vector3.new(2, 2, actualDist); beam.CFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -actualDist/2)
+            beam.Anchored = true; beam.CanCollide = false; beam.Material = Enum.Material.Neon; beam.Color = Color3.fromRGB(200, 255, 255)
+            TweenService:Create(beam, TweenInfo.new(0.3), {Size = Vector3.new(0,0,actualDist), Transparency = 1}):Play(); Debris:AddItem(beam, 0.3)
+            
+            local tw = TweenService:Create(root, TweenInfo.new(0.15, Enum.EasingStyle.Linear), {CFrame = CFrame.lookAt(targetPos, targetPos + direction)})
+            tw:Play()
+            task.spawn(function() while tw.PlaybackState == Enum.PlaybackState.Playing do CreateGhostTrail(char, 0.3, Color3.new(1,1,1)); task.wait(0.01) end end)
+            tw.Completed:Wait()
+            
+            TweenService:Create(Camera, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {FieldOfView = 70}):Play()
+            CreateRingRipple(root.Position - Vector3.new(0, 4, 0)) 
+        end)
+    end
+})
+
+-- ==========================================
+-- 4. CỔNG KHÔNG GIAN (ĐI VÀ VỀ LĨNH VỰC)
+-- ==========================================
+TabTrans:CreateButton({
+    Name = "Nhận: 🌀 Không Gian Lĩnh Vực",
+    Callback = function()
+        local tool = Instance.new("Tool", player.Backpack)
+        tool.Name, tool.RequiresHandle = "🌀 Không Gian Lĩnh Vực", false
+        
+        tool.Activated:Connect(function()
+            local char = player.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") or not _G.IsMaThan then return end
             
             local root = char.HumanoidRootPart
             local hum = char:FindFirstChild("Humanoid")
             
             if not _G.InPortalRealm then
-                -- TRẠNG THÁI 1: BƯỚC VÀO CỔNG
                 _G.InPortalRealm = true
-                _G.PortalSavedPos = root.CFrame -- Lưu tọa độ cũ
+                _G.PortalSavedPos = root.CFrame 
                 
-                -- Tạo cổng đen, viền xanh biển dưới đất
-                local portal = Instance.new("Part", workspace)
-                portal.Shape = Enum.PartType.Cylinder; portal.Size = Vector3.new(0.5, 10, 10)
-                portal.CFrame = root.CFrame * CFrame.new(0, -hum.HipHeight - 2, 0) * CFrame.Angles(0, 0, math.rad(90))
-                portal.Anchored = true; portal.CanCollide = false; portal.Material = Enum.Material.Neon; portal.Color = Color3.fromRGB(0, 0, 0)
-                
-                local portalAura = Instance.new("Part", workspace)
-                portalAura.Shape = Enum.PartType.Cylinder; portalAura.Size = Vector3.new(0.4, 11, 11)
-                portalAura.CFrame = portal.CFrame
-                portalAura.Anchored = true; portalAura.CanCollide = false; portalAura.Material = Enum.Material.Neon; portalAura.Color = Color3.fromRGB(0, 150, 255)
-                
+                local p, a = SpawnPortal(root.CFrame * CFrame.new(0, -hum.HipHeight - 2, 0), Color3.fromRGB(0, 150, 255))
                 PlaySound(142070127, 0.5, 3)
                 
-                -- Animation chìm xuống đất (Tắt va chạm mới chìm được nha má)
                 hum.WalkSpeed = 0
                 for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end
                 
-                local twDown = TweenService:Create(root, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {CFrame = root.CFrame * CFrame.new(0, -10, 0)})
-                twDown:Play()
+                TweenService:Create(root, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {CFrame = root.CFrame * CFrame.new(0, -10, 0)}):Play()
+                task.spawn(function() for i = 1, 15 do StrikeLightning(p.Position, 15, Color3.fromRGB(0, 150, 255)); task.wait(0.1) end end)
+                task.wait(1.5)
+                p:Destroy(); a:Destroy()
                 
-                -- Sấm sét giật tung tóe lúc chìm
-                task.spawn(function()
-                    for i = 1, 15 do StrikeLightning(portal.Position, 15, Color3.fromRGB(0, 150, 255)); task.wait(0.1) end
-                end)
-                
-                twDown.Completed:Wait()
-                portal:Destroy(); portalAura:Destroy()
-                
-                -- Dịch chuyển lên Realm (Trên trời 10000m)
                 root.CFrame = CFrame.new(0, 10000, 0)
-                local floor = Instance.new("Part", workspace)
-                floor.Name = "PortalFloor"; floor.Size = Vector3.new(100, 1, 100); floor.CFrame = CFrame.new(0, 9995, 0)
-                floor.Anchored = true; floor.Material = Enum.Material.ForceField; floor.Color = Color3.fromRGB(0, 50, 100)
+                local floor = Instance.new("Part", workspace); floor.Name = "PortalFloor"; floor.Size = Vector3.new(100, 1, 100); floor.CFrame = CFrame.new(0, 9995, 0); floor.Anchored = true; floor.Material = Enum.Material.ForceField; floor.Color = Color3.fromRGB(0, 50, 100)
                 
-                -- Phục hồi va chạm và cho di chuyển
                 for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = true end end
                 hum.WalkSpeed = 50
                 
-                -- Màn hình mờ ảo tung chảo + Đổi màu xanh
                 if Lighting:FindFirstChild("MaThanCC") then Lighting.MaThanCC.TintColor = Color3.fromRGB(100, 200, 255) end
-                local blur = Instance.new("BlurEffect", Lighting)
-                blur.Name = "PortalBlur"; blur.Size = 30 -- Mờ ơi là mờ
+                local blur = Instance.new("BlurEffect", Lighting); blur.Name = "PortalBlur"; blur.Size = 30 
                 
-                -- Sét xanh nổ liên tục trong Realm
                 realmConn = RunService.RenderStepped:Connect(function()
                     if math.random(1, 5) == 1 then StrikeLightning(root.Position, 50, Color3.fromRGB(0, 200, 255)) end
                 end)
                 
             else
-                -- TRẠNG THÁI 2: TRỞ VỀ TỪ CỔNG
                 _G.InPortalRealm = false
                 hum.WalkSpeed = 0
                 
-                -- Thu hồi Realm
                 if realmConn then realmConn:Disconnect() end
                 if workspace:FindFirstChild("PortalFloor") then workspace.PortalFloor:Destroy() end
                 if Lighting:FindFirstChild("PortalBlur") then Lighting.PortalBlur:Destroy() end
                 if Lighting:FindFirstChild("MaThanCC") then Lighting.MaThanCC.TintColor = Color3.fromRGB(200, 200, 200) end
                 
-                -- Về lại vị trí cũ, nằm dưới lòng đất 10m
                 root.CFrame = _G.PortalSavedPos * CFrame.new(0, -10, 0)
                 for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end
                 
-                -- Mở cổng tại vị trí về
-                local portal = Instance.new("Part", workspace)
-                portal.Shape = Enum.PartType.Cylinder; portal.Size = Vector3.new(0.5, 10, 10)
-                portal.CFrame = _G.PortalSavedPos * CFrame.new(0, -hum.HipHeight - 2, 0) * CFrame.Angles(0, 0, math.rad(90))
-                portal.Anchored = true; portal.CanCollide = false; portal.Material = Enum.Material.Neon; portal.Color = Color3.fromRGB(0, 0, 0)
-                
-                local portalAura = Instance.new("Part", workspace)
-                portalAura.Shape = Enum.PartType.Cylinder; portalAura.Size = Vector3.new(0.4, 11, 11)
-                portalAura.CFrame = portal.CFrame
-                portalAura.Anchored = true; portalAura.CanCollide = false; portalAura.Material = Enum.Material.Neon; portalAura.Color = Color3.fromRGB(0, 150, 255)
-                
+                local p, a = SpawnPortal(_G.PortalSavedPos * CFrame.new(0, -hum.HipHeight - 2, 0), Color3.fromRGB(0, 150, 255))
                 PlaySound(142070127, 0.6, 3)
                 
-                -- Màn hình hơi mờ nhẹ lúc ngoi lên
-                local tempBlur = Instance.new("BlurEffect", Lighting); tempBlur.Size = 15
-                
-                -- Tween ngoi đầu từ từ lên
-                local twUp = TweenService:Create(root, TweenInfo.new(2, Enum.EasingStyle.Sine), {CFrame = _G.PortalSavedPos})
-                twUp:Play()
-                
-                task.spawn(function()
-                    for i = 1, 20 do StrikeLightning(portal.Position, 15, Color3.fromRGB(0, 150, 255)); task.wait(0.1) end
-                end)
-                
-                twUp.Completed:Wait()
-                portal:Destroy(); portalAura:Destroy(); tempBlur:Destroy()
+                TweenService:Create(root, TweenInfo.new(2, Enum.EasingStyle.Sine), {CFrame = _G.PortalSavedPos}):Play()
+                task.spawn(function() for i = 1, 20 do StrikeLightning(p.Position, 15, Color3.fromRGB(0, 150, 255)); task.wait(0.1) end end)
+                task.wait(2)
+                p:Destroy(); a:Destroy()
                 
                 for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = true end end
                 hum.WalkSpeed = 50
@@ -281,74 +330,24 @@ TabTrans:CreateButton({
         end)
     end
 })
--- ==========================================
--- 2. BƯỚC NHẢY KHÔNG GIAN (LƯỚT THE THE FLASH)
--- ==========================================
-TabTrans:CreateButton({
-    Name = "Nhận: ⚡ Bước Nhảy Không Gian",
-    Callback = function()
-        local tool = Instance.new("Tool", player.Backpack)
-        tool.Name, tool.RequiresHandle = "⚡ Bước Nhảy Không Gian", false
-        
-        tool.Activated:Connect(function()
-            local char = player.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            if not _G.IsMaThan then return end
-            
-            local root = char.HumanoidRootPart
-            PlaySound(231917744, 0.8, 2)
-            
-            local targetPos = mouse.Hit.Position
-            local direction = (targetPos - root.Position)
-            if direction.Magnitude > 50 then direction = direction.Unit * 50 end
-            targetPos = root.Position + direction
-            
-            local actualDist = (targetPos - root.Position).Magnitude
-            TweenService:Create(Camera, TweenInfo.new(0.1, Enum.EasingStyle.Exponential), {FieldOfView = 110}):Play()
-            
-            local beam = Instance.new("Part", workspace)
-            beam.Size = Vector3.new(2, 2, actualDist); beam.CFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -actualDist/2)
-            beam.Anchored = true; beam.CanCollide = false; beam.Material = Enum.Material.Neon; beam.Color = Color3.fromRGB(200, 255, 255)
-            TweenService:Create(beam, TweenInfo.new(0.3), {Size = Vector3.new(0,0,actualDist), Transparency = 1}):Play()
-            Debris:AddItem(beam, 0.3)
-            
-            local tw = TweenService:Create(root, TweenInfo.new(0.15, Enum.EasingStyle.Linear), {CFrame = CFrame.lookAt(targetPos, targetPos + direction)})
-            tw:Play()
-            
-            task.spawn(function()
-                while tw.PlaybackState == Enum.PlaybackState.Playing do
-                    CreateGhostTrail(char, 0.3, Color3.new(1,1,1)); task.wait(0.01)
-                end
-            end)
-            
-            tw.Completed:Wait()
-            TweenService:Create(Camera, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {FieldOfView = 70}):Play()
-            
-            -- TẠO VÒNG TRÒN RỖNG LAN TỎA
-            CreateRingRipple(root.Position - Vector3.new(0, 4, 0)) 
-        end)
-    end
-})
 
 -- ==========================================
--- 3. CỔNG KHÔNG GIAN SÁT THỦ (TỰ ĐỘNG BƯỚC VÀO)
+-- 5. CỔNG SÁT THỦ XUYÊN KHÔNG (ÁM SÁT)
 -- ==========================================
 TabTrans:CreateButton({
-    Name = "Nhận: 🌀 Cổng Sát Thủ Xuyên Không",
+    Name = "Nhận: 🌀 Cổng Sát Thủ",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
-        tool.Name, tool.RequiresHandle = "🌀  sát thủ xuyên không gian", false
+        tool.Name, tool.RequiresHandle = "🌀 Cổng Sát Thủ", false
         local isCasting = false
         
         tool.Activated:Connect(function()
             local char = player.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") or isCasting then return end
-            if not _G.IsMaThan then return end
+            if not char or not char:FindFirstChild("HumanoidRootPart") or isCasting or not _G.IsMaThan then return end
             
             local root = char.HumanoidRootPart
             local hum = char:FindFirstChild("Humanoid")
             
-            -- Tìm mục tiêu gần nhất
             local target = nil; local minDist = 300
             for _, p in pairs(Players:GetPlayers()) do
                 if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
@@ -357,67 +356,120 @@ TabTrans:CreateButton({
                 end
             end
             
-            if not target then
-                Rayfield:Notify({Title = "Thất bại", Content = "Không có ai ở gần để mở cổng!", Duration = 2})
-                return
-            end
-            
+            if not target then Rayfield:Notify({Title = "Thất bại", Content = "Không có ai ở gần!", Duration = 2}); return end
             isCasting = true
-            PlaySound(142070127, 0.5, 3)
             
-            -- Cổng 1: Hiện trước mặt
+            PlaySound(142070127, 0.5, 3)
             local portal1CF = root.CFrame * CFrame.new(0, -2, -6)
             local p1, a1 = SpawnPortal(portal1CF, Color3.fromRGB(0, 150, 255))
+            task.spawn(function() for i=1, 10 do StrikeLightning(p1.Position, 15, Color3.fromRGB(0, 150, 255)); task.wait(0.1) end end)
             
-            -- Xả sét xanh quanh cổng
-            task.spawn(function()
-                for i=1, 10 do StrikeLightning(p1.Position, 15, Color3.fromRGB(0, 150, 255)); task.wait(0.1) end
-            end)
+            hum.WalkSpeed = 0 
+            TweenService:Create(root, TweenInfo.new(0.6, Enum.EasingStyle.Linear), {CFrame = portal1CF}):Play()
+            task.wait(0.6)
             
-            -- Animation tự đi vào cổng (Cutscene bằng Tween)
-            hum.WalkSpeed = 0 -- Khóa tay người chơi
-            local twIn = TweenService:Create(root, TweenInfo.new(0.6, Enum.EasingStyle.Linear), {CFrame = portal1CF})
-            twIn:Play(); twIn.Completed:Wait()
-            
-            -- Biến mất
             for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.Transparency = 1 end end
             p1:Destroy(); a1:Destroy()
             
-            -- Màn hình mờ siêu ảo
             local blur = Instance.new("BlurEffect", Lighting); blur.Size = 30
-            task.wait(0.5) -- Delay trong không gian
+            task.wait(0.5) 
             
-            -- Cổng 2: Hiện sau lưng Target
             local portal2CF = target.CFrame * CFrame.new(0, -2, 6) * CFrame.Angles(0, math.rad(180), 0)
             local p2, a2 = SpawnPortal(portal2CF, Color3.fromRGB(0, 150, 255))
             PlaySound(142070127, 0.8, 3)
             
-            task.spawn(function()
-                for i=1, 10 do StrikeLightning(p2.Position, 15, Color3.fromRGB(0, 150, 255)); task.wait(0.1) end
-            end)
+            task.spawn(function() for i=1, 10 do StrikeLightning(p2.Position, 15, Color3.fromRGB(0, 150, 255)); task.wait(0.1) end end)
             
-            -- Đặt character vào cổng 2 và hiện lại
             root.CFrame = portal2CF
             for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then v.Transparency = 0 end end
             
-            -- Animation bước ra
-            local twOut = TweenService:Create(root, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {CFrame = target.CFrame * CFrame.new(0, 0, 3)})
-            twOut:Play(); twOut.Completed:Wait()
+            TweenService:Create(root, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {CFrame = target.CFrame * CFrame.new(0, 0, 3)}):Play()
+            task.wait(0.5)
             
             p2:Destroy(); a2:Destroy(); blur:Destroy()
-            hum.WalkSpeed = 50 -- Mở khóa
-            isCasting = false
+            hum.WalkSpeed = 50; isCasting = false
         end)
     end
 })
 
 -- ==========================================
--- 4. HỦY DẠNG MA THẦN
+-- 6. CỔNG XUYÊN KHÔNG 100M (XUYÊN TƯỜNG)
 -- ==========================================
 TabTrans:CreateButton({
-    Name = "❌ Hủy Dạng Ma Thần",
+    Name = "Nhận: 🌀 Cổng Xuyên Không (100m)",
+    Callback = function()
+        local tool = Instance.new("Tool", player.Backpack)
+        tool.Name, tool.RequiresHandle = "🌀 Cổng 100m", false
+        local isCasting = false
+        
+        tool.Activated:Connect(function()
+            local char = player.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") or isCasting or not _G.IsMaThan then return end
+            
+            isCasting = true
+            local root = char.HumanoidRootPart
+            local hum = char:FindFirstChild("Humanoid")
+            
+            PlaySound(142070127, 0.5, 3)
+            
+            local startPos = root.Position
+            local dashDirection = root.CFrame.LookVector
+            local targetPos = startPos + (dashDirection * 100)
+            
+            local portal1CF = root.CFrame * CFrame.new(0, -2, -5)
+            local p1, a1 = SpawnPortal(portal1CF, Color3.fromRGB(0, 255, 100))
+            task.spawn(function() for i=1, 10 do StrikeLightning(p1.Position, 15, Color3.fromRGB(0, 255, 100)); task.wait(0.1) end end)
+            
+            hum.WalkSpeed = 0 
+            TweenService:Create(root, TweenInfo.new(0.6, Enum.EasingStyle.Linear), {CFrame = portal1CF}):Play()
+            task.wait(0.6)
+            
+            for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.Transparency = 1 end end
+            p1:Destroy(); a1:Destroy()
+            
+            local blur = Instance.new("BlurEffect", Lighting); blur.Size = 40
+            local ccTemp = Instance.new("ColorCorrectionEffect", Lighting); ccTemp.TintColor = Color3.fromRGB(0, 255, 100); ccTemp.Contrast = 1
+            
+            task.spawn(function()
+                for i = 1, 10 do Camera.CFrame = Camera.CFrame * CFrame.new(math.random(-2,2), math.random(-2,2), math.random(-2,2)); task.wait(0.05) end
+            end)
+            task.wait(0.5) 
+            
+            local raycastParams = RaycastParams.new(); raycastParams.FilterDescendantsInstances = {char}; raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+            local safeYRay = workspace:Raycast(targetPos + Vector3.new(0, 50, 0), Vector3.new(0, -100, 0), raycastParams)
+            local finalPos = safeYRay and (safeYRay.Position + Vector3.new(0, 3, 0)) or targetPos
+            
+            local portal2CF = CFrame.new(finalPos) * CFrame.Angles(0, math.atan2(dashDirection.X, dashDirection.Z) + math.pi, 0)
+            local p2, a2 = SpawnPortal(portal2CF * CFrame.new(0, -2, -3), Color3.fromRGB(0, 255, 100))
+            PlaySound(142070127, 0.8, 3)
+            
+            task.spawn(function() for i=1, 10 do StrikeLightning(p2.Position, 15, Color3.fromRGB(0, 255, 100)); task.wait(0.1) end end)
+            
+            root.CFrame = p2.CFrame
+            for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then v.Transparency = 0 end end
+            
+            TweenService:Create(root, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {CFrame = portal2CF * CFrame.new(0, 2, -5)}):Play()
+            task.wait(0.5)
+            
+            p2:Destroy(); a2:Destroy(); blur:Destroy(); ccTemp:Destroy()
+            hum.WalkSpeed = 50; isCasting = false
+        end)
+    end
+})
+
+-- ==========================================
+-- 7. HỦY TẤT CẢ DẠNG VÀ VẬT PHẨM
+-- ==========================================
+TabTrans:CreateButton({
+    Name = "❌ Hủy Ma Thần & Xóa Đồ",
     Callback = function()
         _G.IsMaThan = false
+        _G.InPortalRealm = false
+        hoverActive = false
+        RunService:UnbindFromRenderStep("HoverPadSync")
+        if hoverPad then hoverPad:Destroy() end
+        if player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("HoverGUI") then player.PlayerGui.HoverGUI:Destroy() end
+        
         local char = player.Character
         if char then
             local hum = char:FindFirstChild("Humanoid")
@@ -429,6 +481,10 @@ TabTrans:CreateButton({
             end
         end
         if ghostMovementConn then ghostMovementConn:Disconnect() end
+        if realmConn then realmConn:Disconnect() end
         if Lighting:FindFirstChild("MaThanCC") then Lighting.MaThanCC:Destroy() end
+        if Lighting:FindFirstChild("PortalBlur") then Lighting.PortalBlur:Destroy() end
+        if workspace:FindFirstChild("PortalFloor") then workspace.PortalFloor:Destroy() end
+        for _, v in pairs(player.Backpack:GetChildren()) do v:Destroy() end
     end
 })
