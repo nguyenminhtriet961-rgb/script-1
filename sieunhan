@@ -1,5 +1,5 @@
 -- ==========================================
--- TÊN SẢN PHẨM: MINT TRANSFORMATION HUB (AUDIO VIP)
+-- TÊN SẢN PHẨM: MINT TRANSFORMATION - MA THẦN V4
 -- TÁC GIẢ: Em trai làm mướn
 -- ==========================================
 
@@ -10,71 +10,54 @@ local Debris = game:GetService("Debris")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
-local mouse = player:GetMouse()
 local Camera = game.Workspace.CurrentCamera
 
 local Window = Rayfield:CreateWindow({
-    Name = "MinT Biến Hình Hub 🔮",
-    LoadingTitle = "Đang triệu hồi Ma Thần...",
-    LoadingSubtitle = "Nhớ bật Max Loa để nghe độ VIP!",
+    Name = "MinT Ma Thần Hub 🔮",
+    LoadingTitle = "Đang load Aura V4...",
+    LoadingSubtitle = "Học VSTEP đi bà nội!",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
 
-local TabTrans = Window:CreateTab("🔮 Ma Thần Không Gian", nil)
+local TabTrans = Window:CreateTab("🔮 Ma Thần V4", nil)
 
 _G.IsMaThan = false
+local ghostMovementConn
 
 -- ==========================================
--- BỘ TRỘN ÂM THANH (AUDIO MIXER VIP)
+-- HÀM HỖ TRỢ VFX & AUDIO
 -- ==========================================
-local function PlayLayeredSound(type, parent)
-    local root = parent or (player.Character and player.Character:FindFirstChild("HumanoidRootPart")) or workspace
-    
-    if type == "Transform" then
-        -- Lớp 1: Tiếng nổ Bass sập không gian
-        local s1 = Instance.new("Sound", root)
-        s1.SoundId = "rbxassetid://142070127"; s1.Volume = 3; s1.Pitch = 0.4
-        s1:Play(); Debris:AddItem(s1, 5)
-        
-        -- Lớp 2: Tiếng gió lốc rùng rợn
-        local s2 = Instance.new("Sound", root)
-        s2.SoundId = "rbxassetid://178452221"; s2.Volume = 2; s2.Pitch = 0.5
-        s2:Play(); Debris:AddItem(s2, 5)
-        
-        -- Lớp 3: Tiếng nhiễu sóng (Glitch) của hắc khí
-        local s3 = Instance.new("Sound", root)
-        s3.SoundId = "rbxassetid://2248511"; s3.Volume = 1.5; s3.Pitch = 0.2
-        s3:Play(); Debris:AddItem(s3, 5)
-        
-    elseif type == "Dash" then
-        -- Lớp 1: Tiếng chớp xé toạc
-        local d1 = Instance.new("Sound", root)
-        d1.SoundId = "rbxassetid://231917744"; d1.Volume = 2; d1.Pitch = 0.8
-        d1:Play(); Debris:AddItem(d1, 2)
-        
-        -- Lớp 2: Tiếng gầm vang dội
-        local d2 = Instance.new("Sound", root)
-        d2.SoundId = "rbxassetid://12222208"; d2.Volume = 2.5; d2.Pitch = 1.5
-        d2:Play(); Debris:AddItem(d2, 2)
-    end
+local function PlaySound(id, pitch, vol)
+    local s = Instance.new("Sound")
+    s.SoundId = "rbxassetid://" .. tostring(id)
+    s.Volume = vol or 2; s.Pitch = pitch or 1; s.Parent = player.Character and player.Character:FindFirstChild("HumanoidRootPart") or workspace
+    s:Play(); Debris:AddItem(s, 5)
 end
 
-local function CreateGhostTrail(char)
+-- Hàm tạo tàn ảnh (Ghost Trail)
+local function CreateGhostTrail(char, duration, color)
     for _, part in pairs(char:GetChildren()) do
         if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
             local clone = part:Clone()
             clone.Parent = workspace
             clone.Anchored = true; clone.CanCollide = false
-            clone.Material = Enum.Material.ForceField; clone.Color = Color3.fromRGB(200, 255, 255)
-            TweenService:Create(clone, TweenInfo.new(0.4), {Transparency = 1}):Play()
-            Debris:AddItem(clone, 0.4)
+            clone.Material = Enum.Material.ForceField
+            clone.Color = color or Color3.fromRGB(150, 255, 255)
+            
+            -- Xóa các thành phần thừa trong clone
+            for _, v in pairs(clone:GetChildren()) do
+                if not v:IsA("SpecialMesh") then v:Destroy() end
+            end
+            
+            TweenService:Create(clone, TweenInfo.new(duration or 0.5), {Transparency = 1}):Play()
+            Debris:AddItem(clone, duration or 0.5)
         end
     end
 end
 
 -- ==========================================
--- VẬT PHẨM 1: BIẾN HÌNH MA THẦN
+-- 1. BIẾN HÌNH MA THẦN (AURA V4)
 -- ==========================================
 TabTrans:CreateButton({
     Name = "Nhận: 🔮 Ấn Ký Ma Thần (Biến Hình)",
@@ -89,127 +72,129 @@ TabTrans:CreateButton({
             local hum = char:FindFirstChild("Humanoid")
             
             if _G.IsMaThan then
-                Rayfield:Notify({Title = "Thông báo", Content = "Chị đang ở dạng Ma Thần rồi!", Duration = 2})
+                Rayfield:Notify({Title = "Nhắc nhở", Content = "Đã biến hình rồi má!", Duration = 2})
                 return
             end
             
             _G.IsMaThan = true
             
-            -- GỌI ÂM THANH BIẾN HÌNH ĐA LỚP
-            PlayLayeredSound("Transform", root)
+            -- Dừng mọi animation cầm đồ lỏ
+            for _, anim in pairs(hum:GetPlayingAnimationTracks()) do anim:Stop() end
             
-            -- Màn hình chuyển xám
+            -- AUDIO VIP
+            PlaySound(142070127, 0.4, 3) -- Nổ trầm
+            PlaySound(178452221, 0.5, 2) -- Gió rít
+            PlaySound(2248511, 0.2, 1.5) -- Tĩnh điện hắc khí
+            
+            -- Màn hình xám xịt
             local cc = Instance.new("ColorCorrectionEffect", Lighting)
             cc.Name = "MaThanCC"
-            TweenService:Create(cc, TweenInfo.new(1), {Saturation = -1, Contrast = 0.2}):Play()
+            TweenService:Create(cc, TweenInfo.new(1), {Saturation = -1, Contrast = 0.2, TintColor = Color3.fromRGB(200, 200, 200)}):Play()
             
-            -- Lơ lửng trên trời
-            root.CFrame = root.CFrame * CFrame.new(0, 10, 0)
-            hum.WalkSpeed = 0 
-            hum.JumpPower = 0
+            -- Animation Biến Hình: Bay lên và Xoay vòng
+            root.Anchored = true
+            local twTransform = TweenService:Create(root, TweenInfo.new(1.5, Enum.EasingStyle.Exponential), {CFrame = root.CFrame * CFrame.new(0, 8, 0) * CFrame.Angles(0, math.rad(360*2), 0)})
+            twTransform:Play()
+            twTransform.Completed:Wait()
+            root.Anchored = false
             
-            local hover = Instance.new("BodyVelocity", root)
-            hover.Name = "MaThanHover"
-            hover.MaxForce = Vector3.new(0, 100000, 0)
-            hover.Velocity = Vector3.new(0, 0, 0)
+            -- Lơ lửng khi di chuyển (Bằng cách hack HipHeight thay vì BodyVelocity)
+            hum.HipHeight = 5 -- Lơ lửng cách đất 5 studs
+            hum.WalkSpeed = 50 -- Chạy tốc độ thần thánh
             
-            -- Tạo Aura trắng & Hắc khí lỗi
-            local whiteAura = Instance.new("ParticleEmitter", root)
-            whiteAura.Texture = "rbxassetid://243660364"
-            whiteAura.Color = ColorSequence.new(Color3.new(1, 1, 1))
-            whiteAura.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 2), NumberSequenceKeypoint.new(1, 6)})
-            whiteAura.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.8), NumberSequenceKeypoint.new(1, 1)})
-            whiteAura.Speed = NumberRange.new(2, 5)
-            whiteAura.Lifetime = NumberRange.new(1, 2)
-            whiteAura.Rate = 50
-            whiteAura.EmissionDirection = Enum.NormalId.Top
+            -- AURA KIỂU V4 BLOX FRUITS (Không dùng Clone dính người nữa)
+            -- Lớp 1: Hơi thở trắng rực rỡ tỏa ra
+            local auraWhite = Instance.new("ParticleEmitter", root)
+            auraWhite.Name = "V4AuraWhite"
+            auraWhite.Texture = "rbxassetid://504653048" -- Ring texture
+            auraWhite.Color = ColorSequence.new(Color3.new(1, 1, 1))
+            auraWhite.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.5, 8), NumberSequenceKeypoint.new(1, 0)})
+            auraWhite.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.2), NumberSequenceKeypoint.new(1, 1)})
+            auraWhite.Lifetime = NumberRange.new(1)
+            auraWhite.Rate = 20
+            auraWhite.Speed = NumberRange.new(0)
+            auraWhite.Rotation = NumberRange.new(0, 360)
+            auraWhite.RotSpeed = NumberRange.new(-50, 50)
+            auraWhite.LockedToPart = true
             
-            local glitchAura = Instance.new("ParticleEmitter", root)
-            glitchAura.Texture = "rbxassetid://243660364"
-            glitchAura.Color = ColorSequence.new(Color3.new(0, 0, 0)) 
-            glitchAura.Size = NumberSequence.new(3)
-            glitchAura.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 1)})
-            glitchAura.Speed = NumberRange.new(10, 20)
-            glitchAura.Lifetime = NumberRange.new(0.2, 0.4)
-            glitchAura.Rate = 100
-            glitchAura.SpreadAngle = Vector2.new(360, 360)
+            -- Lớp 2: Hắc khí lỗi rỉ ra xung quanh
+            local auraBlack = Instance.new("ParticleEmitter", root)
+            auraBlack.Name = "V4AuraBlack"
+            auraBlack.Texture = "rbxassetid://243660364"
+            auraBlack.Color = ColorSequence.new(Color3.new(0, 0, 0))
+            auraBlack.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 2), NumberSequenceKeypoint.new(1, 5)})
+            auraBlack.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 1)})
+            auraBlack.Lifetime = NumberRange.new(0.5, 1)
+            auraBlack.Rate = 80
+            auraBlack.Speed = NumberRange.new(2, 5)
+            auraBlack.SpreadAngle = Vector2.new(360, 360)
             
-            -- Phân ảnh trắng mờ ngầu xung quanh
-            local cloneGroup = Instance.new("Model", char)
-            cloneGroup.Name = "MaThanClones"
-            for _, part in pairs(char:GetChildren()) do
-                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                    local c = part:Clone()
-                    c.Parent = cloneGroup
-                    c.Massless = true; c.CanCollide = false
-                    c.Material = Enum.Material.Neon
-                    c.Color = Color3.fromRGB(200, 255, 255)
-                    c.Transparency = 0.5
-                    
-                    local weld = Instance.new("WeldConstraint", c)
-                    weld.Part0 = part; weld.Part1 = c
-                    
-                    local mesh = c:FindFirstChildOfClass("SpecialMesh")
-                    if mesh then mesh.Scale = mesh.Scale * 1.1 else c.Size = c.Size * 1.1 end
+            -- Vòng lặp: Di chuyển tạo tàn ảnh ảo
+            local timer = 0
+            ghostMovementConn = RunService.RenderStepped:Connect(function(dt)
+                timer = timer + dt
+                if timer > 0.1 and hum.MoveDirection.Magnitude > 0 then 
+                    CreateGhostTrail(char, 0.6, Color3.fromRGB(200, 200, 200)) -- Tàn ảnh xám trắng ngầu
+                    timer = 0 
                 end
-            end
+            end)
             
-            Rayfield:Notify({Title = "Hoàn tất", Content = "Ma Thần Không Gian giáng lâm!", Duration = 3})
+            Rayfield:Notify({Title = "Thức tỉnh!", Content = "Ma Thần Hóa V4 thành công!", Duration = 3})
         end)
     end
 })
 
 -- ==========================================
--- VẬT PHẨM 2: TRẢM KHÔNG GIAN (LƯỚT)
+-- 2. BƯỚC NHẢY KHÔNG GIAN (LƯỚT 50M)
 -- ==========================================
 TabTrans:CreateButton({
-    Name = "Nhận: ⚡ Kỹ Năng: Trảm Không Gian",
+    Name = "Nhận: ⚡ Kỹ Năng: Bước Nhảy Không Gian",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
-        tool.Name, tool.RequiresHandle = "⚡ Trảm Không Gian", false
+        tool.Name, tool.RequiresHandle = "⚡ Bước Nhảy Không Gian", false
         
         tool.Activated:Connect(function()
             local char = player.Character
             if not char or not char:FindFirstChild("HumanoidRootPart") then return end
             
             if not _G.IsMaThan then
-                Rayfield:Notify({Title = "Cảnh báo", Content = "Phải ở dạng Ma Thần mới lướt được!", Duration = 2})
+                Rayfield:Notify({Title = "Cảnh báo", Content = "Phải thức tỉnh Ma Thần mới nhảy được!", Duration = 2})
                 return
             end
             
             local root = char.HumanoidRootPart
+            PlaySound(231917744, 0.8, 2) -- Tiếng xé gió
+            PlaySound(12222208, 1.5, 1)  -- Kèm tiếng nổ sấm
             
-            -- GỌI ÂM THANH LƯỚT VIP
-            PlayLayeredSound("Dash", root)
+            -- Xác định điểm lướt (Phía trước mặt 50m để 100% chuẩn trên điện thoại)
+            local startPos = root.Position
+            local dashVector = root.CFrame.LookVector * 50
             
-            local targetPos = mouse.Hit.Position
-            local direction = (targetPos - root.Position)
-            local distance = direction.Magnitude
+            -- Check tường tránh đâm xuyên map lỏ
+            local ray = workspace:Raycast(startPos, dashVector, RaycastParams.new())
+            local targetPos = ray and ray.Position or (startPos + dashVector)
+            local actualDist = (targetPos - startPos).Magnitude
             
-            if distance > 50 then
-                direction = direction.Unit * 50
-                targetPos = root.Position + direction
-            end
+            TweenService:Create(Camera, TweenInfo.new(0.1, Enum.EasingStyle.Exponential), {FieldOfView = 110}):Play()
             
-            TweenService:Create(Camera, TweenInfo.new(0.1, Enum.EasingStyle.Exponential), {FieldOfView = 120}):Play()
-            
+            -- Hiệu ứng tia sáng siêu ngầu quét qua
             local beam = Instance.new("Part", workspace)
-            local beamDist = (root.Position - targetPos).Magnitude
-            beam.Size = Vector3.new(1, 1, beamDist)
-            beam.CFrame = CFrame.lookAt(root.Position, targetPos) * CFrame.new(0, 0, -beamDist/2)
+            beam.Size = Vector3.new(2, 2, actualDist)
+            beam.CFrame = CFrame.lookAt(startPos, targetPos) * CFrame.new(0, 0, -actualDist/2)
             beam.Anchored = true; beam.CanCollide = false
-            beam.Material = Enum.Material.Neon; beam.Color = Color3.fromRGB(200, 255, 255)
-            
-            TweenService:Create(beam, TweenInfo.new(0.3), {Size = Vector3.new(0,0,beamDist), Transparency = 1}):Play()
+            beam.Material = Enum.Material.Neon; beam.Color = Color3.new(1, 1, 1)
+            TweenService:Create(beam, TweenInfo.new(0.3), {Size = Vector3.new(0,0,actualDist), Transparency = 1}):Play()
             Debris:AddItem(beam, 0.3)
             
-            local tw = TweenService:Create(root, TweenInfo.new(0.15, Enum.EasingStyle.Linear), {CFrame = CFrame.lookAt(targetPos, targetPos + direction)})
+            -- Tween lướt tới
+            local tw = TweenService:Create(root, TweenInfo.new(0.15, Enum.EasingStyle.Linear), {CFrame = CFrame.new(targetPos, targetPos + dashVector)})
             tw:Play()
             
+            -- Xả tàn ảnh liên tục siêu tốc
             task.spawn(function()
                 while tw.PlaybackState == Enum.PlaybackState.Playing do
-                    CreateGhostTrail(char)
-                    task.wait(0.02)
+                    CreateGhostTrail(char, 0.3, Color3.new(1,1,1))
+                    task.wait(0.01)
                 end
             end)
             
@@ -220,7 +205,7 @@ TabTrans:CreateButton({
 })
 
 -- ==========================================
--- HỦY DẠNG
+-- 3. HỦY DẠNG MA THẦN
 -- ==========================================
 TabTrans:CreateButton({
     Name = "❌ Hủy Dạng Ma Thần",
@@ -230,15 +215,19 @@ TabTrans:CreateButton({
         if char then
             local hum = char:FindFirstChild("Humanoid")
             local root = char:FindFirstChild("HumanoidRootPart")
-            if hum then hum.WalkSpeed = 16; hum.JumpPower = 50 end
-            if root then 
-                if root:FindFirstChild("MaThanHover") then root.MaThanHover:Destroy() end
-                for _, v in pairs(root:GetChildren()) do
-                    if v:IsA("ParticleEmitter") then v:Destroy() end
-                end
+            
+            if hum then 
+                hum.WalkSpeed = 16 
+                hum.HipHeight = 0 -- Trả lại độ cao bình thường
             end
-            if char:FindFirstChild("MaThanClones") then char.MaThanClones:Destroy() end
+            
+            if root then 
+                if root:FindFirstChild("V4AuraWhite") then root.V4AuraWhite:Destroy() end
+                if root:FindFirstChild("V4AuraBlack") then root.V4AuraBlack:Destroy() end
+            end
         end
+        if ghostMovementConn then ghostMovementConn:Disconnect() end
         if Lighting:FindFirstChild("MaThanCC") then Lighting.MaThanCC:Destroy() end
+        Rayfield:Notify({Title = "Thông báo", Content = "Đã thu hồi pháp lực.", Duration = 2})
     end
 })
