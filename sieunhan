@@ -1,4 +1,8 @@
- 
+-- ==========================================
+-- TÊN SẢN PHẨM: MINT MA THẦN V4 (ULTIMATE FINAL)
+-- TÁC GIẢ: Em trai làm mướn (Đã cạn lời)
+-- ==========================================
+
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -11,8 +15,8 @@ local mouse = player:GetMouse()
 
 local Window = Rayfield:CreateWindow({
     Name = "MinT Ma Thần Hub 🔮",
-    LoadingTitle = "Đang load bản cuối cùng...",
-    LoadingSubtitle = "Học VSTEP đi chị gái Dược 4!",
+    LoadingTitle = "Đang load bản chốt đơn...",
+    LoadingSubtitle = "minh triết đẹp trai!",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
@@ -22,9 +26,8 @@ local TabTrans = Window:CreateTab("🔮 Ma Thần Tối Thượng", nil)
 _G.IsMaThan = false
 _G.InPortalRealm = false
 _G.PortalSavedPos = nil
-_G.NoclipSlow = false
 
-local ghostMovementConn, realmConn, noclipConn
+local ghostMovementConn, realmConn
 local hoverActive, hoverPad, gui, hoverHeight = false, nil, 0, nil
 local TargetNameForPortal = ""
 
@@ -103,7 +106,7 @@ local function SpawnFloorPortal(cframe, color)
 end
 
 -- ==========================================
--- 1. BIẾN HÌNH & HỦY DẠNG (BẬT/TẮT TRONG 1 NÚT)
+-- 1. BIẾN HÌNH & HỦY DẠNG
 -- ==========================================
 TabTrans:CreateButton({
     Name = "Nhận: 🔮 Ấn Ký Ma Thần (Bật/Tắt)",
@@ -180,14 +183,14 @@ TabTrans:CreateButton({
                         CreateGhostTrail(char, 0.6, Color3.fromRGB(150, 255, 255)); timer = 0 
                     end
                 end)
-                Rayfield:Notify({Title = "Thức tỉnh!", Content = "Máy bay hơi lag, mong chị thông cảm!", Duration = 3})
+                Rayfield:Notify({Title = "Thức tỉnh!", Content = "Hóa Ma Thần thành công!", Duration = 3})
             end
         end)
     end
 })
 
 -- ==========================================
--- 2. THIÊN KHÔNG BỘ (LƠ LỬNG + 2 NÚT LÊN/XUỐNG)
+-- 2. THIÊN KHÔNG BỘ (LƠ LỬNG TRÊN TRỜI)
 -- ==========================================
 TabTrans:CreateButton({
     Name = "Nhận: ☁️ Thiên Không Bộ",
@@ -290,57 +293,72 @@ TabTrans:CreateButton({
 })
 
 -- ==========================================
--- 4. U BỘ XUYÊN TƯỜNG (CHẬM & NGẦU)
+-- 4. U BỘ XUYÊN TƯỜNG (TWEEN CHUI QUA VÁCH)
 -- ==========================================
 TabTrans:CreateButton({
-    Name = "Nhận: 👻 U Bộ Xuyên Tường (Bật/Tắt)",
+    Name = "Nhận: 👻 U Bộ Xuyên Tường",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
         tool.Name, tool.RequiresHandle = "👻 U Bộ Xuyên Tường", false
+        local isPhasing = false
         
         tool.Activated:Connect(function()
             local char = player.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            if not _G.IsMaThan then return end
+            if not char or not char:FindFirstChild("HumanoidRootPart") or isPhasing then return end
+            if not _G.IsMaThan then 
+                Rayfield:Notify({Title = "Cảnh báo", Content = "Phải hóa Ma Thần mới xuyên tường được!", Duration = 2})
+                return 
+            end
             
+            local root = char.HumanoidRootPart
             local hum = char:FindFirstChild("Humanoid")
-            _G.NoclipSlow = not _G.NoclipSlow
             
-            if _G.NoclipSlow then
-                Rayfield:Notify({Title = "U Bộ", Content = "Bật đi xuyên tường. Tốc độ bò trườn!", Duration = 2})
-                PlaySound(178452221, 0.3, 2)
-                hum.WalkSpeed = 6 
-                
-                for _, v in pairs(char:GetDescendants()) do 
-                    if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then 
-                        v.Color = Color3.new(0,0,0)
-                        v.Transparency = 0.7 
-                    end 
-                end
-                
-                noclipConn = RunService.Stepped:Connect(function()
-                    for _, v in pairs(char:GetDescendants()) do
-                        if v:IsA("BasePart") then v.CanCollide = false end
-                    end
-                end)
-            else
-                Rayfield:Notify({Title = "U Bộ", Content = "Đã tắt xuyên tường.", Duration = 2})
-                if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
-                hum.WalkSpeed = 50 
-                
-                for _, v in pairs(char:GetDescendants()) do 
-                    if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then 
-                        v.Color = Color3.new(1,1,1)
-                        v.Transparency = 0 
-                    end 
+            -- Phóng tia check tường
+            local raycastParams = RaycastParams.new(); raycastParams.FilterDescendantsInstances = {char}; raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+            local result = workspace:Raycast(root.Position, root.CFrame.LookVector * 5, raycastParams)
+            
+            if not result then 
+                Rayfield:Notify({Title = "Lỗi U Bộ", Content = "Phải đứng sát vào tường mới chui qua được!", Duration = 2})
+                return 
+            end
+            
+            isPhasing = true
+            hum.WalkSpeed = 0 
+            PlaySound(231917744, 0.3, 2) 
+            
+            local oldProps = {}
+            for _, v in pairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    oldProps[v] = {Mat = v.Material, Col = v.Color, Trans = v.Transparency, CanCol = v.CanCollide}
+                    v.Material = Enum.Material.ForceField; v.Color = Color3.new(0, 0, 0); v.Transparency = 0.5; v.CanCollide = false
                 end
             end
+            
+            local tw = TweenService:Create(root, TweenInfo.new(2.5, Enum.EasingStyle.Linear), {CFrame = root.CFrame * CFrame.new(0, 0, -10)})
+            tw:Play()
+            
+            task.spawn(function()
+                while tw.PlaybackState == Enum.PlaybackState.Playing do
+                    CreateGhostTrail(char, 0.8, Color3.fromRGB(50, 50, 50)); task.wait(0.1)
+                end
+            end)
+            
+            tw.Completed:Wait()
+            
+            for v, props in pairs(oldProps) do
+                if v and v.Parent then
+                    v.Material = props.Mat; v.Color = props.Col; v.Transparency = props.Trans; v.CanCollide = true
+                end
+            end
+            
+            hum.WalkSpeed = 50 
+            isPhasing = false
         end)
     end
 })
 
 -- ==========================================
--- 5. CỔNG KHÔNG GIAN (ĐI VÀ VỀ LĨNH VỰC)
+-- 5. KHÔNG GIAN LĨNH VỰC (ĐI VÀ VỀ REALM)
 -- ==========================================
 TabTrans:CreateButton({
     Name = "Nhận: 🌀 Không Gian Lĩnh Vực",
@@ -382,7 +400,6 @@ TabTrans:CreateButton({
                 realmConn = RunService.RenderStepped:Connect(function()
                     if math.random(1, 5) == 1 then StrikeLightning(root.Position, 50, Color3.fromRGB(0, 200, 255)) end
                 end)
-                
             else
                 _G.InPortalRealm = false
                 hum.WalkSpeed = 0
@@ -411,7 +428,7 @@ TabTrans:CreateButton({
 })
 
 -- ==========================================
--- 6. CỔNG SÁT THỦ XUYÊN KHÔNG (TỰ TÌM NGƯỜI GẦN NHẤT)
+-- 6. CỔNG SÁT THỦ (AUTO TÌM NGƯỜI)
 -- ==========================================
 TabTrans:CreateButton({
     Name = "Nhận: 🌀 Cổng Sát Thủ",
@@ -472,7 +489,7 @@ TabTrans:CreateButton({
 })
 
 -- ==========================================
--- 7. CỔNG XUYÊN KHÔNG 100M (XUYÊN TƯỜNG)
+-- 7. CỔNG XUYÊN KHÔNG 100M
 -- ==========================================
 TabTrans:CreateButton({
     Name = "Nhận: 🌀 Cổng Xuyên Không (100m)",
@@ -531,19 +548,37 @@ TabTrans:CreateButton({
 })
 
 -- ==========================================
--- 8. CỔNG DỊCH CHUYỂN THEO TÊN (ÁM SÁT TARGET)
+-- 8. CỔNG TRUY SÁT THEO TÊN (DROPDOWN CHỌN)
 -- ==========================================
-TabTrans:CreateInput({
-    Name = "Nhập Tên Mục Tiêu",
-    PlaceholderText = "Tên người chơi...",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(Text)
-        TargetNameForPortal = Text
+local function GetPlayerNames()
+    local list = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= player then table.insert(list, p.Name) end
+    end
+    return list
+end
+
+local TargetDropdown = TabTrans:CreateDropdown({
+    Name = "Chọn Mục Tiêu Ám Sát",
+    Options = GetPlayerNames(),
+    CurrentOption = {""},
+    MultipleOptions = false,
+    Flag = "TargetDropdown",
+    Callback = function(Option)
+        TargetNameForPortal = Option[1]
     end,
 })
 
 TabTrans:CreateButton({
-    Name = "Nhận: 🌀 Cổng Truy Sát (Theo Tên)",
+    Name = "🔄 Làm Mới Danh Sách Người Chơi",
+    Callback = function()
+        TargetDropdown:Refresh(GetPlayerNames(), true)
+        Rayfield:Notify({Title = "Thành công", Content = "Đã cập nhật danh sách!", Duration = 2})
+    end
+})
+
+TabTrans:CreateButton({
+    Name = "Nhận: 🌀 Cổng Truy Sát (Mục Tiêu)",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
         tool.Name, tool.RequiresHandle = "🌀 Cổng Truy Sát", false
@@ -554,22 +589,13 @@ TabTrans:CreateButton({
             if not char or not char:FindFirstChild("HumanoidRootPart") or isCasting or not _G.IsMaThan then return end
             
             if TargetNameForPortal == "" then
-                Rayfield:Notify({Title = "Lỗi", Content = "Chưa nhập tên mục tiêu vào ô!", Duration = 2})
+                Rayfield:Notify({Title = "Lỗi", Content = "Vui lòng chọn người chơi từ danh sách!", Duration = 2})
                 return
             end
             
-            -- Tìm Player theo tên
-            local targetPlayer = nil
-            for _, p in pairs(Players:GetPlayers()) do
-                if string.lower(string.sub(p.Name, 1, #TargetNameForPortal)) == string.lower(TargetNameForPortal) or 
-                   string.lower(string.sub(p.DisplayName, 1, #TargetNameForPortal)) == string.lower(TargetNameForPortal) then
-                    targetPlayer = p
-                    break
-                end
-            end
-            
+            local targetPlayer = Players:FindFirstChild(TargetNameForPortal)
             if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                Rayfield:Notify({Title = "Thất bại", Content = "Không tìm thấy người chơi này!", Duration = 2})
+                Rayfield:Notify({Title = "Thất bại", Content = "Người chơi này đã thoát hoặc chưa load xong!", Duration = 2})
                 return
             end
             
@@ -581,7 +607,7 @@ TabTrans:CreateButton({
             PlaySound(142070127, 0.5, 3)
             
             local dashDirection = root.CFrame.LookVector
-            local p1, a1 = SpawnFrontPortal(root.Position, dashDirection, Color3.fromRGB(255, 0, 0)) -- Cổng màu đỏ máu
+            local p1, a1 = SpawnFrontPortal(root.Position, dashDirection, Color3.fromRGB(255, 0, 0)) 
             task.spawn(function() for i=1, 10 do StrikeLightning(p1.Position, 15, Color3.fromRGB(255, 0, 0)); task.wait(0.1) end end)
             
             hum.WalkSpeed = 0 
@@ -612,7 +638,7 @@ TabTrans:CreateButton({
 })
 
 -- ==========================================
--- 9. DỌN DẸP & HỦY TẤT CẢ
+-- 9. DỌN DẸP
 -- ==========================================
 TabTrans:CreateButton({
     Name = "🧹 Xóa Túi Đồ & Hủy Ma Thần",
@@ -636,7 +662,6 @@ TabTrans:CreateButton({
         end
         if ghostMovementConn then ghostMovementConn:Disconnect() end
         if realmConn then realmConn:Disconnect() end
-        if noclipConn then noclipConn:Disconnect() end
         if Lighting:FindFirstChild("MaThanCC") then Lighting.MaThanCC:Destroy() end
         if Lighting:FindFirstChild("PortalBlur") then Lighting.PortalBlur:Destroy() end
         if workspace:FindFirstChild("PortalFloor") then workspace.PortalFloor:Destroy() end
