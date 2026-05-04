@@ -1,4 +1,4 @@
--- ==========================================
+-- ==========================================vv
 -- TÊN SẢN PHẨM: MINT MA THẦN V4 (BẢN TỐI THƯỢNG)
 -- TÁC GIẢ: Em trai làm mướn
 -- ==========================================
@@ -163,7 +163,124 @@ TabTrans:CreateButton({
         end)
     end
 })
-
+-- ==========================================
+-- 3. CỔNG KHÔNG GIAN (ĐI VÀ VỀ)
+-- ==========================================
+TabTrans:CreateButton({
+    Name = "Nhận: 🌀 không gian lĩnh vực",
+    Callback = function()
+        local tool = Instance.new("Tool", player.Backpack)
+        tool.Name, tool.RequiresHandle = "🌀 Cổng Không Gian", false
+        
+        tool.Activated:Connect(function()
+            local char = player.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            if not _G.IsMaThan then return end
+            
+            local root = char.HumanoidRootPart
+            local hum = char:FindFirstChild("Humanoid")
+            
+            if not _G.InPortalRealm then
+                -- TRẠNG THÁI 1: BƯỚC VÀO CỔNG
+                _G.InPortalRealm = true
+                _G.PortalSavedPos = root.CFrame -- Lưu tọa độ cũ
+                
+                -- Tạo cổng đen, viền xanh biển dưới đất
+                local portal = Instance.new("Part", workspace)
+                portal.Shape = Enum.PartType.Cylinder; portal.Size = Vector3.new(0.5, 10, 10)
+                portal.CFrame = root.CFrame * CFrame.new(0, -hum.HipHeight - 2, 0) * CFrame.Angles(0, 0, math.rad(90))
+                portal.Anchored = true; portal.CanCollide = false; portal.Material = Enum.Material.Neon; portal.Color = Color3.fromRGB(0, 0, 0)
+                
+                local portalAura = Instance.new("Part", workspace)
+                portalAura.Shape = Enum.PartType.Cylinder; portalAura.Size = Vector3.new(0.4, 11, 11)
+                portalAura.CFrame = portal.CFrame
+                portalAura.Anchored = true; portalAura.CanCollide = false; portalAura.Material = Enum.Material.Neon; portalAura.Color = Color3.fromRGB(0, 150, 255)
+                
+                PlaySound(142070127, 0.5, 3)
+                
+                -- Animation chìm xuống đất (Tắt va chạm mới chìm được nha má)
+                hum.WalkSpeed = 0
+                for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end
+                
+                local twDown = TweenService:Create(root, TweenInfo.new(1.5, Enum.EasingStyle.Sine), {CFrame = root.CFrame * CFrame.new(0, -10, 0)})
+                twDown:Play()
+                
+                -- Sấm sét giật tung tóe lúc chìm
+                task.spawn(function()
+                    for i = 1, 15 do StrikeLightning(portal.Position, 15, Color3.fromRGB(0, 150, 255)); task.wait(0.1) end
+                end)
+                
+                twDown.Completed:Wait()
+                portal:Destroy(); portalAura:Destroy()
+                
+                -- Dịch chuyển lên Realm (Trên trời 10000m)
+                root.CFrame = CFrame.new(0, 10000, 0)
+                local floor = Instance.new("Part", workspace)
+                floor.Name = "PortalFloor"; floor.Size = Vector3.new(100, 1, 100); floor.CFrame = CFrame.new(0, 9995, 0)
+                floor.Anchored = true; floor.Material = Enum.Material.ForceField; floor.Color = Color3.fromRGB(0, 50, 100)
+                
+                -- Phục hồi va chạm và cho di chuyển
+                for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = true end end
+                hum.WalkSpeed = 50
+                
+                -- Màn hình mờ ảo tung chảo + Đổi màu xanh
+                if Lighting:FindFirstChild("MaThanCC") then Lighting.MaThanCC.TintColor = Color3.fromRGB(100, 200, 255) end
+                local blur = Instance.new("BlurEffect", Lighting)
+                blur.Name = "PortalBlur"; blur.Size = 30 -- Mờ ơi là mờ
+                
+                -- Sét xanh nổ liên tục trong Realm
+                realmConn = RunService.RenderStepped:Connect(function()
+                    if math.random(1, 5) == 1 then StrikeLightning(root.Position, 50, Color3.fromRGB(0, 200, 255)) end
+                end)
+                
+            else
+                -- TRẠNG THÁI 2: TRỞ VỀ TỪ CỔNG
+                _G.InPortalRealm = false
+                hum.WalkSpeed = 0
+                
+                -- Thu hồi Realm
+                if realmConn then realmConn:Disconnect() end
+                if workspace:FindFirstChild("PortalFloor") then workspace.PortalFloor:Destroy() end
+                if Lighting:FindFirstChild("PortalBlur") then Lighting.PortalBlur:Destroy() end
+                if Lighting:FindFirstChild("MaThanCC") then Lighting.MaThanCC.TintColor = Color3.fromRGB(200, 200, 200) end
+                
+                -- Về lại vị trí cũ, nằm dưới lòng đất 10m
+                root.CFrame = _G.PortalSavedPos * CFrame.new(0, -10, 0)
+                for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end
+                
+                -- Mở cổng tại vị trí về
+                local portal = Instance.new("Part", workspace)
+                portal.Shape = Enum.PartType.Cylinder; portal.Size = Vector3.new(0.5, 10, 10)
+                portal.CFrame = _G.PortalSavedPos * CFrame.new(0, -hum.HipHeight - 2, 0) * CFrame.Angles(0, 0, math.rad(90))
+                portal.Anchored = true; portal.CanCollide = false; portal.Material = Enum.Material.Neon; portal.Color = Color3.fromRGB(0, 0, 0)
+                
+                local portalAura = Instance.new("Part", workspace)
+                portalAura.Shape = Enum.PartType.Cylinder; portalAura.Size = Vector3.new(0.4, 11, 11)
+                portalAura.CFrame = portal.CFrame
+                portalAura.Anchored = true; portalAura.CanCollide = false; portalAura.Material = Enum.Material.Neon; portalAura.Color = Color3.fromRGB(0, 150, 255)
+                
+                PlaySound(142070127, 0.6, 3)
+                
+                -- Màn hình hơi mờ nhẹ lúc ngoi lên
+                local tempBlur = Instance.new("BlurEffect", Lighting); tempBlur.Size = 15
+                
+                -- Tween ngoi đầu từ từ lên
+                local twUp = TweenService:Create(root, TweenInfo.new(2, Enum.EasingStyle.Sine), {CFrame = _G.PortalSavedPos})
+                twUp:Play()
+                
+                task.spawn(function()
+                    for i = 1, 20 do StrikeLightning(portal.Position, 15, Color3.fromRGB(0, 150, 255)); task.wait(0.1) end
+                end)
+                
+                twUp.Completed:Wait()
+                portal:Destroy(); portalAura:Destroy(); tempBlur:Destroy()
+                
+                for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = true end end
+                hum.WalkSpeed = 50
+            end
+        end)
+    end
+})
 -- ==========================================
 -- 2. BƯỚC NHẢY KHÔNG GIAN (LƯỚT THE THE FLASH)
 -- ==========================================
