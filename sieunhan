@@ -1,8 +1,4 @@
--- ==========================================
--- TÊN SẢN PHẨM: MINT MA THẦN V4 (ULTIMATE FINAL)
--- TÁC GIẢ: Em trai làm mướn (Đã cạn lời)
--- ==========================================
-
+ 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -14,14 +10,14 @@ local Camera = game.Workspace.CurrentCamera
 local mouse = player:GetMouse()
 
 local Window = Rayfield:CreateWindow({
-    Name = "MinT Ma Thần Hub 🔮",
+    Name = " Ma Thần không gian 🔮",
     LoadingTitle = "Đang load bản chốt đơn...",
     LoadingSubtitle = "minh triết đẹp trai!",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
 
-local TabTrans = Window:CreateTab("🔮 Ma Thần Tối Thượng", nil)
+local TabTrans = Window:CreateTab("🔮 Ma Thần không giang", nil)
 
 _G.IsMaThan = false
 _G.InPortalRealm = false
@@ -109,10 +105,10 @@ end
 -- 1. BIẾN HÌNH & HỦY DẠNG
 -- ==========================================
 TabTrans:CreateButton({
-    Name = "Nhận: 🔮 Ấn Ký Ma Thần (Bật/Tắt)",
+    Name = "Nhận: 🔮 Ấn Ký Ma Thần khoog gian (Bật/Tắt)",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
-        tool.Name, tool.RequiresHandle = "🔮 Ấn Ký Ma Thần", false
+        tool.Name, tool.RequiresHandle = "🔮 Ấn Ký Ma Thần không gian", false
         
         tool.Activated:Connect(function()
             local char = player.Character
