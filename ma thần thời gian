@@ -1,1 +1,330 @@
+ 
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local Debris = game:GetService("Debris")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local Camera = game.Workspace.CurrentCamera
 
+local Window = Rayfield:CreateWindow({
+    Name = "MinT Thời Gian Hub ⏳",
+    LoadingTitle = "Đang đạo diễn cắt cảnh...",
+    LoadingSubtitle = "Tắt game đi chạy data IPE đi!",
+    ConfigurationSaving = { Enabled = false },
+    KeySystem = false,
+})
+
+local TabTime = Window:CreateTab("⏳ Ma Thần Thời Gian", nil)
+
+_G.IsTimeGod = false
+_G.TimeStopped = false
+local ghostConn, backClockConn, floatingNumConn
+local originalWalkSpeeds = {}
+
+-- ==========================================
+-- HÀM HỖ TRỢ VFX & AUDIO
+-- ==========================================
+local function PlaySound(id, pitch, vol, parent)
+    local s = Instance.new("Sound")
+    s.SoundId = "rbxassetid://" .. tostring(id)
+    s.Volume = vol or 2; s.Pitch = pitch or 1; s.Parent = parent or (player.Character and player.Character:FindFirstChild("HumanoidRootPart")) or workspace
+    s:Play(); Debris:AddItem(s, 10)
+    return s
+end
+
+local function CreateGhostTrail(char, duration, color)
+    for _, part in pairs(char:GetChildren()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            local clone = part:Clone()
+            clone.Parent = workspace; clone.Anchored = true; clone.CanCollide = false
+            clone.Material = Enum.Material.ForceField; clone.Color = color or Color3.fromRGB(255, 215, 0)
+            for _, v in pairs(clone:GetChildren()) do if not v:IsA("SpecialMesh") then v:Destroy() end end
+            TweenService:Create(clone, TweenInfo.new(duration or 0.5), {Transparency = 1}):Play()
+            Debris:AddItem(clone, duration or 0.5)
+        end
+    end
+end
+
+local function Shockwave(pos, color)
+    local ring = Instance.new("Part", workspace)
+    ring.Anchored = true; ring.CanCollide = false; ring.Transparency = 0; ring.Material = Enum.Material.Neon; ring.Color = color or Color3.fromRGB(255, 215, 0)
+    ring.CFrame = CFrame.new(pos) * CFrame.Angles(math.rad(90), 0, 0)
+    local mesh = Instance.new("SpecialMesh", ring)
+    mesh.MeshId = "rbxassetid://3270017"; mesh.Scale = Vector3.new(1, 1, 0.1)
+    TweenService:Create(mesh, TweenInfo.new(1, Enum.EasingStyle.Sine), {Scale = Vector3.new(150, 150, 0.1)}):Play()
+    TweenService:Create(ring, TweenInfo.new(1), {Transparency = 1}):Play()
+    Debris:AddItem(ring, 1)
+end
+
+local function CreateClockPart(cframe)
+    local part = Instance.new("Part", workspace)
+    part.Size = Vector3.new(4, 4, 0.2); part.CFrame = cframe
+    part.Anchored = true; part.CanCollide = false; part.Transparency = 1
+    part.Material = Enum.Material.Neon; part.Color = Color3.fromRGB(255, 215, 0)
+    
+    local cylinder = Instance.new("CylinderMesh", part)
+    
+    local decalFront = Instance.new("Decal", part)
+    decalFront.Texture = "rbxassetid://1440019623"; decalFront.Face = Enum.NormalId.Front; decalFront.Transparency = 1
+    local decalBack = Instance.new("Decal", part)
+    decalBack.Texture = "rbxassetid://1440019623"; decalBack.Face = Enum.NormalId.Back; decalBack.Transparency = 1
+    
+    return part, decalFront, decalBack
+end
+
+-- ==========================================
+-- 1. CUTSCENE BIẾN HÌNH MA THẦN THỜI GIAN
+-- ==========================================
+TabTime:CreateButton({
+    Name = "Nhận: ⏳ Ấn Ký Thời Gian (Biến Hình)",
+    Callback = function()
+        local tool = Instance.new("Tool", player.Backpack)
+        tool.Name, tool.RequiresHandle = "⏳ Biến Hình Thời Gian", false
+        local isTransforming = false
+        
+        tool.Activated:Connect(function()
+            local char = player.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") or isTransforming then return end
+            
+            local root = char.HumanoidRootPart
+            local hum = char:FindFirstChild("Humanoid")
+            
+            if _G.IsTimeGod then
+                Rayfield:Notify({Title = "Thông báo", Content = "Đã biến hình rồi, dùng Hủy Dạng để tắt!", Duration = 2})
+                return
+            end
+            
+            isTransforming = true
+            _G.IsTimeGod = true
+            hum.WalkSpeed = 0; root.Anchored = true -- Khóa chân
+            
+            -- [1] Ép Camera ra trước mặt
+            Camera.CameraType = Enum.CameraType.Scriptable
+            local camPos = root.Position + root.CFrame.LookVector * 12 + Vector3.new(0, 2, 0)
+            TweenService:Create(Camera, TweenInfo.new(1, Enum.EasingStyle.Sine), {CFrame = CFrame.lookAt(camPos, root.Position)}):Play()
+            task.wait(1)
+            
+            -- [2] Hiện từ từ 2 đồng hồ 2 bên
+            PlaySound(152835970, 0.8, 3) -- Tiếng tíc tắc
+            local leftCF = root.CFrame * CFrame.new(-4, 2, -2) * CFrame.Angles(0, math.rad(90), 0)
+            local rightCF = root.CFrame * CFrame.new(4, 2, -2) * CFrame.Angles(0, math.rad(90), 0)
+            
+            local cLeft, d1, d2 = CreateClockPart(leftCF)
+            local cRight, d3, d4 = CreateClockPart(rightCF)
+            
+            TweenService:Create(cLeft, TweenInfo.new(2), {Transparency = 0.5}):Play()
+            TweenService:Create(cRight, TweenInfo.new(2), {Transparency = 0.5}):Play()
+            TweenService:Create(d1, TweenInfo.new(2), {Transparency = 0}):Play()
+            TweenService:Create(d2, TweenInfo.new(2), {Transparency = 0}):Play()
+            TweenService:Create(d3, TweenInfo.new(2), {Transparency = 0}):Play()
+            TweenService:Create(d4, TweenInfo.new(2), {Transparency = 0}):Play()
+            
+            task.wait(2) -- Chờ 2 giây
+            
+            -- [3] Đồng hồ quay quay 3 giây
+            PlaySound(864568856, 1, 3) 
+            local spinTw1 = TweenService:Create(cLeft, TweenInfo.new(3, Enum.EasingStyle.Linear), {CFrame = leftCF * CFrame.Angles(0, 0, math.rad(360*3))})
+            local spinTw2 = TweenService:Create(cRight, TweenInfo.new(3, Enum.EasingStyle.Linear), {CFrame = rightCF * CFrame.Angles(0, 0, math.rad(-360*3))})
+            spinTw1:Play(); spinTw2:Play()
+            
+            task.wait(3) -- Quay 3 giây
+            
+            -- [4] Hợp nhất bay lên đầu rồi hạ xuống chân
+            local topCF = root.CFrame * CFrame.new(0, 8, 0) * CFrame.Angles(math.rad(90), 0, 0)
+            local mergeTw1 = TweenService:Create(cLeft, TweenInfo.new(1, Enum.EasingStyle.Exponential), {CFrame = topCF})
+            local mergeTw2 = TweenService:Create(cRight, TweenInfo.new(1, Enum.EasingStyle.Exponential), {CFrame = topCF})
+            mergeTw1:Play(); mergeTw2:Play()
+            mergeTw1.Completed:Wait()
+            
+            cLeft:Destroy() -- CRight sẽ rớt xuống
+            local downTw = TweenService:Create(cRight, TweenInfo.new(0.5, Enum.EasingStyle.Bounce), {CFrame = root.CFrame * CFrame.new(0, -hum.HipHeight, 0) * CFrame.Angles(math.rad(90), 0, 0)})
+            downTw:Play()
+            downTw.Completed:Wait()
+            
+            Shockwave(root.Position, Color3.fromRGB(255, 215, 0))
+            cRight:Destroy()
+            
+            -- [5] Trả Camera lại
+            Camera.CameraType = Enum.CameraType.Custom
+            root.Anchored = false
+            hum.WalkSpeed = 50 -- Cấp quyền Ma Thần (Gia tốc)
+            
+            local cc = Instance.new("ColorCorrectionEffect", Lighting)
+            cc.Name = "TimeCC"
+            TweenService:Create(cc, TweenInfo.new(1), {TintColor = Color3.fromRGB(255, 240, 150), Contrast = 0.2}):Play()
+            
+            -- Tàn ảnh vàng chạy bộ (Gia Tốc Thời Gian)
+            local timer = 0
+            ghostConn = RunService.RenderStepped:Connect(function(dt)
+                timer = timer + dt
+                if timer > 0.15 and hum.MoveDirection.Magnitude > 0 then 
+                    CreateGhostTrail(char, 0.5, Color3.fromRGB(255, 215, 0)); timer = 0 
+                end
+            end)
+            
+            -- [6] Hiệu ứng đồng hồ bự quay sau lưng liên tục
+            local backClock, db1, db2 = CreateClockPart(root.CFrame * CFrame.new(0, 0, 2))
+            backClock.Name = "BackClock"; backClock.Size = Vector3.new(6, 6, 0.2)
+            backClock.Transparency = 0.5; db1.Transparency = 0; db2.Transparency = 0
+            
+            local weld = Instance.new("WeldConstraint", root)
+            weld.Part0 = root; weld.Part1 = backClock
+            weld.C0 = CFrame.new(0, 0, 2) -- Cách lưng 2 stud
+            
+            local angle = 0
+            backClockConn = RunService.Heartbeat:Connect(function(dt)
+                angle = angle + math.rad(45 * dt) -- Xoay chậm
+                weld.C0 = CFrame.new(0, 0, 2.5) * CFrame.Angles(0, 0, angle)
+            end)
+            
+            -- [7] Chữ số lởn vởn bay lên
+            floatingNumConn = RunService.Heartbeat:Connect(function()
+                if math.random(1, 10) == 1 then
+                    local numPart = Instance.new("Part", workspace)
+                    numPart.Size = Vector3.new(1,1,1); numPart.Transparency = 1; numPart.Anchored = true; numPart.CanCollide = false
+                    numPart.CFrame = root.CFrame * CFrame.new(math.random(-5,5), -2, math.random(-5,5))
+                    
+                    local bg = Instance.new("BillboardGui", numPart)
+                    bg.Size = UDim2.new(2,0,2,0); bg.AlwaysOnTop = true
+                    local txt = Instance.new("TextLabel", bg)
+                    txt.Size = UDim2.new(1,0,1,0); txt.BackgroundTransparency = 1
+                    txt.Text = tostring(math.random(0, 9)); txt.TextColor3 = Color3.fromRGB(255, 215, 0); txt.TextScaled = true; txt.Font = Enum.Font.Code
+                    
+                    TweenService:Create(numPart, TweenInfo.new(3, Enum.EasingStyle.Linear), {CFrame = numPart.CFrame * CFrame.new(0, 15, 0)}):Play()
+                    TweenService:Create(txt, TweenInfo.new(3), {TextTransparency = 1}):Play()
+                    Debris:AddItem(numPart, 3)
+                end
+            end)
+            
+            PlaySound(5094957444, 1, 1).Looped = true -- Nhạc nền đồng hồ mini bay xung quanh
+            isTransforming = false
+            Rayfield:Notify({Title = "Thức tỉnh!", Content = "Gia Tốc Thời Gian đã được kích hoạt!", Duration = 3})
+        end)
+    end
+})
+
+-- ==========================================
+-- 2. NGƯNG ĐỌNG THỜI GIAN
+-- ==========================================
+TabTime:CreateButton({
+    Name = "Nhận: ⏸️ Ngưng Đọng Thời Gian",
+    Callback = function()
+        local tool = Instance.new("Tool", player.Backpack)
+        tool.Name, tool.RequiresHandle = "⏸️ Ngưng Đọng Thời Gian", false
+        
+        tool.Activated:Connect(function()
+            if not _G.IsTimeGod then return end
+            local char = player.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            
+            if _G.TimeStopped then
+                _G.TimeStopped = false
+                if Lighting:FindFirstChild("ZaWarudoCC") then Lighting.ZaWarudoCC:Destroy() end
+                
+                for target, speed in pairs(originalWalkSpeeds) do
+                    if target and target.Parent and target:IsA("Humanoid") then target.WalkSpeed = speed end
+                end
+                originalWalkSpeeds = {}
+                PlaySound(609250266, 1, 3) 
+                Rayfield:Notify({Title = "Thời gian", Content = "Thời gian tiếp tục trôi.", Duration = 2})
+            else
+                _G.TimeStopped = true
+                PlaySound(864568856, 0.5, 5) 
+                
+                local cc = Instance.new("ColorCorrectionEffect", Lighting)
+                cc.Name = "ZaWarudoCC"
+                TweenService:Create(cc, TweenInfo.new(0.5), {Saturation = -1, Contrast = 0.5, Brightness = -0.2}):Play()
+                
+                Shockwave(char.HumanoidRootPart.Position, Color3.fromRGB(150, 150, 150))
+                
+                originalWalkSpeeds = {}
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= player and p.Character and p.Character:FindFirstChild("Humanoid") then
+                        local tHum = p.Character.Humanoid
+                        originalWalkSpeeds[tHum] = tHum.WalkSpeed
+                        tHum.WalkSpeed = 0 
+                    end
+                end
+                
+                Rayfield:Notify({Title = "Za Warudo!", Content = "Cả thế giới đã bị đóng băng!", Duration = 3})
+            end
+        end)
+    end
+})
+
+-- ==========================================
+-- 3. TRỞ VỀ QUÁ KHỨ (RECALL)
+-- ==========================================
+TabTime:CreateButton({
+    Name = "Nhận: ⏪ Trở Về Quá Khứ",
+    Callback = function()
+        local tool = Instance.new("Tool", player.Backpack)
+        tool.Name, tool.RequiresHandle = "⏪ Trở Về Quá Khứ", false
+        local isRecalling = false
+        
+        tool.Activated:Connect(function()
+            local char = player.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") or isRecalling then return end
+            if not _G.IsTimeGod then return end
+            
+            isRecalling = true
+            local root = char.HumanoidRootPart
+            local savedCFrame = root.CFrame 
+            
+            PlaySound(1125603704, 1, 2)
+            Rayfield:Notify({Title = "Ghi Nhớ", Content = "Đã lưu vị trí. 3 giây nữa sẽ quay về quá khứ!", Duration = 3})
+            
+            local ghost = Instance.new("Part", workspace)
+            ghost.Size = Vector3.new(2, 5, 2); ghost.CFrame = savedCFrame; ghost.Anchored = true; ghost.CanCollide = false
+            ghost.Material = Enum.Material.ForceField; ghost.Color = Color3.fromRGB(0, 255, 255)
+            Debris:AddItem(ghost, 3.5)
+            
+            task.wait(3) 
+            
+            PlaySound(231917744, 1.5, 3)
+            TweenService:Create(Camera, TweenInfo.new(0.1), {FieldOfView = 120}):Play()
+            
+            local tw = TweenService:Create(root, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {CFrame = savedCFrame})
+            tw:Play()
+            
+            task.spawn(function()
+                while tw.PlaybackState == Enum.PlaybackState.Playing do CreateGhostTrail(char, 0.2, Color3.fromRGB(0, 255, 255)); task.wait(0.02) end
+            end)
+            
+            tw.Completed:Wait()
+            TweenService:Create(Camera, TweenInfo.new(0.3), {FieldOfView = 70}):Play()
+            Shockwave(root.Position, Color3.fromRGB(0, 255, 255))
+            
+            isRecalling = false
+        end)
+    end
+})
+
+-- ==========================================
+-- 4. HỦY DẠNG
+-- ==========================================
+TabTime:CreateButton({
+    Name = "🧹 Hủy Dạng & Xóa Đồ",
+    Callback = function()
+        _G.IsTimeGod = false
+        _G.TimeStopped = false
+        
+        Camera.CameraType = Enum.CameraType.Custom
+        if ghostConn then ghostConn:Disconnect() end
+        if backClockConn then backClockConn:Disconnect() end
+        if floatingNumConn then floatingNumConn:Disconnect() end
+        
+        if Lighting:FindFirstChild("TimeCC") then Lighting.TimeCC:Destroy() end
+        if Lighting:FindFirstChild("ZaWarudoCC") then Lighting.ZaWarudoCC:Destroy() end
+        
+        local char = player.Character
+        if char then
+            local hum = char:FindFirstChild("Humanoid")
+            if hum then hum.WalkSpeed = 16; hum.HipHeight = 0 end
+            if char.HumanoidRootPart and char.HumanoidRootPart:FindFirstChild("BackClock") then char.HumanoidRootPart.BackClock:Destroy() end
+        end
+        for _, v in pairs(player.Backpack:GetChildren()) do v:Destroy() end
+    end
+})
