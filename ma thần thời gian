@@ -1,8 +1,4 @@
--- ==========================================
--- TÊN SẢN PHẨM: MINT MA THẦN THỜI GIAN (BẢN ĐÃ VÁ LỖI + THÊM KHÓA CHIÊU)
--- TÁC GIẢ: Em trai làm mướn (Giữ nguyên VFX làm màu của chị)
--- ==========================================
-
+ 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -13,9 +9,9 @@ local player = Players.LocalPlayer
 local Camera = game.Workspace.CurrentCamera
 
 local Window = Rayfield:CreateWindow({
-    Name = "MinT Thời Gian Hub ⏳",
+    Name = "ma thần Thời Gian Hub ⏳",
     LoadingTitle = "Đang gỡ bỏ giới hạn...",
-    LoadingSubtitle = "Đã thêm khóa chiêu và lặp lại quá khứ!",
+    LoadingSubtitle = " tít tít tít",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
@@ -23,13 +19,51 @@ local Window = Rayfield:CreateWindow({
 local TabTime = Window:CreateTab("⏳ Ma Thần Thời Gian", nil)
 
 -- ==========================================
--- HỆ THỐNG TRẠNG THÁI (THAY THẾ _G. RÁC)
+-- HỆ THỐNG BYPASS ANTI-CHEAT BẢN CLIENT  
+-- ==========================================
+local bypassed = false
+
+TabTime:CreateToggle({
+    Name = "🛡️ Bật Khiên Anti-Cheat",
+    CurrentValue = false,
+    Flag = "BypassToggle",
+    Callback = function(Value)
+        bypassed = Value
+        if bypassed then
+            Rayfield:Notify({Title = "Cảnh báo", Content = "Đã bật Bypass Client! Chỉ tác dụng game cùi!", Duration = 3})
+        else
+            Rayfield:Notify({Title = "Cảnh báo", Content = "Đã tắt Bypass!", Duration = 2})
+        end
+    end,
+})
+
+-- Kỹ thuật Hook Metatable (Can thiệp vào bộ nhớ tạm của game)
+local mt = getrawmetatable(game)
+local oldIndex = mt.__index
+setreadonly(mt, false)
+
+mt.__index = newcclosure(function(t, k)
+    -- Nếu game đang kiểm tra WalkSpeed hoặc JumpPower từ máy tính
+    if bypassed and not checkcaller() and t:IsA("Humanoid") then
+        if k == "WalkSpeed" then
+            return 16 -- Báo cáo láo
+        elseif k == "JumpPower" then
+            return 50 -- Báo cáo láo
+        end
+    end
+    return oldIndex(t, k)
+end)
+
+setreadonly(mt, true)
+
+-- ==========================================
+-- HỆ THỐNG TRẠNG THÁI 
 -- ==========================================
 local TimeState = {
     IsTimeGod = false,
     TimeStopped = false,
-    IsRecalling = false, -- Skill 3 cũ
-    ActiveSkill = nil, -- Khóa chiêu: "TimeStop", "Recall", "Dash", "Rewind"
+    IsRecalling = false, 
+    ActiveSkill = nil, -- Khóa chiêu
     
     -- Dành cho hệ thống Lặp Lại Quá Khứ mới
     History = {},
@@ -63,7 +97,7 @@ local function StartRecording()
 end
 
 -- ==========================================
--- HÀM HỖ TRỢ VFX & AUDIO CỦA CHỊ MINT
+-- HÀM HỖ TRỢ VFX, AUDIO & TÀNG HÌNH
 -- ==========================================
 local function PlaySound(id, pitch, vol, parent)
     local s = Instance.new("Sound")
@@ -137,6 +171,33 @@ end
 local function SetModelTransparency(model, trans)
     for _, part in pairs(model:GetChildren()) do
         if part:IsA("BasePart") then part.Transparency = trans end
+    end
+end
+
+local function SetInvisibility(char, state)
+    for _, obj in pairs(char:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.Name ~= "HumanoidRootPart" then
+            if state then
+                if not obj:GetAttribute("OrigTrans") then obj:SetAttribute("OrigTrans", obj.Transparency) end
+                obj.Transparency = 1
+            else
+                obj.Transparency = obj:GetAttribute("OrigTrans") or 0
+            end
+        elseif obj:IsA("Decal") then 
+            if state then
+                if not obj:GetAttribute("OrigTrans") then obj:SetAttribute("OrigTrans", obj.Transparency) end
+                obj.Transparency = 1
+            else
+                obj.Transparency = obj:GetAttribute("OrigTrans") or 0
+            end
+        end
+    end
+    
+    local backClock = workspace:FindFirstChild("BackClockModel")
+    if backClock then
+        for _, p in pairs(backClock:GetDescendants()) do
+            if p:IsA("BasePart") then p.Transparency = state and 1 or 0 end
+        end
     end
 end
 
@@ -275,17 +336,17 @@ TabTime:CreateButton({
             
             PlaySound(5094957444, 1, 1).Looped = true
             isTransforming = false
-            StartRecording() -- Bắt đầu lưu lịch sử di chuyển
+            StartRecording()
             Rayfield:Notify({Title = "Thức tỉnh!", Content = "Gỡ bỏ mọi giới hạn, spam đi chị!", Duration = 3})
         end)
     end
 })
 
 -- ==========================================
--- 2. NGƯNG ĐỌNG THỜI GIAN
+-- 2. NGƯNG ĐỌNG THỜI GIAN (TÀNG HÌNH)
 -- ==========================================
 TabTime:CreateButton({
-    Name = "Nhận: ⏸️ Ngưng Đọng",
+    Name = "Nhận: ⏸️ Ngưng Đọng (Tàng Hình)",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
         tool.Name, tool.RequiresHandle = "⏸️ Ngưng Đọng", false
@@ -306,7 +367,11 @@ TabTime:CreateButton({
             
             if TimeState.TimeStopped then
                 TimeState.TimeStopped = false
-                TimeState.ActiveSkill = nil -- Mở khóa chiêu
+                TimeState.ActiveSkill = nil 
+                
+                SetInvisibility(char, false)
+                Shockwave(char.HumanoidRootPart.Position, Color3.fromRGB(0, 255, 255)) 
+                
                 if Lighting:FindFirstChild("ZaWarudoCC") then Lighting.ZaWarudoCC:Destroy() end
                 if offsetVal and scaleVal then
                     TweenService:Create(offsetVal, TweenInfo.new(1, Enum.EasingStyle.Exponential), {Value = CFrame.new(0, 0, 2.5)}):Play()
@@ -321,7 +386,10 @@ TabTime:CreateButton({
                 Rayfield:Notify({Title = "Thời gian", Content = "Thời gian tiếp tục trôi.", Duration = 2})
             else
                 TimeState.TimeStopped = true
-                TimeState.ActiveSkill = "TimeStop" -- Khóa chiêu khác
+                TimeState.ActiveSkill = "TimeStop" 
+                
+                SetInvisibility(char, true)
+                
                 PlaySound(864568856, 0.5, 5) 
                 local cc = Instance.new("ColorCorrectionEffect", Lighting)
                 cc.Name = "ZaWarudoCC"
@@ -341,145 +409,14 @@ TabTime:CreateButton({
                         tRoot.Anchored = true 
                     end
                 end
-                Rayfield:Notify({Title = "Za Warudo!", Content = "Cả server đã bị khóa cứng!", Duration = 3})
+                Rayfield:Notify({Title = "Za Warudo!", Content = "Cả server đứng hình, chị đã tàng hình!", Duration = 3})
             end
         end)
     end
 })
 
 -- ==========================================
--- 3. TRỞ VỀ QUÁ KHỨ (Skill cũ của chị: Giật lùi 4 giây)
--- ==========================================
-TabTime:CreateButton({
-    Name = "Nhận: ⏪ Trở Về Quá Khứ (Vô Hạn)",
-    Callback = function()
-        local tool = Instance.new("Tool", player.Backpack)
-        tool.Name, tool.RequiresHandle = "⏪ Trở Về Quá Khứ", false
-        local activeTickSound = nil
-        
-        tool.Activated:Connect(function()
-            local char = player.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") or not TimeState.IsTimeGod then return end
-            
-            if TimeState.ActiveSkill and TimeState.ActiveSkill ~= "Recall" then
-                Rayfield:Notify({Title = "Khóa Chiêu", Content = "Hãy tắt chiêu đang chạy!", Duration = 2})
-                return
-            end
-            
-            if TimeState.IsRecalling then
-                TimeState.IsRecalling = false
-                TimeState.ActiveSkill = nil
-                return 
-            end
-            
-            local root = char.HumanoidRootPart
-            local hum = char:FindFirstChild("Humanoid")
-            
-            TimeState.IsRecalling = true
-            TimeState.ActiveSkill = "Recall"
-            TimeState.RecallSavedCFrame = root.CFrame 
-            hum.WalkSpeed = 100 
-            
-            Rayfield:Notify({Title = "Thoát Xác", Content = "4 giây nữa sẽ giật về chỗ cũ!", Duration = 3})
-            PlaySound(1125603704, 1, 2)
-            activeTickSound = PlaySound(152835970, 1.5, 2)
-            activeTickSound.Looped = true
-            
-            task.spawn(function()
-                local t = 0
-                while TimeState.IsRecalling and t < 4 do task.wait(0.1); t = t + 0.1 end
-                
-                TimeState.IsRecalling = false
-                TimeState.ActiveSkill = nil
-                if activeTickSound then activeTickSound:Destroy() end
-                
-                PlaySound(231917744, 1.5, 3)
-                TweenService:Create(Camera, TweenInfo.new(0.1), {FieldOfView = 120}):Play()
-                
-                local tw = TweenService:Create(root, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {CFrame = TimeState.RecallSavedCFrame})
-                tw:Play()
-                tw.Completed:Wait()
-                
-                TweenService:Create(Camera, TweenInfo.new(0.3), {FieldOfView = 70}):Play()
-                Shockwave(root.Position, Color3.fromRGB(0, 255, 255))
-                
-                hum.WalkSpeed = 50 
-                TimeState.RecallSavedCFrame = nil 
-            end)
-        end)
-    end
-})
-
--- ==========================================
--- 4. BIẾN DẠNG THỜI GIAN (LƯỚT)
--- ==========================================
-TabTime:CreateButton({
-    Name = "Nhận: 🚀 Biến Dạng Thời Gian (Lướt)",
-    Callback = function()
-        local tool = Instance.new("Tool", player.Backpack)
-        tool.Name, tool.RequiresHandle = "🚀 Biến Dạng Thời Gian", false
-        
-        tool.Activated:Connect(function()
-            local char = player.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            if not TimeState.IsTimeGod then return end
-            
-            if TimeState.ActiveSkill then return end -- Lướt nhanh nên chặn ngầm không cần báo
-            TimeState.ActiveSkill = "Dash"
-            
-            local root = char.HumanoidRootPart
-            local rayOrigin = root.Position
-            local rayDirection = root.CFrame.LookVector * 70 
-            
-            local raycastParams = RaycastParams.new()
-            raycastParams.FilterDescendantsInstances = {char, workspace:FindFirstChild("BackClockModel")}
-            raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-            
-            local hitResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-            local targetPos = hitResult and (hitResult.Position - (root.CFrame.LookVector * 2)) or (rayOrigin + rayDirection)
-            
-            local thrownClock, tW1, tW2 = CreateClockModel(root.CFrame)
-            thrownClock.Name = "ThrownClock"
-            thrownClock:ScaleTo(0.5) 
-            
-            PlaySound(152835970, 2, 2) 
-            
-            local throwTw = TweenService:Create(thrownClock.PrimaryPart, TweenInfo.new(0.3, Enum.EasingStyle.Linear), {CFrame = CFrame.new(targetPos) * CFrame.Angles(0, math.rad(90), 0)})
-            throwTw:Play()
-            
-            local throwConn = RunService.Heartbeat:Connect(function(dt)
-                if tW1 and tW2 then
-                    tW1.C0 = tW1.C0 * CFrame.Angles(math.rad(360 * dt * 5), 0, 0)
-                    tW2.C0 = tW2.C0 * CFrame.Angles(math.rad(360 * dt * 2), 0, 0)
-                end
-            end)
-            
-            throwTw.Completed:Wait()
-            if throwConn then throwConn:Disconnect() end
-            
-            PlaySound(231917744, 1.5, 3)
-            TweenService:Create(Camera, TweenInfo.new(0.1), {FieldOfView = 100}):Play()
-            
-            local dashTw = TweenService:Create(root, TweenInfo.new(0.1, Enum.EasingStyle.Exponential), {CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0), targetPos + root.CFrame.LookVector * 10)})
-            dashTw:Play()
-            
-            task.spawn(function()
-                CreateGhostTrail(char, 0.5, Color3.fromRGB(255, 215, 0))
-            end)
-            
-            dashTw.Completed:Wait()
-            TweenService:Create(Camera, TweenInfo.new(0.2), {FieldOfView = 70}):Play()
-            
-            Shockwave(targetPos, Color3.fromRGB(255, 215, 0))
-            thrownClock:Destroy()
-            
-            TimeState.ActiveSkill = nil
-        end)
-    end
-})
-
--- ==========================================
--- 5. KỸ NĂNG MỚI: LẶP LẠI HÀNH ĐỘNG TRONG QUÁ KHỨ
+-- 3. KỸ NĂNG: LẶP LẠI HÀNH ĐỘNG (Rewind)
 -- ==========================================
 TabTime:CreateButton({
     Name = "Nhận: 🔄 Lặp Lại Hành Động (Rewind)",
@@ -540,7 +477,75 @@ TabTime:CreateButton({
 })
 
 -- ==========================================
--- 6. HỦY DẠNG 
+-- 4. BIẾN DẠNG THỜI GIAN (LƯỚT)
+-- ==========================================
+TabTime:CreateButton({
+    Name = "Nhận: 🚀 Biến Dạng Thời Gian (Lướt)",
+    Callback = function()
+        local tool = Instance.new("Tool", player.Backpack)
+        tool.Name, tool.RequiresHandle = "🚀 Biến Dạng Thời Gian", false
+        
+        tool.Activated:Connect(function()
+            local char = player.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            if not TimeState.IsTimeGod then return end
+            
+            if TimeState.ActiveSkill then return end 
+            TimeState.ActiveSkill = "Dash"
+            
+            local root = char.HumanoidRootPart
+            local rayOrigin = root.Position
+            local rayDirection = root.CFrame.LookVector * 70 
+            
+            local raycastParams = RaycastParams.new()
+            raycastParams.FilterDescendantsInstances = {char, workspace:FindFirstChild("BackClockModel")}
+            raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+            
+            local hitResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+            local targetPos = hitResult and (hitResult.Position - (root.CFrame.LookVector * 2)) or (rayOrigin + rayDirection)
+            
+            local thrownClock, tW1, tW2 = CreateClockModel(root.CFrame)
+            thrownClock.Name = "ThrownClock"
+            thrownClock:ScaleTo(0.5) 
+            
+            PlaySound(152835970, 2, 2) 
+            
+            local throwTw = TweenService:Create(thrownClock.PrimaryPart, TweenInfo.new(0.3, Enum.EasingStyle.Linear), {CFrame = CFrame.new(targetPos) * CFrame.Angles(0, math.rad(90), 0)})
+            throwTw:Play()
+            
+            local throwConn = RunService.Heartbeat:Connect(function(dt)
+                if tW1 and tW2 then
+                    tW1.C0 = tW1.C0 * CFrame.Angles(math.rad(360 * dt * 5), 0, 0)
+                    tW2.C0 = tW2.C0 * CFrame.Angles(math.rad(360 * dt * 2), 0, 0)
+                end
+            end)
+            
+            throwTw.Completed:Wait()
+            if throwConn then throwConn:Disconnect() end
+            
+            PlaySound(231917744, 1.5, 3)
+            TweenService:Create(Camera, TweenInfo.new(0.1), {FieldOfView = 100}):Play()
+            
+            local dashTw = TweenService:Create(root, TweenInfo.new(0.1, Enum.EasingStyle.Exponential), {CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0), targetPos + root.CFrame.LookVector * 10)})
+            dashTw:Play()
+            
+            task.spawn(function()
+                CreateGhostTrail(char, 0.5, Color3.fromRGB(255, 215, 0))
+            end)
+            
+            dashTw.Completed:Wait()
+            TweenService:Create(Camera, TweenInfo.new(0.2), {FieldOfView = 70}):Play()
+            
+            Shockwave(targetPos, Color3.fromRGB(255, 215, 0))
+            thrownClock:Destroy()
+            
+            TimeState.ActiveSkill = nil
+        end)
+    end
+})
+
+-- ==========================================
+-- 5. HỦY DẠNG DỌN RÁC
 -- ==========================================
 TabTime:CreateButton({
     Name = "🧹 Hủy Dạng & Xóa Đồ",
@@ -564,6 +569,8 @@ TabTime:CreateButton({
         
         local char = player.Character
         if char then
+            SetInvisibility(char, false) -- Đảm bảo không bị kẹt tàng hình
+            
             local hum = char:FindFirstChild("Humanoid")
             local root = char:FindFirstChild("HumanoidRootPart")
             if hum then 
