@@ -18,7 +18,7 @@ TabMain:CreateButton({
     Callback = function()
         -- Lấy link RAW chuẩn, sửa lại tên file nếu cần
         -- Lưu ý: Phải thay đúng cái link đã sửa đuôi .lua nhé
-        local rawLink = "https://raw.githubusercontent.com/nguyenminhtriet961-rgb/script-1/main/mathan.lua"
+        local rawLink = "https://raw.githubusercontent.com/nguyenminhtriet961-rgb/script-1/refs/heads/main/ma%20th%E1%BA%A7n%20kh%C3%B4ng%20gian"
         
         -- Cú pháp chống lưu Cache bộ nhớ đệm (Thêm ?t=thời_gian_thực)
         local antiCacheLink = rawLink .. "?t=" .. tostring(tick())
