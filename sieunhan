@@ -44,28 +44,28 @@ end
 TabMain:CreateButton({
     Name = "🚀 Chạy Script: Ma Thần Không Gian",
     Callback = function()
-        LoadScript("https://raw.githubusercontent.com/nguyenminhtriet961-rgb/script-1/main/mathankhonggian.lua")
+        LoadScript("https://raw.githubusercontent.com/nguyenminhtriet961-rgb/script-1/refs/heads/main/ma%20th%E1%BA%A7n%20kh%C3%B4ng%20gian")
     end
 })
 
 TabMain:CreateButton({
     Name = "🚀 Chạy Script: Ma Thần Thời Gian",
     Callback = function()
-        LoadScript("https://raw.githubusercontent.com/nguyenminhtriet961-rgb/script-1/main/mathanthoigian.lua")
+        LoadScript("https://raw.githubusercontent.com/nguyenminhtriet961-rgb/script-1/refs/heads/main/ma%20th%E1%BA%A7n%20th%E1%BB%9Di%20gian")
     end
 })
 
 TabMain:CreateButton({
     Name = "🚀 Chạy Script: Kiếm Đạo Diệt Thế",
     Callback = function()
-        LoadScript("https://raw.githubusercontent.com/nguyenminhtriet961-rgb/script-1/main/kiemdaodietthe.lua")
+        LoadScript("https://raw.githubusercontent.com/nguyenminhtriet961-rgb/script-1/refs/heads/main/kiemdaodietthe")
     end
 })
 
 TabMain:CreateButton({
     Name = "🚀 Chạy Script: Ma Thần Điên Loạn",
     Callback = function()
-        LoadScript("https://raw.githubusercontent.com/nguyenminhtriet961-rgb/script-1/main/mathandienloan.lua")
+        LoadScript("https://raw.githubusercontent.com/nguyenminhtriet961-rgb/script-1/refs/heads/main/mathandienloan")
     end
 })
 
