@@ -1,8 +1,4 @@
--- ==========================================
--- TÊN SẢN PHẨM: MINT MA THẦN THỜI GIAN (BẢN ĐẠO DIỄN KHẮC KHẮT KHE)
--- TÁC GIẢ: Em trai làm mướn
--- ==========================================
-
+ 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -14,7 +10,7 @@ local Camera = game.Workspace.CurrentCamera
 
 local Window = Rayfield:CreateWindow({
     Name = "MinT Thời Gian Hub ⏳",
-    LoadingTitle = "Đang thao túng thời không...",
+    LoadingTitle = "Đang rèn kim đồng hồ...",
     LoadingSubtitle = "Học VSTEP đi chị gái Dược 4!",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
@@ -26,7 +22,7 @@ _G.IsTimeGod = false
 _G.TimeStopped = false
 local ghostConn, backClockConn, floatingNumConn
 local originalWalkSpeeds = {}
-local camLockConn -- Biến để khóa cam liên tục
+local camLockConn 
 
 -- ==========================================
 -- HÀM HỖ TRỢ VFX & AUDIO
@@ -63,38 +59,44 @@ local function Shockwave(pos, color)
     Debris:AddItem(ring, 1)
 end
 
--- TẠO ĐỒNG HỒ HÌNH TRÒN CHUẨN
-local function CreateClockPart(cframe)
-    local part = Instance.new("Part", workspace)
-    part.Shape = Enum.PartType.Cylinder -- Ép thành hình trụ tròn
-    part.Size = Vector3.new(0.2, 5, 5) -- Độ mỏng 0.2, đường kính 5
-    -- Xoay Cylinder để nó đứng thẳng lên như mặt đồng hồ
-    part.CFrame = cframe * CFrame.Angles(0, 0, math.rad(90))
-    part.Anchored = true; part.CanCollide = false
-    part.Material = Enum.Material.Neon; part.Color = Color3.fromRGB(255, 255, 255) -- Lõi trắng
+-- TẠO ĐỒNG HỒ CƠ HỌC (ĐỨNG THẲNG, LÕI TRẮNG, VIỀN ĐEN, KIM QUAY ĐƯỢC)
+local function CreateClockPart(cframe, sizeMult)
+    sizeMult = sizeMult or 1
+    local base = Instance.new("Part", workspace)
+    base.Shape = Enum.PartType.Cylinder
+    base.Size = Vector3.new(0.2 * sizeMult, 5 * sizeMult, 5 * sizeMult)
+    -- Ép đồng hồ ĐỨNG THẲNG và hướng mặt về phía trước
+    base.CFrame = cframe * CFrame.Angles(0, math.rad(90), 0)
+    base.Anchored = true; base.CanCollide = false
+    base.Material = Enum.Material.Neon; base.Color = Color3.fromRGB(255, 255, 255) 
     
-    -- Viền đen bên ngoài
-    local outline = Instance.new("Part", part)
+    local outline = Instance.new("Part", base)
     outline.Shape = Enum.PartType.Cylinder
-    outline.Size = Vector3.new(0.15, 5.3, 5.3)
-    outline.CFrame = part.CFrame
-    outline.Anchored = true; outline.CanCollide = false
-    outline.Color = Color3.fromRGB(0, 0, 0) -- Viền đen
+    outline.Size = Vector3.new(0.15 * sizeMult, 5.3 * sizeMult, 5.3 * sizeMult)
+    outline.CFrame = base.CFrame
+    outline.Anchored = true; outline.CanCollide = false; outline.Color = Color3.fromRGB(0, 0, 0)
     
-    -- Hình dán (Decal) mặt đồng hồ
-    local decalFront = Instance.new("Decal", part)
-    decalFront.Texture = "rbxassetid://1440019623" -- ID mặt đồng hồ la mã
-    decalFront.Face = Enum.NormalId.Right
+    -- Kim phút (Dài, Đỏ)
+    local minHand = Instance.new("Part", base)
+    minHand.Size = Vector3.new(0.25 * sizeMult, 2.2 * sizeMult, 0.1 * sizeMult)
+    minHand.Color = Color3.fromRGB(255, 0, 0); minHand.Anchored = false; minHand.CanCollide = false
+    local wMin = Instance.new("Weld", base)
+    wMin.Part0 = base; wMin.Part1 = minHand
+    wMin.C0 = CFrame.new(0.15 * sizeMult, 0, 0); wMin.C1 = CFrame.new(0, -1.1 * sizeMult, 0)
     
-    local decalBack = Instance.new("Decal", part)
-    decalBack.Texture = "rbxassetid://1440019623"
-    decalBack.Face = Enum.NormalId.Left
+    -- Kim giờ (Ngắn, Đen)
+    local hrHand = Instance.new("Part", base)
+    hrHand.Size = Vector3.new(0.25 * sizeMult, 1.5 * sizeMult, 0.15 * sizeMult)
+    hrHand.Color = Color3.fromRGB(0, 0, 0); hrHand.Anchored = false; hrHand.CanCollide = false
+    local wHr = Instance.new("Weld", base)
+    wHr.Part0 = base; wHr.Part1 = hrHand
+    wHr.C0 = CFrame.new(0.15 * sizeMult, 0, 0); wHr.C1 = CFrame.new(0, -0.75 * sizeMult, 0)
     
-    return part
+    return base, outline, wMin, wHr
 end
 
 -- ==========================================
--- 1. CUTSCENE BIẾN HÌNH ĐÓNG BĂNG CAM
+-- 1. CUTSCENE BIẾN HÌNH ĐÓNG BĂNG CAM CHUẨN
 -- ==========================================
 TabTime:CreateButton({
     Name = "Nhận: ⏳ Ấn Ký Thời Gian (Biến Hình)",
@@ -118,69 +120,66 @@ TabTime:CreateButton({
             isTransforming = true
             _G.IsTimeGod = true
             
-            -- [1] KHÓA TOÀN BỘ CHUYỂN ĐỘNG VÀ CAMERA
-            hum.WalkSpeed = 0
-            hum.JumpPower = 0
-            root.Anchored = true 
+            -- [1] KHÓA TOÀN BỘ CHUYỂN ĐỘNG (FIX LỖI KẸT)
+            hum.WalkSpeed = 0; hum.JumpPower = 0; root.Anchored = true 
             
             Camera.CameraType = Enum.CameraType.Scriptable
-            -- Ép Camera nhìn thẳng mặt liên tục bằng Heartbeat (Không cho nhúc nhích)
             camLockConn = RunService.Heartbeat:Connect(function()
+                -- Khóa góc cam nhìn từ đằng trước mặt
                 local camPos = root.Position + root.CFrame.LookVector * 15 + Vector3.new(0, 2, 0)
                 Camera.CFrame = CFrame.lookAt(camPos, root.Position)
             end)
             
-            -- [2] HIỆN TỪ TỪ 2 ĐỒNG HỒ TRÒN 2 BÊN
+            -- [2] HIỆN TỪ TỪ 2 ĐỒNG HỒ ĐỨNG 2 BÊN
             PlaySound(152835970, 0.8, 3) 
             local leftPos = root.CFrame * CFrame.new(-4, 2, 0)
             local rightPos = root.CFrame * CFrame.new(4, 2, 0)
             
-            local cLeft = CreateClockPart(leftPos)
-            local cRight = CreateClockPart(rightPos)
+            local cLeft, oL, wM1, wH1 = CreateClockPart(leftPos, 1)
+            local cRight, oR, wM2, wH2 = CreateClockPart(rightPos, 1)
             
-            -- Đặt tàng hình ban đầu
-            cLeft.Transparency = 1; cLeft:FindFirstChildOfClass("Part").Transparency = 1
-            for _, d in pairs(cLeft:GetChildren()) do if d:IsA("Decal") then d.Transparency = 1 end end
+            -- Làm mờ rồi hiện ra
+            cLeft.Transparency = 1; oL.Transparency = 1; wM1.Part1.Transparency = 1; wH1.Part1.Transparency = 1
+            cRight.Transparency = 1; oR.Transparency = 1; wM2.Part1.Transparency = 1; wH2.Part1.Transparency = 1
             
-            cRight.Transparency = 1; cRight:FindFirstChildOfClass("Part").Transparency = 1
-            for _, d in pairs(cRight:GetChildren()) do if d:IsA("Decal") then d.Transparency = 1 end end
+            TweenService:Create(cLeft, TweenInfo.new(2), {Transparency = 0}):Play()
+            TweenService:Create(oL, TweenInfo.new(2), {Transparency = 0}):Play()
+            TweenService:Create(wM1.Part1, TweenInfo.new(2), {Transparency = 0}):Play()
+            TweenService:Create(wH1.Part1, TweenInfo.new(2), {Transparency = 0}):Play()
             
-            -- Tween hiện ra
-            TweenService:Create(cLeft, TweenInfo.new(2), {Transparency = 0.2}):Play()
-            TweenService:Create(cLeft:FindFirstChildOfClass("Part"), TweenInfo.new(2), {Transparency = 0}):Play()
-            for _, d in pairs(cLeft:GetChildren()) do if d:IsA("Decal") then TweenService:Create(d, TweenInfo.new(2), {Transparency = 0}):Play() end end
-            
-            TweenService:Create(cRight, TweenInfo.new(2), {Transparency = 0.2}):Play()
-            TweenService:Create(cRight:FindFirstChildOfClass("Part"), TweenInfo.new(2), {Transparency = 0}):Play()
-            for _, d in pairs(cRight:GetChildren()) do if d:IsA("Decal") then TweenService:Create(d, TweenInfo.new(2), {Transparency = 0}):Play() end end
+            TweenService:Create(cRight, TweenInfo.new(2), {Transparency = 0}):Play()
+            TweenService:Create(oR, TweenInfo.new(2), {Transparency = 0}):Play()
+            TweenService:Create(wM2.Part1, TweenInfo.new(2), {Transparency = 0}):Play()
+            TweenService:Create(wH2.Part1, TweenInfo.new(2), {Transparency = 0}):Play()
             
             task.wait(2)
             
-            -- [3] ĐỒNG HỒ QUAY NHANH 3 GIÂY
+            -- [3] KIM ĐỒNG HỒ VÀ BẢN THÂN NÓ QUAY NHANH 3 GIÂY
             PlaySound(864568856, 1, 3) 
-            local spinTw1 = TweenService:Create(cLeft, TweenInfo.new(3, Enum.EasingStyle.Linear), {CFrame = leftPos * CFrame.Angles(math.rad(360*3), 0, math.rad(90))})
-            local spinTw2 = TweenService:Create(cRight, TweenInfo.new(3, Enum.EasingStyle.Linear), {CFrame = rightPos * CFrame.Angles(math.rad(-360*3), 0, math.rad(90))})
-            spinTw1:Play(); spinTw2:Play()
+            -- Quay cả cái khối
+            TweenService:Create(cLeft, TweenInfo.new(3, Enum.EasingStyle.Linear), {CFrame = leftPos * CFrame.Angles(0, math.rad(90), math.rad(360*2))}):Play()
+            TweenService:Create(cRight, TweenInfo.new(3, Enum.EasingStyle.Linear), {CFrame = rightPos * CFrame.Angles(0, math.rad(90), math.rad(-360*2))}):Play()
+            -- Quay kim điên loạn
+            TweenService:Create(wM1, TweenInfo.new(3, Enum.EasingStyle.Linear), {C0 = CFrame.new(0.15, 0, 0) * CFrame.Angles(math.rad(360*15), 0, 0)}):Play()
+            TweenService:Create(wM2, TweenInfo.new(3, Enum.EasingStyle.Linear), {C0 = CFrame.new(0.15, 0, 0) * CFrame.Angles(math.rad(360*15), 0, 0)}):Play()
             
             task.wait(3)
             
-            -- [4] HỢP NHẤT BAY LÊN ĐẦU RỒI HẠ XUỐNG CHÂN
+            -- [4] HỢP NHẤT BỌN NÓ LÊN ĐẦU VÀ RỚT XUỐNG
             local topPos = root.CFrame * CFrame.new(0, 10, 0)
-            local mergeTw1 = TweenService:Create(cLeft, TweenInfo.new(1, Enum.EasingStyle.Exponential), {CFrame = topPos * CFrame.Angles(0, 0, math.rad(90))})
-            local mergeTw2 = TweenService:Create(cRight, TweenInfo.new(1, Enum.EasingStyle.Exponential), {CFrame = topPos * CFrame.Angles(0, 0, math.rad(90))})
-            mergeTw1:Play(); mergeTw2:Play()
-            mergeTw1.Completed:Wait()
+            TweenService:Create(cLeft, TweenInfo.new(0.8, Enum.EasingStyle.Exponential), {CFrame = topPos * CFrame.Angles(0, math.rad(90), 0)}):Play()
+            TweenService:Create(cRight, TweenInfo.new(0.8, Enum.EasingStyle.Exponential), {CFrame = topPos * CFrame.Angles(0, math.rad(90), 0)}):Play()
+            task.wait(0.8)
             
             cLeft:Destroy() -- Xóa trái, phải rớt xuống
             local downPos = root.CFrame * CFrame.new(0, -hum.HipHeight, 0)
-            local downTw = TweenService:Create(cRight, TweenInfo.new(0.5, Enum.EasingStyle.Bounce), {CFrame = downPos * CFrame.Angles(0, math.rad(90), 0)})
-            downTw:Play()
-            downTw.Completed:Wait()
+            TweenService:Create(cRight, TweenInfo.new(0.5, Enum.EasingStyle.Bounce), {CFrame = downPos * CFrame.Angles(0, math.rad(90), math.rad(90))}):Play()
+            task.wait(0.5)
             
             Shockwave(root.Position, Color3.fromRGB(255, 215, 0))
             cRight:Destroy()
             
-            -- [5] MỞ KHÓA CAMERA VÀ NGƯỜI CHƠI
+            -- [5] BẮT BUỘC MỞ KHÓA NGƯỜI CHƠI (CHỐNG KẸT)
             if camLockConn then camLockConn:Disconnect() end
             Camera.CameraType = Enum.CameraType.Custom
             root.Anchored = false
@@ -200,19 +199,23 @@ TabTime:CreateButton({
                 end
             end)
             
-            -- [6] ĐỒNG HỒ BỰ SAU LƯNG QUAY LIÊN TỤC
-            local backClock = CreateClockPart(root.CFrame * CFrame.new(0, 0, 2))
-            backClock.Name = "BackClock"; backClock.Size = Vector3.new(0.2, 8, 8)
-            backClock:FindFirstChildOfClass("Part").Size = Vector3.new(0.15, 8.3, 8.3)
+            -- [6] ĐỒNG HỒ BỰ SAU LƯNG QUAY LIÊN TỤC VÀ CÓ KIM
+            local backClock, bOut, bWm, bWh = CreateClockPart(root.CFrame * CFrame.new(0, 0, 2), 1.5)
+            backClock.Name = "BackClock"; backClock.Transparency = 0.5
             
             local weld = Instance.new("WeldConstraint", root)
             weld.Part0 = root; weld.Part1 = backClock
-            weld.C0 = CFrame.new(0, 0, 2)
             
             local angle = 0
+            local kimAngle = 0
             backClockConn = RunService.Heartbeat:Connect(function(dt)
-                angle = angle + math.rad(45 * dt)
-                weld.C0 = CFrame.new(0, 0, 2.5) * CFrame.Angles(angle, 0, math.rad(90))
+                -- Lưng quay tà tà
+                angle = angle + math.rad(30 * dt)
+                backClock.CFrame = root.CFrame * CFrame.new(0, 0, 2.5) * CFrame.Angles(0, math.rad(90), angle)
+                -- Kim quay vù vù
+                kimAngle = kimAngle + math.rad(180 * dt)
+                bWm.C0 = CFrame.new(0.15 * 1.5, 0, 0) * CFrame.Angles(kimAngle, 0, 0)
+                bWh.C0 = CFrame.new(0.15 * 1.5, 0, 0) * CFrame.Angles(kimAngle / 12, 0, 0)
             end)
             
             -- [7] CHỮ SỐ BAY XUNG QUANH
@@ -236,7 +239,7 @@ TabTime:CreateButton({
             
             PlaySound(5094957444, 1, 1).Looped = true
             isTransforming = false
-            Rayfield:Notify({Title = "Thức tỉnh!", Content = "Gia Tốc Thời Gian đã được kích hoạt!", Duration = 3})
+            Rayfield:Notify({Title = "Thức tỉnh!", Content = "Đã sửa xong lỗi kẹt! Múa đi chị!", Duration = 3})
         end)
     end
 })
