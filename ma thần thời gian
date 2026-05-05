@@ -1,8 +1,4 @@
--- ==========================================
--- TÊN SẢN PHẨM: MINT MA THẦN THỜI GIAN (BẢN ĐẠO DIỄN CHỐT HẠ)
--- TÁC GIẢ: Em trai làm mướn (Sắp trầm cảm vì bà chị)
--- ==========================================
-
+ 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -13,9 +9,9 @@ local player = Players.LocalPlayer
 local Camera = game.Workspace.CurrentCamera
 
 local Window = Rayfield:CreateWindow({
-    Name = "MinT Thời Gian Hub ⏳",
-    LoadingTitle = "Đang fix lỗi chính tả cho chủ thớt...",
-    LoadingSubtitle = "Học VSTEP đi chị gái Dược 4!",
+    Name = "MA THẦN Thời Gian Hub ⏳",
+    LoadingTitle = "skucu...",
+    LoadingSubtitle = "lọ để tnagw sức khỏe!",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
@@ -24,6 +20,9 @@ local TabTime = Window:CreateTab("⏳ Ma Thần Thời Gian", nil)
 
 _G.IsTimeGod = false
 _G.TimeStopped = false
+_G.IsRecalling = false
+_G.RecallSavedCFrame = nil
+
 local ghostConn, backClockConn, floatingNumConn
 local originalAnchorStates = {}
 local camLockConn 
@@ -63,7 +62,6 @@ local function Shockwave(pos, color)
     Debris:AddItem(ring, 1)
 end
 
--- TẠO ĐỒNG HỒ DẠNG MODEL ĐỂ DỄ SCALE VÀ FIX LỖI VẬT LÝ
 local function CreateClockModel(cframe)
     local model = Instance.new("Model", workspace)
     
@@ -84,7 +82,6 @@ local function CreateClockModel(cframe)
     local wOut = Instance.new("Weld", base)
     wOut.Part0 = base; wOut.Part1 = outline; wOut.C0 = CFrame.new(0,0,0)
     
-    -- Kim phút (Đỏ)
     local minHand = Instance.new("Part", model)
     minHand.Size = Vector3.new(0.25, 2.2, 0.1)
     minHand.Color = Color3.fromRGB(255, 0, 0); minHand.Anchored = false; minHand.CanCollide = false; minHand.Massless = true
@@ -92,7 +89,6 @@ local function CreateClockModel(cframe)
     wMin.Part0 = base; wMin.Part1 = minHand
     wMin.C0 = CFrame.new(0.15, 0, 0); wMin.C1 = CFrame.new(0, -1.1, 0)
     
-    -- Kim giờ (Đen)
     local hrHand = Instance.new("Part", model)
     hrHand.Size = Vector3.new(0.25, 1.5, 0.15)
     hrHand.Color = Color3.fromRGB(0, 0, 0); hrHand.Anchored = false; hrHand.CanCollide = false; hrHand.Massless = true
@@ -103,7 +99,6 @@ local function CreateClockModel(cframe)
     return model, wMin, wHr
 end
 
--- Đổi màu/độ mờ cho toàn bộ Model
 local function SetModelTransparency(model, trans)
     for _, part in pairs(model:GetChildren()) do
         if part:IsA("BasePart") then part.Transparency = trans end
@@ -111,7 +106,7 @@ local function SetModelTransparency(model, trans)
 end
 
 -- ==========================================
--- 1. CUTSCENE BIẾN HÌNH MỚI (LÀM THEO YÊU CẦU LỦNG CỦNG CỦA BÀ CHỊ)
+-- 1. CUTSCENE BIẾN HÌNH (SỬA ĐỂ TƯƠNG THÍCH CHIÊU 2)
 -- ==========================================
 TabTime:CreateButton({
     Name = "Nhận: ⏳ Ấn Ký Thời Gian (Biến Hình)",
@@ -134,7 +129,6 @@ TabTime:CreateButton({
             isTransforming = true
             _G.IsTimeGod = true
             
-            -- Khóa cứng người và Cam
             hum.WalkSpeed = 0; hum.JumpPower = 0; root.Anchored = true 
             Camera.CameraType = Enum.CameraType.Scriptable
             camLockConn = RunService.Heartbeat:Connect(function()
@@ -142,7 +136,6 @@ TabTime:CreateButton({
                 Camera.CFrame = CFrame.lookAt(camPos, root.Position)
             end)
             
-            -- [1] HIỆN 2 ĐỒNG HỒ (KHÔNG QUAY)
             PlaySound(152835970, 0.8, 3) 
             local leftPos = root.CFrame * CFrame.new(-4, 2, 0)
             local rightPos = root.CFrame * CFrame.new(4, 2, 0)
@@ -155,30 +148,26 @@ TabTime:CreateButton({
             for _, part in pairs(cRight:GetChildren()) do if part:IsA("BasePart") then TweenService:Create(part, TweenInfo.new(2), {Transparency = 0}):Play() end end
             task.wait(2.5)
             
-            -- [2] HỢP NHẤT LÊN ĐẦU RỒI RỚT TỪ TỪ XUỐNG CHÂN
             PlaySound(864568856, 1, 3) 
             local topPos = root.CFrame * CFrame.new(0, 8, 0)
             TweenService:Create(cLeft.PrimaryPart, TweenInfo.new(1, Enum.EasingStyle.Exponential), {CFrame = topPos * CFrame.Angles(0, math.rad(90), 0)}):Play()
             TweenService:Create(cRight.PrimaryPart, TweenInfo.new(1, Enum.EasingStyle.Exponential), {CFrame = topPos * CFrame.Angles(0, math.rad(90), 0)}):Play()
             task.wait(1)
             
-            cLeft:Destroy() -- Hợp nhất xong xóa trái
+            cLeft:Destroy() 
             local downPos = root.CFrame * CFrame.new(0, -hum.HipHeight, 0)
             TweenService:Create(cRight.PrimaryPart, TweenInfo.new(2, Enum.EasingStyle.Linear), {CFrame = downPos * CFrame.Angles(0, math.rad(90), 0)}):Play()
             task.wait(2)
             
             Shockwave(root.Position, Color3.fromRGB(255, 215, 0))
             
-            -- [3] BAY RA ĐẰNG SAU LƯNG
             local backPos = root.CFrame * CFrame.new(0, 0, 2.5)
             TweenService:Create(cRight.PrimaryPart, TweenInfo.new(1, Enum.EasingStyle.Sine), {CFrame = backPos * CFrame.Angles(0, math.rad(90), 0)}):Play()
             task.wait(1)
             
-            -- Gắn cRight thành đồng hồ vĩnh viễn sau lưng
             cRight.Name = "BackClockModel"
-            cRight:ScaleTo(1.5) -- Cho to ra xíu lúc đầu
+            cRight:ScaleTo(1.5) 
             
-            -- Mở khóa người chơi
             if camLockConn then camLockConn:Disconnect() end
             Camera.CameraType = Enum.CameraType.Custom
             root.Anchored = false
@@ -191,13 +180,16 @@ TabTime:CreateButton({
             local timer = 0
             ghostConn = RunService.RenderStepped:Connect(function(dt)
                 timer = timer + dt
-                if timer > 0.15 and hum.MoveDirection.Magnitude > 0 then CreateGhostTrail(char, 0.5, Color3.fromRGB(255, 215, 0)); timer = 0 end
+                -- NẾU ĐANG DÙNG CHIÊU 2 THÌ ĐẺ TÀN ẢNH LIÊN TỤC (0.05s) THAY VÌ 0.15s
+                local ghostThreshold = _G.IsRecalling and 0.05 or 0.15
+                if timer > ghostThreshold and hum.MoveDirection.Magnitude > 0 then 
+                    CreateGhostTrail(char, _G.IsRecalling and 1 or 0.5, Color3.fromRGB(255, 215, 0))
+                    timer = 0 
+                end
             end)
             
-            -- TẠO VALUE ĐỂ LƯU VỊ TRÍ OFFSET VÀ SCALE (Cho hiệu ứng Ngưng Đọng)
             local offsetVal = Instance.new("CFrameValue", root)
             offsetVal.Name = "ClockOffset"; offsetVal.Value = CFrame.new(0, 0, 2.5)
-            
             local scaleVal = Instance.new("NumberValue", root)
             scaleVal.Name = "ClockScale"; scaleVal.Value = 1.5
             
@@ -205,27 +197,37 @@ TabTime:CreateButton({
                 if cRight and cRight.PrimaryPart then cRight:ScaleTo(val) end
             end)
             
-            -- [4] ĐỒNG HỒ ĐỨNG YÊN, CHỈ CÓ KIM QUAY
             local kimAngle = 0
+            local crazyClockAngle = 0
             backClockConn = RunService.Heartbeat:Connect(function(dt)
-                if not root or not root.Parent then return end
-                -- Đồng hồ ĐỨNG YÊN sau lưng, không xoay tròn nữa
-                cRight.PrimaryPart.CFrame = root.CFrame * offsetVal.Value * CFrame.Angles(0, math.rad(90), 0)
-                -- Kim quay
-                kimAngle = kimAngle + math.rad(180 * dt)
-                rW1.C0 = CFrame.new(0.15 * scaleVal.Value, 0, 0) * CFrame.Angles(kimAngle, 0, 0)
-                rW2.C0 = CFrame.new(0.15 * scaleVal.Value, 0, 0) * CFrame.Angles(kimAngle / 12, 0, 0)
+                if not root or not root.Parent or not cRight or not cRight.PrimaryPart then return end
+                
+                if _G.IsRecalling and _G.RecallSavedCFrame then
+                    -- NẾU ĐANG TRỞ VỀ QUÁ KHỨ: Đồng hồ kẹt lại chỗ cũ và quay điên loạn nguyên cái
+                    crazyClockAngle = crazyClockAngle + math.rad(1080 * dt) -- Xoay nguyên cục 3 vòng/s
+                    cRight.PrimaryPart.CFrame = _G.RecallSavedCFrame * CFrame.Angles(0, crazyClockAngle, math.rad(90))
+                    
+                    kimAngle = kimAngle + math.rad(1440 * dt) -- Kim xoay lú luôn
+                    rW1.C0 = CFrame.new(0.15 * scaleVal.Value, 0, 0) * CFrame.Angles(kimAngle, 0, 0)
+                    rW2.C0 = CFrame.new(0.15 * scaleVal.Value, 0, 0) * CFrame.Angles(kimAngle / 12, 0, 0)
+                else
+                    -- BÌNH THƯỜNG: Bám theo lưng
+                    cRight.PrimaryPart.CFrame = root.CFrame * offsetVal.Value * CFrame.Angles(0, math.rad(90), 0)
+                    kimAngle = kimAngle + math.rad(180 * dt)
+                    rW1.C0 = CFrame.new(0.15 * scaleVal.Value, 0, 0) * CFrame.Angles(kimAngle, 0, 0)
+                    rW2.C0 = CFrame.new(0.15 * scaleVal.Value, 0, 0) * CFrame.Angles(kimAngle / 12, 0, 0)
+                end
             end)
             
             PlaySound(5094957444, 1, 1).Looped = true
             isTransforming = false
-            Rayfield:Notify({Title = "Thức tỉnh!", Content = "Cắt cảnh đúng ý bà nội rồi nhé!", Duration = 3})
+            Rayfield:Notify({Title = "Thức tỉnh!", Content = "Đã biến hình thành công!", Duration = 3})
         end)
     end
 })
 
 -- ==========================================
--- 2. NGƯNG ĐỌNG THỜI GIAN (ZA WARUDO - FIX ĐÓNG BĂNG VÀ ANIMATION)
+-- 2. NGƯNG ĐỌNG THỜI GIAN
 -- ==========================================
 TabTime:CreateButton({
     Name = "Nhận: ⏸️ Ngưng Đọng (Za Warudo)",
@@ -235,6 +237,12 @@ TabTime:CreateButton({
         
         tool.Activated:Connect(function()
             if not _G.IsTimeGod then return end
+            -- Khóa: Đang xài chiêu 2 thì cấm xài chiêu 1
+            if _G.IsRecalling then 
+                Rayfield:Notify({Title = "Lỗi", Content = "Đang Trở Về Quá Khứ, không thể Ngưng Đọng!", Duration = 2})
+                return 
+            end
+            
             local char = player.Character
             if not char or not char:FindFirstChild("HumanoidRootPart") then return end
             local root = char.HumanoidRootPart
@@ -242,17 +250,13 @@ TabTime:CreateButton({
             local scaleVal = root:FindFirstChild("ClockScale")
             
             if _G.TimeStopped then
-                -- TẮT NGƯNG ĐỌNG
                 _G.TimeStopped = false
                 if Lighting:FindFirstChild("ZaWarudoCC") then Lighting.ZaWarudoCC:Destroy() end
-                
-                -- Hủy Animation: Trả đồng hồ về lưng
                 if offsetVal and scaleVal then
                     TweenService:Create(offsetVal, TweenInfo.new(1, Enum.EasingStyle.Exponential), {Value = CFrame.new(0, 0, 2.5)}):Play()
                     TweenService:Create(scaleVal, TweenInfo.new(1, Enum.EasingStyle.Exponential), {Value = 1.5}):Play()
                 end
                 
-                -- Mở khóa vật lý cho người chơi khác
                 for targetRoot, isAnchored in pairs(originalAnchorStates) do
                     if targetRoot and targetRoot.Parent then targetRoot.Anchored = isAnchored end
                 end
@@ -260,33 +264,26 @@ TabTime:CreateButton({
                 PlaySound(609250266, 1, 3) 
                 Rayfield:Notify({Title = "Thời gian", Content = "Thời gian tiếp tục trôi.", Duration = 2})
             else
-                -- BẬT NGƯNG ĐỌNG
                 _G.TimeStopped = true
                 PlaySound(864568856, 0.5, 5) 
-                
                 local cc = Instance.new("ColorCorrectionEffect", Lighting)
                 cc.Name = "ZaWarudoCC"
                 TweenService:Create(cc, TweenInfo.new(0.5), {Saturation = -1, Contrast = 0.5, Brightness = -0.2}):Play()
                 Shockwave(char.HumanoidRootPart.Position, Color3.fromRGB(150, 150, 150))
                 
-                -- Chạy Animation: Đưa đồng hồ lên cao và phóng to
                 if offsetVal and scaleVal then
-                    -- Đưa lên trên đầu (Y = 5), lùi ra sau một chút (Z = 3)
                     TweenService:Create(offsetVal, TweenInfo.new(1, Enum.EasingStyle.Exponential), {Value = CFrame.new(0, 5, 3)}):Play()
-                    -- Phóng to ra gấp rưỡi (2.5)
                     TweenService:Create(scaleVal, TweenInfo.new(1, Enum.EasingStyle.Exponential), {Value = 2.5}):Play()
                 end
                 
-                -- Đóng băng VẬT LÝ người chơi khác (Cái này mới tác dụng thật này)
                 originalAnchorStates = {}
                 for _, p in pairs(Players:GetPlayers()) do
                     if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                         local tRoot = p.Character.HumanoidRootPart
                         originalAnchorStates[tRoot] = tRoot.Anchored
-                        tRoot.Anchored = true -- KHÓA CỨNG VỊ TRÍ
+                        tRoot.Anchored = true 
                     end
                 end
-                
                 Rayfield:Notify({Title = "Za Warudo!", Content = "Cả server đã bị khóa cứng!", Duration = 3})
             end
         end)
@@ -294,49 +291,79 @@ TabTime:CreateButton({
 })
 
 -- ==========================================
--- 3. TRỞ VỀ QUÁ KHỨ (RECALL)
+-- 3. TRỞ VỀ QUÁ KHỨ (RECALL - UPDATE CỰC MẠNH)
 -- ==========================================
+local lastRecallTime = 0
 TabTime:CreateButton({
-    Name = "Nhận: ⏪ Trở Về Quá Khứ",
+    Name = "Nhận: ⏪ Trở Về Quá Khứ (Bấm để Tắt/Bật)",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
         tool.Name, tool.RequiresHandle = "⏪ Trở Về Quá Khứ", false
-        local isRecalling = false
+        local activeTickSound = nil
         
         tool.Activated:Connect(function()
             local char = player.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") or isRecalling then return end
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
             if not _G.IsTimeGod then return end
             
-            isRecalling = true
+            -- [ĐIỀU KIỆN] PHẢI TẮT CHIÊU 1 MỚI ĐƯỢC DÙNG CHIÊU 2
+            if _G.TimeStopped then
+                Rayfield:Notify({Title = "Lỗi Logic", Content = "Phải tắt Ngưng Đọng Thời Gian trước mới tua lại được!", Duration = 3})
+                return
+            end
+            
             local root = char.HumanoidRootPart
-            local savedCFrame = root.CFrame 
+            local hum = char:FindFirstChild("Humanoid")
             
+            -- NẾU ĐANG BẬT THÌ TẮT SỚM (BẤM VÀO VẬT PHẨM LẦN NỮA ĐỂ TẮT)
+            if _G.IsRecalling then
+                _G.IsRecalling = false
+                return -- Quá trình Tween giật về sẽ tự động kích hoạt ở luồng đang chạy
+            end
+            
+           
+            
+            -- BẮT ĐẦU KÍCH HOẠT
+            _G.IsRecalling = true
+            _G.RecallSavedCFrame = root.CFrame 
+            hum.WalkSpeed = 100 -- TĂNG TỐC ĐỘ BÀN THỜ
+            
+            Rayfield:Notify({Title = "Thoát Xác", Content = "Tăng tốc cực đại! 4 giây nữa sẽ giật về chỗ cũ!", Duration = 3})
             PlaySound(1125603704, 1, 2)
-            Rayfield:Notify({Title = "Ghi Nhớ", Content = "Đã lưu vị trí. 3 giây nữa sẽ quay về quá khứ!", Duration = 3})
             
-            local ghost = Instance.new("Part", workspace)
-            ghost.Size = Vector3.new(2, 5, 2); ghost.CFrame = savedCFrame; ghost.Anchored = true; ghost.CanCollide = false
-            ghost.Material = Enum.Material.ForceField; ghost.Color = Color3.fromRGB(0, 255, 255)
-            Debris:AddItem(ghost, 3.5)
+            -- ÂM THANH TÍCH TẮC LIÊN TỤC
+            activeTickSound = PlaySound(152835970, 1.5, 2)
+            activeTickSound.Looped = true
             
-            task.wait(3) 
-            
-            PlaySound(231917744, 1.5, 3)
-            TweenService:Create(Camera, TweenInfo.new(0.1), {FieldOfView = 120}):Play()
-            
-            local tw = TweenService:Create(root, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {CFrame = savedCFrame})
-            tw:Play()
-            
+            -- LUỒNG ĐẾM NGƯỢC 4 GIÂY ĐỘC LẬP
             task.spawn(function()
-                while tw.PlaybackState == Enum.PlaybackState.Playing do CreateGhostTrail(char, 0.2, Color3.fromRGB(0, 255, 255)); task.wait(0.02) end
+                local t = 0
+                -- Vòng lặp check mỗi 0.1s xem có bị tắt sớm không, tối đa 4s
+                while _G.IsRecalling and t < 4 do
+                    task.wait(0.1)
+                    t = t + 0.1
+                end
+                
+                -- HẾT 4 GIÂY HOẶC BỊ BẤM TẮT SỚM -> GIẬT VỀ
+                _G.IsRecalling = false
+                if activeTickSound then activeTickSound:Destroy() end
+                
+                PlaySound(231917744, 1.5, 3)
+                TweenService:Create(Camera, TweenInfo.new(0.1), {FieldOfView = 120}):Play()
+                
+                -- Kéo người chơi giật ngược về chỗ cái đồng hồ
+                local tw = TweenService:Create(root, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {CFrame = _G.RecallSavedCFrame})
+                tw:Play()
+                tw.Completed:Wait()
+                
+                TweenService:Create(Camera, TweenInfo.new(0.3), {FieldOfView = 70}):Play()
+                Shockwave(root.Position, Color3.fromRGB(0, 255, 255))
+                
+                -- Dọn dẹp, khôi phục trạng thái
+                hum.WalkSpeed = 50 -- Trả lại tốc độ Ma Thần bình thường
+                _G.RecallSavedCFrame = nil -- Đồng hồ tự động bám lại lưng nhờ backClockConn
+                lastRecallTime = tick() -- BẮT ĐẦU ĐẾM HỒI CHIÊU 10 GIÂY
             end)
-            
-            tw.Completed:Wait()
-            TweenService:Create(Camera, TweenInfo.new(0.3), {FieldOfView = 70}):Play()
-            Shockwave(root.Position, Color3.fromRGB(0, 255, 255))
-            
-            isRecalling = false
         end)
     end
 })
@@ -349,6 +376,7 @@ TabTime:CreateButton({
     Callback = function()
         _G.IsTimeGod = false
         _G.TimeStopped = false
+        _G.IsRecalling = false
         
         if camLockConn then camLockConn:Disconnect() end
         Camera.CameraType = Enum.CameraType.Custom
@@ -372,7 +400,6 @@ TabTime:CreateButton({
             end
             if workspace:FindFirstChild("BackClockModel") then workspace.BackClockModel:Destroy() end
             
-            -- Nhả người ta ra lỡ bị kẹt
             for targetRoot, isAnchored in pairs(originalAnchorStates) do
                 if targetRoot and targetRoot.Parent then targetRoot.Anchored = isAnchored end
             end
