@@ -2,9 +2,9 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "MinT Mini Hub 🔮",
-    LoadingTitle = "Đang phá Cache GitHub...",
-    LoadingSubtitle = "Đi ăn cơm đi bà chị ơi!",
+    Name = "THẦN SUKULU",
+    LoadingTitle = "Đang log...",
+    LoadingSubtitle = "sukuna thầm iu sisuka!",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
