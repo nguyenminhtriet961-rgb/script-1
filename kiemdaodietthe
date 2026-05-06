@@ -1,5 +1,5 @@
 -- ==========================================
--- TÊN SẢN PHẨM: KIẾM ĐẠO TỐI THƯỢNG (BẢN TINH GỌN CHUẨN Ý)
+-- TÊN SẢN PHẨM: KIẾM ĐẠO TỐI THƯỢNG (BẢN FINAL - NGỰ KIẾM VIP)
 -- TÁC GIẢ: Em trai làm mướn x MinT
 -- ==========================================
 
@@ -15,7 +15,7 @@ local Camera = workspace.CurrentCamera
 local Window = Rayfield:CreateWindow({
     Name = "MinT Kiếm Đạo ⚔️",
     LoadingTitle = "Khởi động kỹ xảo...",
-    LoadingSubtitle = "Đã dọn dẹp sạch sẽ rác kỹ xảo...",
+    LoadingSubtitle = "Đã fix lỗi lười gõ phím của user...",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
@@ -109,38 +109,48 @@ local function BuildSword(scale, isGlowing, hasDarkAura)
 end
 
 -- ==========================================
--- HÀM XÂY DỰNG KIẾM (NGỰ KIẾM BẬT TẮT)
+-- HÀM XÂY DỰNG KIẾM (NGỰ KIẾM - ĐÃ LÀM HẸP VÀ MŨI TAM GIÁC)
 -- ==========================================
 local function BuildRidingSword()
     local model = Instance.new("Model")
     
+    -- Lõi kiếm (bóp hẹp lại còn 0.4 thay vì 0.8)
     local core = Instance.new("Part", model)
-    core.Name = "Core"; core.Size = Vector3.new(0.4, 6, 0.8)
+    core.Name = "Core"; core.Size = Vector3.new(0.1, 6, 0.4)
     core.Color = Color3.fromRGB(15, 15, 15); core.Material = Enum.Material.Slate
     core.Anchored = true; core.CanCollide = false; model.PrimaryPart = core
 
+    -- Viền sáng 2 bên cũng bóp hẹp theo
     local edge1 = Instance.new("Part", model)
-    edge1.Size = Vector3.new(0.1, 6.2, 0.2); edge1.Color = Color3.fromRGB(255, 255, 255); edge1.Material = Enum.Material.Neon
-    edge1.CFrame = core.CFrame * CFrame.new(0, 0, 0.45); edge1.Anchored = false; edge1.CanCollide = false
+    edge1.Size = Vector3.new(0.05, 6.2, 0.1); edge1.Color = Color3.fromRGB(255, 255, 255); edge1.Material = Enum.Material.Neon
+    edge1.CFrame = core.CFrame * CFrame.new(0, 0, 0.25); edge1.Anchored = false; edge1.CanCollide = false
     local w1 = Instance.new("WeldConstraint", core); w1.Part0 = core; w1.Part1 = edge1
 
     local edge2 = Instance.new("Part", model)
-    edge2.Size = Vector3.new(0.1, 6.2, 0.2); edge2.Color = Color3.fromRGB(255, 255, 255); edge2.Material = Enum.Material.Neon
-    edge2.CFrame = core.CFrame * CFrame.new(0, 0, -0.45); edge2.Anchored = false; edge2.CanCollide = false
+    edge2.Size = Vector3.new(0.05, 6.2, 0.1); edge2.Color = Color3.fromRGB(255, 255, 255); edge2.Material = Enum.Material.Neon
+    edge2.CFrame = core.CFrame * CFrame.new(0, 0, -0.25); edge2.Anchored = false; edge2.CanCollide = false
     local w2 = Instance.new("WeldConstraint", core); w2.Part0 = core; w2.Part1 = edge2
 
-    local tip = Instance.new("WedgePart", model)
-    tip.Size = Vector3.new(0.1, 1.5, 1); tip.Color = Color3.fromRGB(255, 255, 255); tip.Material = Enum.Material.Neon
-    tip.CFrame = core.CFrame * CFrame.new(0, 3.8, 0); tip.Anchored = false; tip.CanCollide = false
-    local wt = Instance.new("WeldConstraint", core); wt.Part0 = core; wt.Part1 = tip
+    -- Mũi kiếm hình tam giác cân (Ghép từ 2 WedgePart úp vào nhau)
+    local tipLeft = Instance.new("WedgePart", model)
+    tipLeft.Size = Vector3.new(0.1, 1.5, 0.2); tipLeft.Color = Color3.fromRGB(255, 255, 255); tipLeft.Material = Enum.Material.Neon
+    tipLeft.CFrame = core.CFrame * CFrame.new(0, 3.75, 0.1); tipLeft.Anchored = false; tipLeft.CanCollide = false
+    local wtl = Instance.new("WeldConstraint", core); wtl.Part0 = core; wtl.Part1 = tipLeft
 
+    local tipRight = Instance.new("WedgePart", model)
+    tipRight.Size = Vector3.new(0.1, 1.5, 0.2); tipRight.Color = Color3.fromRGB(255, 255, 255); tipRight.Material = Enum.Material.Neon
+    tipRight.CFrame = core.CFrame * CFrame.new(0, 3.75, -0.1) * CFrame.Angles(0, math.rad(180), 0); tipRight.Anchored = false; tipRight.CanCollide = false
+    local wtr = Instance.new("WeldConstraint", core); wtr.Part0 = core; wtr.Part1 = tipRight
+
+    -- Kiếm cách chữ thập
     local cross = Instance.new("Part", model)
-    cross.Size = Vector3.new(0.6, 0.4, 2.5); cross.Color = Color3.fromRGB(90, 50, 25); cross.Material = Enum.Material.Wood
+    cross.Size = Vector3.new(0.3, 0.4, 1.5); cross.Color = Color3.fromRGB(90, 50, 25); cross.Material = Enum.Material.Wood
     cross.CFrame = core.CFrame * CFrame.new(0, -3.2, 0); cross.Anchored = false; cross.CanCollide = false
     local wc = Instance.new("WeldConstraint", core); wc.Part0 = core; wc.Part1 = cross
 
+    -- Chuôi kiếm
     local hilt = Instance.new("Part", model)
-    hilt.Size = Vector3.new(0.3, 1.5, 0.4); hilt.Color = Color3.fromRGB(50, 30, 15); hilt.Material = Enum.Material.Wood
+    hilt.Size = Vector3.new(0.2, 1.5, 0.2); hilt.Color = Color3.fromRGB(50, 30, 15); hilt.Material = Enum.Material.Wood
     hilt.CFrame = core.CFrame * CFrame.new(0, -4.1, 0); hilt.Anchored = false; hilt.CanCollide = false
     local wh = Instance.new("WeldConstraint", core); wh.Part0 = core; wh.Part1 = hilt
 
@@ -181,7 +191,6 @@ TabSword:CreateButton({
             hum.WalkSpeed = 0; hum.JumpPower = 0; root.Anchored = true
             SetPose(char, true)
 
-            -- Hóa đen bản thể
             for _, v in pairs(char:GetDescendants()) do
                 if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
                     v.Color = Color3.fromRGB(5, 5, 5); v.Material = Enum.Material.Neon
@@ -194,14 +203,12 @@ TabSword:CreateButton({
             cc.Name = "SwordCC"
             TweenService:Create(cc, TweenInfo.new(2), {Saturation = 0.8, Contrast = 0.5, TintColor = Color3.fromRGB(255, 60, 60)}):Play()
 
-            -- Mặt đất đen kịt
             local darkGround = Instance.new("Part", workspace)
             darkGround.Size = Vector3.new(200, 2, 200); darkGround.CFrame = CFrame.new(startPos - Vector3.new(0, 3, 0))
             darkGround.Color = Color3.new(0, 0, 0); darkGround.Material = Enum.Material.SmoothPlastic
             darkGround.Anchored = true; darkGround.CanCollide = false
             Debris:AddItem(darkGround, 25)
 
-            -- CHỈ CÓ Đá vụn lơ lửng (Đã xóa xích sắt)
             local floatingRocks = {}
             for i = 1, 30 do
                 local rock = Instance.new("Part", workspace)
@@ -216,7 +223,6 @@ TabSword:CreateButton({
                 table.insert(floatingRocks, rock); Debris:AddItem(rock, 10)
             end
 
-            -- Gọi 500 thanh kiếm
             local tempSwords = {}
             PlaySound(142070127, 3, 0.3) 
             local heartbeat = PlaySound(874742456, 3, 1, root); heartbeat.Looped = true
@@ -257,7 +263,6 @@ TabSword:CreateButton({
             end
             task.wait(0.5)
 
-            -- Xếp kiếm thành vòng tròn trước mặt (Đã xóa Quỷ Môn Quan & Vòng Ma Pháp)
             PlaySound(864568856, 2, 2)
             for i, s in ipairs(tempSwords) do
                 s.PrimaryPart.Material = Enum.Material.Neon
@@ -265,7 +270,6 @@ TabSword:CreateButton({
                 local angle = math.random(0, 360)
                 local offsetX = radiusCircle * math.cos(math.rad(angle))
                 local offsetY = radiusCircle * math.sin(math.rad(angle))
-                -- Xếp thành hình tròn đằng trước
                 local targetCFrame = root.CFrame * CFrame.new(offsetX, offsetY, -20) * CFrame.Angles(math.rad(-90), 0, 0)
                 TweenService:Create(s.PrimaryPart, TweenInfo.new(1, Enum.EasingStyle.Back), {CFrame = targetCFrame}):Play()
             end
@@ -277,11 +281,9 @@ TabSword:CreateButton({
             task.wait(0.5) 
             impact:Destroy()
 
-            -- Phóng thẳng 500 thanh kiếm
             PlaySound(138080210, 5, 0.8) 
             for _, s in ipairs(tempSwords) do
                 task.spawn(function()
-                    -- Dùng +500 để bay thẳng mũi
                     local dest = s.PrimaryPart.CFrame * CFrame.new(0, 500, 0) 
                     local tw = TweenService:Create(s.PrimaryPart, TweenInfo.new(0.6, Enum.EasingStyle.Linear), {CFrame = dest})
                     tw:Play(); tw.Completed:Wait()
@@ -396,7 +398,8 @@ TabSword:CreateButton({
                 local t = 0
                 local flightConn
                 flightConn = RunService.RenderStepped:Connect(function(dt)
-                    t = t + dt * 0.8 
+                    -- SỬA LỖI 1: BAY CHẬM TRONG 5 GIÂY (0.2 thay vì 0.8)
+                    t = t + dt * 0.2 
                     if t >= 1 then 
                         flightConn:Disconnect()
                         
@@ -405,7 +408,8 @@ TabSword:CreateButton({
                             return 
                         end
 
-                        FlyingState.Sword.PrimaryPart.CFrame = root.CFrame * CFrame.new(0, -3, 0) * CFrame.Angles(math.rad(90), 0, math.rad(-90))
+                        -- SỬA LỖI 3: XOAY KIẾM NẰM BẸP XUỐNG ĐẤT, MẶT PHẲNG ĐỠ CHÂN
+                        FlyingState.Sword.PrimaryPart.CFrame = root.CFrame * CFrame.new(0, -3.2, 0) * CFrame.Angles(math.rad(-90), math.rad(90), 0)
                         
                         local weld = Instance.new("WeldConstraint", root)
                         weld.Name = "SwordWeld" 
@@ -431,8 +435,10 @@ TabSword:CreateButton({
                             if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - camCFrame.LookVector end
                             if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - camCFrame.RightVector end
                             if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + camCFrame.RightVector end
-                            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
-                            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+                            
+                            -- SỬA LỖI 4: PHÍM BAY LÊN/HẠ XUỐNG DÙNG E VÀ Q CHUẨN MEN
+                            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.E) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+                            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Q) then moveDir = moveDir - Vector3.new(0, 1, 0) end
 
                             if moveDir.Magnitude > 0 then moveDir = moveDir.Unit end
 
@@ -441,11 +447,12 @@ TabSword:CreateButton({
                         end)
 
                         FlyingState.IsTransitioning = false
-                        Rayfield:Notify({Title = "Ngự Kiếm", Content = "Dùng W,A,S,D + Space/Shift để bay. Nhấp chuột lần nữa để hạ cánh.", Duration = 4})
+                        Rayfield:Notify({Title = "Ngự Kiếm", Content = "Dùng W,A,S,D lướt đi. Phím E bay lên, Phím Q hạ xuống.", Duration = 4})
                     else
                         local currentPos = QuadBezier(t, spawnPos, curvePoint, root.Position + Vector3.new(0, -3, 0))
                         if FlyingState.Sword and FlyingState.Sword.PrimaryPart then
-                            FlyingState.Sword.PrimaryPart.CFrame = CFrame.new(currentPos, root.Position) * CFrame.Angles(math.rad(90), 0, 0)
+                            -- Chĩa mũi thẳng về phía mục tiêu trong lúc bay lượn tới
+                            FlyingState.Sword.PrimaryPart.CFrame = CFrame.lookAt(currentPos, root.Position + Vector3.new(0,-3,0)) * CFrame.Angles(math.rad(90), 0, 0)
                         end
                     end
                 end)
@@ -496,6 +503,6 @@ TabSword:CreateButton({
             end
         end)
         
-        Rayfield:Notify({Title = "Nhận thành công", Content = "Đã thêm 🗡️ Ngự Kiếm Phá Không vào túi đồ.", Duration = 3})
+        Rayfield:Notify({Title = "Nhận thành công", Content = "Nhớ dùng E và Q để nâng/hạ độ cao nhé bà chị!", Duration = 3})
     end
 })
