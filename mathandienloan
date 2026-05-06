@@ -1,94 +1,58 @@
--- ==========================================
--- SỨC MẠNH: MA THẦN ĐIÊN LOẠN (BẢN VẬT PHẨM ĐỘC LẬP)
--- TÁC GIẢ: Em trai làm mướn x MinT (Dược sĩ hay gõ sai)
--- ==========================================
-
+ 
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
-local Camera = workspace.CurrentCamera
 local player = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
--- HÀM HỖ TRỢ (FIX LỖI CHỊ HAY GẶP)
-local function PlayDistortedSound(id, vol, pitch)
+local Window = Rayfield:CreateWindow({
+    Name = " Ma Thần Cuồng Loạn 👿",
+    LoadingTitle = "Thức tỉnh ác mộng...",
+    LoadingSubtitle = "cặc ba em!",
+    ConfigurationSaving = { Enabled = false },
+    KeySystem = false,
+})
+
+local TabMadness = Window:CreateTab("🩸 Huyết Ngục", nil)
+
+-- ==========================================
+-- HÀM HỖ TRỢ HIỆU ỨNG ĐIÊN LOẠN
+-- ==========================================
+local function PlayChaosSound(id, vol, pitch)
     local s = Instance.new("Sound", workspace)
-    s.SoundId = "rbxassetid://" .. tostring(id); s.Volume = vol or 2; s.Pitch = pitch or 1
-    s:Play(); Debris:AddItem(s, 5)
+    s.SoundId = "rbxassetid://" .. tostring(id); s.Volume = vol or 3; s.Pitch = pitch or 1
+    s:Play(); Debris:AddItem(s, 15)
 end
 
-local function GlitchEffect(duration)
+local function MadnessDistortion(duration)
     local start = tick()
     local cc = Instance.new("ColorCorrectionEffect", Lighting)
-    task.spawn(function()
-        while tick() - start < duration do
+    local blur = Instance.new("BlurEffect", Lighting)
+    
+    local conn; conn = RunService.RenderStepped:Connect(function()
+        if tick() - start < duration then
             cc.TintColor = Color3.new(math.random(), 0, 0)
-            cc.Contrast = math.random(2, 5)
-            Camera.FieldOfView = 70 + math.random(-15, 20)
-            task.wait(0.05)
-        end
-        cc:Destroy(); Camera.FieldOfView = 70
-    end)
-end
-
--- ==========================================
--- TOOL 1: ẤN KÝ THỨC TỈNH (BIẾN HÌNH)
--- ==========================================
-local function CreateTransformationTool()
-    local tool = Instance.new("Tool")
-    tool.Name = "🩸 Thức Tỉnh Ma Thần"
-    tool.RequiresHandle = false
-    tool.Parent = player.Backpack
-
-    local isTransformed = false
-    local aura = nil
-
-    tool.Activated:Connect(function()
-        local char = player.Character; local root = char and char:FindFirstChild("HumanoidRootPart")
-        if not root then return end
-
-        if not isTransformed then
-            isTransformed = true
-            PlayDistortedSound(864568856, 5, 0.4)
-            GlitchEffect(1.5)
-            
-            -- Animation bẻ khớp điên loạn
-            root.Anchored = true
-            for i = 1, 15 do
-                root.CFrame *= CFrame.new(math.random(-1,1), 0.2, math.random(-1,1)) * CFrame.Angles(math.rad(math.random(-10,10)), 0, 0)
-                task.wait(0.05)
-            end
-            root.Anchored = false
-            
-            -- Sức mạnh điên loạn
-            char.Humanoid.WalkSpeed = 100
-            char.Humanoid.JumpPower = 150
-            
-            -- Aura Hắc Ám
-            local att = Instance.new("Attachment", root)
-            local p = Instance.new("ParticleEmitter", att)
-            p.Color = ColorSequence.new(Color3.new(0,0,0), Color3.new(0.6,0,0))
-            p.Size = NumberSequence.new(10, 0); p.Rate = 200; p.Texture = "rbxassetid://243660364"
-            p.Lifetime = NumberRange.new(0.5, 0.8); p.Speed = NumberRange.new(15, 30)
-            aura = att
-            
-            print("Đã hóa Ma Thần!")
+            cc.Contrast = 5
+            cc.Saturation = 2
+            blur.Size = math.random(0, 20)
+            Camera.FieldOfView = 70 + math.sin(tick() * 20) * 30
+            Camera.CFrame *= CFrame.Angles(0, 0, math.rad(math.random(-5, 5)))
         else
-            isTransformed = false
-            char.Humanoid.WalkSpeed = 16
-            if aura then aura:Destroy() end
-            print("Đã trở lại người thường!")
+            cc:Destroy(); blur:Destroy(); conn:Disconnect()
+            Camera.FieldOfView = 70
         end
     end)
 end
 
 -- ==========================================
--- TOOL 2: HƯ VÔ LOẠN TRẢM (KỸ NĂNG)
+-- CÁC KỸ NĂNG DẠNG VẬT PHẨM
 -- ==========================================
-local function CreateSlashTool()
+local function GiveMadnessTool()
     local tool = Instance.new("Tool")
-    tool.Name = "🔪 Hư Vô Loạn Trảm"
+    tool.Name = "👿 Ấn Ký Điên Loạn"
     tool.RequiresHandle = false
     tool.Parent = player.Backpack
 
@@ -96,60 +60,75 @@ local function CreateSlashTool()
         local char = player.Character; local root = char and char:FindFirstChild("HumanoidRootPart")
         if not root then return end
 
-        PlayDistortedSound(138080210, 3, 0.6)
-        GlitchEffect(0.3)
+        -- TRƯỜNG ĐOẠN BIẾN HÌNH DÀI (5 GIÂY ĐIÊN LOẠN)
+        root.Anchored = true
+        PlayChaosSound(864568856, 5, 0.4) -- Tiếng nổ trầm
+        PlayChaosSound(138084556, 3, 0.6) -- Tiếng xé rách
+        MadnessDistortion(5)
 
-        for i = 1, 15 do
-            task.spawn(function()
-                local slash = Instance.new("Part", workspace)
-                slash.Size = Vector3.new(0.2, math.random(15, 40), 3)
-                slash.Color = Color3.new(math.random(0.5, 1), 0, 0)
-                slash.Material = Enum.Material.Neon; slash.Anchored = true; slash.CanCollide = false
-                slash.CFrame = root.CFrame * CFrame.new(math.random(-15, 15), math.random(-5, 10), math.random(-25, -10)) * CFrame.Angles(math.rad(math.random(0,360)), math.rad(math.random(0,360)), 0)
-                
-                TweenService:Create(slash, TweenInfo.new(0.2), {Transparency = 1, Size = Vector3.new(0, 50, 0)}):Play()
-                Debris:AddItem(slash, 0.2)
-            end)
-            task.wait(0.03)
+        for i = 1, 50 do
+            root.CFrame *= CFrame.new(math.random(-2,2), 0.5, math.random(-2,2)) * CFrame.Angles(math.rad(math.random(-20,20)), 0, 0)
+            if i % 5 == 0 then PlayChaosSound(138080210, 2, math.random(1,3)) end
+            task.wait(0.1)
         end
+        
+        root.Anchored = false
+        char.Humanoid.WalkSpeed = 150
+        
+        -- Tạo Aura "Mưa Máu" xung quanh
+        local p = Instance.new("ParticleEmitter", root)
+        p.Color = ColorSequence.new(Color3.new(0,0,0), Color3.new(1,0,0))
+        p.Size = NumberSequence.new(15, 0); p.Rate = 500; p.Texture = "rbxassetid://243660364"
+        p.Speed = NumberRange.new(20, 50); p.Lifetime = NumberRange.new(0.5, 1)
+        
+        Rayfield:Notify({Title = "MA TÍNH", Content = "Sức mạnh điên loạn đã chiếm hữu!", Duration = 5})
     end)
 end
 
--- ==========================================
--- TOOL 3: TRIỆU HỒI ĐẾ TỌA (NGÀI VÀNG)
--- ==========================================
-local function CreateThroneTool()
+local function GiveThroneTool()
     local tool = Instance.new("Tool")
-    tool.Name = "👑 Vô Thượng Đế Tọa"
+    tool.Name = "👑 Ngai Vàng Máu"
     tool.RequiresHandle = false
     tool.Parent = player.Backpack
-
-    local currentThrone = nil
 
     tool.Activated:Connect(function()
         local char = player.Character; local root = char and char:FindFirstChild("HumanoidRootPart")
         if not root then return end
 
-        if currentThrone then currentThrone:Destroy(); currentThrone = nil return end
-
-        PlayDistortedSound(864568856, 4, 0.5)
+        PlayChaosSound(864568856, 6, 0.3)
+        MadnessDistortion(2)
         
-        local model = Instance.new("Model", workspace)
-        local base = Instance.new("Part", model); base.Size = Vector3.new(12, 1.5, 10); base.Color = Color3.new(0.05, 0, 0); base.Material = Enum.Material.Metal; base.Anchored = true
-        base.CFrame = root.CFrame * CFrame.new(0, -2.5, -8)
+        local m = Instance.new("Model", workspace)
+        local p = Instance.new("Part", m); p.Size = Vector3.new(15, 2, 12); p.CFrame = root.CFrame * CFrame.new(0,-2,-10); p.Anchored = true; p.Color = Color3.new(0,0,0); p.Material = Enum.Material.Neon
+        local b = Instance.new("Part", m); b.Size = Vector3.new(12, 20, 2); b.CFrame = p.CFrame * CFrame.new(0, 10, 5); b.Anchored = true; b.Color = Color3.new(0.2, 0, 0); b.Material = Enum.Material.Slate
         
-        local back = Instance.new("Part", model); back.Size = Vector3.new(10, 18, 2); back.CFrame = base.CFrame * CFrame.new(0, 9, 4); back.Color = Color3.new(0, 0, 0); back.Material = Enum.Material.Neon; back.Anchored = true
-        
-        local gold = Instance.new("Part", model); gold.Size = Vector3.new(11, 1, 3); gold.CFrame = back.CFrame * CFrame.new(0, 9, 0); gold.Color = Color3.fromRGB(255, 215, 0); gold.Material = Enum.Material.Neon; gold.Anchored = true
-        
-        currentThrone = model
-        print("Bậc quân chủ đã tọa lạc!")
+        -- Thêm sấm sét quanh ngai vàng
+        for i = 1, 10 do
+            local l = Instance.new("Part", m); l.Size = Vector3.new(0.5, 20, 0.5); l.Color = Color3.new(1,0,0); l.Material = Enum.Material.Neon; l.Anchored = true
+            l.CFrame = b.CFrame * CFrame.new(math.random(-10,10), 0, math.random(-5,5)) * CFrame.Angles(math.rad(math.random(0,360)),0,0)
+        end
+        Debris:AddItem(m, 30)
     end)
 end
 
--- KHỞI CHẠY TẤT CẢ
-CreateTransformationTool()
-CreateSlashTool()
-CreateThroneTool()
+-- ==========================================
+-- MENU RAYFIELD ĐỂ LẤY VẬT PHẨM
+-- ==========================================
+TabMadness:CreateButton({
+    Name = "💉 Nhận Ấn Ký Điên Loạn",
+    Callback = function() GiveMadnessTool() end
+})
 
-print("Script Ma Thần Điên Loạn đã sẵn sàng. Check Backpack của chị đi!")
+TabMadness:CreateButton({
+    Name = "🩸 Nhận Ngai Vàng Máu",
+    Callback = function() GiveThroneTool() end
+})
+
+TabMadness:CreateButton({
+    Name = "❌ Xóa Bỏ Điên Loạn (Reset)",
+    Callback = function()
+        player.Character.Humanoid.WalkSpeed = 16
+        for _, v in pairs(player.Character.HumanoidRootPart:GetChildren()) do if v:IsA("ParticleEmitter") then v:Destroy() end end
+        Rayfield:Notify({Title = "Hệ Thống", Content = "Đã thu hồi ma lực.", Duration = 2})
+    end
+})
