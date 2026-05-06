@@ -1,3 +1,8 @@
+-- ==========================================
+-- TÊN SẢN PHẨM: KIẾM ĐẠO TỐI THƯỢNG (BẢN FINAL FULL 100%)
+-- TÁC GIẢ: Em trai làm mướn x MinT
+-- ==========================================
+
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -11,7 +16,7 @@ local Camera = workspace.CurrentCamera
 local Window = Rayfield:CreateWindow({
     Name = "MinT Kiếm Đạo ⚔️",
     LoadingTitle = "Khởi động hệ thống...",
-    LoadingSubtitle = "Đã chuyển hóa toàn bộ thành Vật Phẩm...",
+    LoadingSubtitle = "Đã tích hợp Hư Không Trảm VIP...",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
@@ -52,9 +57,6 @@ local function SetPose(char, state)
     end
 end
 
--- ==========================================
--- KIẾM & KỸ XẢO
--- ==========================================
 local function BuildSword(scale, isGlowing, hasDarkAura)
     local model = Instance.new("Model")
     local blade = Instance.new("Part", model); blade.Name = "Blade"; blade.Size = Vector3.new(0.1 * scale, 5 * scale, 0.4 * scale); blade.Color = Color3.fromRGB(255, 255, 255); blade.Material = isGlowing and Enum.Material.Neon or Enum.Material.Metal; blade.Anchored = true; blade.CanCollide = false; model.PrimaryPart = blade
@@ -70,7 +72,6 @@ end
 -- ==========================================
 -- TAB: KIẾM ĐẠO (TOOLS)
 -- ==========================================
-
 TabSword:CreateToggle({
     Name = "Bật/Tắt Màu Màn Hình (Diệt Thế)",
     CurrentValue = true,
@@ -93,7 +94,6 @@ TabSword:CreateButton({
             SwordState.LastCastTime = tick()
 
             if not SwordState.IsTransformed then
-                -- BẬT DIỆT THẾ
                 SwordState.IsTransformed = true
                 char.Humanoid.WalkSpeed = 0; char.Humanoid.JumpPower = 0; root.Anchored = true; SetPose(char, true)
 
@@ -128,7 +128,6 @@ TabSword:CreateButton({
                 Rayfield:Notify({Title = "Diệt Thế", Content = "Đã bật trạng thái Ma Thần!", Duration = 3})
 
             else
-                -- TẮT DIỆT THẾ
                 SwordState.IsTransformed = false
                 RunService:UnbindFromRenderStep("SpinSwords")
                 if SwordState.ColorEffect then SwordState.ColorEffect:Destroy(); SwordState.ColorEffect = nil end
@@ -142,31 +141,39 @@ TabSword:CreateButton({
 })
 
 -- ==========================================
--- KỸ NĂNG THỨ 4: HƯ KHÔNG TRẢM (PHÁ GIỚI DI HÌNH)
+-- HƯ KHÔNG TRẢM (SỬA LẠI TẦM XA, HIỆU ỨNG VÀ CHÉM KIẾM)
 -- ==========================================
 local function CreateRift(cframe)
     local rift = Instance.new("Part", workspace)
-    rift.Size = Vector3.new(8, 10, 1) -- To gấp rưỡi nhân vật
+    rift.Size = Vector3.new(12, 12, 1) -- Gấp đôi người chơi
     rift.CFrame = cframe
     rift.Shape = Enum.PartType.Cylinder
-    rift.Color = Color3.new(0, 0, 0)
+    rift.Color = Color3.fromRGB(0, 0, 30) -- Xanh dương siêu đậm đen
     rift.Material = Enum.Material.Neon
     rift.Anchored = true; rift.CanCollide = false
     
+    -- Viền xanh lá
     local hl = Instance.new("Highlight", rift)
-    hl.FillColor = Color3.new(0,0,0); hl.OutlineColor = Color3.fromRGB(150, 0, 255)
+    hl.FillTransparency = 1; hl.OutlineColor = Color3.fromRGB(0, 255, 0); hl.OutlineTransparency = 0
     
-    -- Xoay dẹp lại thành hình bầu dục
     local mesh = Instance.new("BlockMesh", rift)
     mesh.Scale = Vector3.new(1, 1, 0.1)
     
+    -- Sấm sét quanh viền
     local aura = Instance.new("ParticleEmitter", rift)
-    aura.Color = ColorSequence.new(Color3.fromRGB(150, 0, 255))
-    aura.Size = NumberSequence.new(2, 0)
-    aura.Rate = 100; aura.Speed = NumberRange.new(5)
-    aura.Lifetime = NumberRange.new(0.5, 1)
+    aura.Color = ColorSequence.new(Color3.fromRGB(0, 255, 0))
+    aura.Size = NumberSequence.new(3, 0)
+    aura.Rate = 150; aura.Speed = NumberRange.new(5); aura.Lifetime = NumberRange.new(0.5, 1)
+    
+    -- Ngôi sao bên trong
+    local stars = Instance.new("ParticleEmitter", rift)
+    stars.Texture = "rbxassetid://217311100" -- Hình ngôi sao
+    stars.Color = ColorSequence.new(Color3.fromRGB(150, 200, 255))
+    stars.Size = NumberSequence.new(1.5, 0)
+    stars.Rate = 50; stars.Speed = NumberRange.new(1, 3); stars.Lifetime = NumberRange.new(1, 2)
+    stars.EmissionDirection = Enum.NormalId.Front
 
-    Debris:AddItem(rift, 5) -- Tồn tại 5 giây
+    Debris:AddItem(rift, 5)
     return rift
 end
 
@@ -179,59 +186,46 @@ TabSword:CreateButton({
         tool.Activated:Connect(function()
             local char = player.Character; local root = char and char:FindFirstChild("HumanoidRootPart")
             if not root or not SwordState.IsTransformed or #SwordState.GuardianSwords < 3 then 
-                Rayfield:Notify({Title = "Lỗi", Content = "Phải bật Diệt Thế để có 3 thanh kiếm mới dùng được!", Duration = 3})
-                return 
+                Rayfield:Notify({Title = "Cảnh Báo", Content = "Phải bật Diệt Thế trước!", Duration = 3}); return 
             end
             
-            -- Tổng thời gian 1.5 giây
             RunService:UnbindFromRenderStep("SpinSwords")
             char.Humanoid.WalkSpeed = 0
-            
-            local s1 = SwordState.GuardianSwords[1].PrimaryPart
-            local s2 = SwordState.GuardianSwords[2].PrimaryPart
-            local s3 = SwordState.GuardianSwords[3].PrimaryPart
+            local s1, s2, s3 = SwordState.GuardianSwords[1].PrimaryPart, SwordState.GuardianSwords[2].PrimaryPart, SwordState.GuardianSwords[3].PrimaryPart
 
-            -- 1. Chém 3 nhát
-            PlaySound(138080210, 3, 1)
-            TweenService:Create(s1.Weld, TweenInfo.new(0.3), {C0 = CFrame.new(-3, 0, -5) * CFrame.Angles(math.rad(45), math.rad(90), 0)}):Play()
-            TweenService:Create(s2.Weld, TweenInfo.new(0.3), {C0 = CFrame.new(3, 0, -5) * CFrame.Angles(math.rad(-45), math.rad(90), 0)}):Play()
-            TweenService:Create(s3.Weld, TweenInfo.new(0.3), {C0 = CFrame.new(0, 0, -5) * CFrame.Angles(math.rad(90), 0, 0)}):Play()
+            -- 1. Animation chém kiếm mượt mà (Vút lên cao rồi chém xuống)
+            PlaySound(138080210, 3, 1.2)
+            TweenService:Create(s1.Weld, TweenInfo.new(0.4, Enum.EasingStyle.Sine), {C0 = CFrame.new(-3, 8, 2) * CFrame.Angles(math.rad(45), 0, 0)}):Play()
+            TweenService:Create(s2.Weld, TweenInfo.new(0.4, Enum.EasingStyle.Sine), {C0 = CFrame.new(3, 8, 2) * CFrame.Angles(math.rad(-45), 0, 0)}):Play()
+            TweenService:Create(s3.Weld, TweenInfo.new(0.4, Enum.EasingStyle.Sine), {C0 = CFrame.new(0, 10, 2) * CFrame.Angles(math.rad(90), 0, 0)}):Play()
+            task.wait(0.4)
             
-            -- Vệt chém (Part Neon mỏng)
+            PlaySound(138084556, 2, 0.8) -- Tiếng chém/vỡ
+            TweenService:Create(s1.Weld, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {C0 = CFrame.new(-2, -5, -8) * CFrame.Angles(math.rad(-120), math.rad(90), 0)}):Play()
+            TweenService:Create(s2.Weld, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {C0 = CFrame.new(2, -5, -8) * CFrame.Angles(math.rad(-60), math.rad(-90), 0)}):Play()
+            TweenService:Create(s3.Weld, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), {C0 = CFrame.new(0, -6, -10) * CFrame.Angles(math.rad(-90), 0, 0)}):Play()
+            
             for i = 1, 3 do
-                local slash = Instance.new("Part", workspace)
-                slash.Size = Vector3.new(0.2, 15, 0.2); slash.Material = Enum.Material.Neon; slash.Color = Color3.fromRGB(255, 255, 255)
-                slash.Anchored = true; slash.CanCollide = false
-                slash.CFrame = root.CFrame * CFrame.new(0, 0, -6) * CFrame.Angles(0, 0, math.rad(math.random(-60, 60)))
-                TweenService:Create(slash, TweenInfo.new(0.5), {Transparency = 1, Size = Vector3.new(0, 20, 0)}):Play()
-                Debris:AddItem(slash, 0.5)
+                local slash = Instance.new("Part", workspace); slash.Size = Vector3.new(0.2, 20, 0.2); slash.Material = Enum.Material.Neon; slash.Color = Color3.fromRGB(0, 255, 0); slash.Anchored = true; slash.CanCollide = false
+                slash.CFrame = root.CFrame * CFrame.new(0, 0, -8) * CFrame.Angles(0, 0, math.rad(math.random(-60, 60)))
+                TweenService:Create(slash, TweenInfo.new(0.4), {Transparency = 1, Size = Vector3.new(0, 30, 0)}):Play(); Debris:AddItem(slash, 0.5)
             end
+            task.wait(0.2)
 
-            task.wait(0.5)
-
-            -- 2. Nổ và tạo Vết Nứt
-            PlaySound(864568856, 4, 1.2)
+            -- 2. Tạo vết nứt & Dịch chuyển (Tầm xa 500m)
+            PlaySound(864568856, 4, 1)
             local riftPos1 = root.CFrame * CFrame.new(0, 0, -5)
             CreateRift(riftPos1)
 
-            -- 3. Raycast dò đường 85m
             local rayParams = RaycastParams.new(); rayParams.FilterDescendantsInstances = {char}; rayParams.FilterType = Enum.RaycastFilterType.Exclude
-            local rayResult = workspace:Raycast(root.Position, root.CFrame.LookVector * 85, rayParams)
+            local rayResult = workspace:Raycast(root.Position, root.CFrame.LookVector * 500, rayParams) -- Tăng lên 500m
             
-            local destPos
-            if rayResult then
-                destPos = rayResult.Position - (root.CFrame.LookVector * 5) -- Dừng trước tường 5m
-            else
-                destPos = root.Position + (root.CFrame.LookVector * 85)
-            end
-            
+            local destPos = rayResult and (rayResult.Position - (root.CFrame.LookVector * 5)) or (root.Position + (root.CFrame.LookVector * 500))
             local riftPos2 = CFrame.new(destPos, destPos + root.CFrame.LookVector)
             CreateRift(riftPos2)
 
-            -- 4. Dịch chuyển (Ép đi vào vết nứt)
             TweenService:Create(root, TweenInfo.new(0.3), {CFrame = riftPos1}):Play()
             task.wait(0.3)
-            
             for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.Transparency = 1 end end
             root.CFrame = riftPos2 * CFrame.new(0,0,2)
             task.wait(0.2)
@@ -240,18 +234,18 @@ TabSword:CreateButton({
             for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then v.Transparency = 0 end end
             TweenService:Create(root, TweenInfo.new(0.2), {CFrame = riftPos2 * CFrame.new(0,0,-5)}):Play()
 
-            -- Trả lại kiếm
-            task.wait(0.3)
+            -- 3. Kiếm quay về quỹ đạo cũ
+            task.wait(0.2)
             char.Humanoid.WalkSpeed = 50
             local swordPos = { {off = CFrame.new(-4, 3, 0) * CFrame.Angles(math.rad(180), 0, 0)}, {off = CFrame.new(4, 3, 0) * CFrame.Angles(math.rad(180), 0, 0)}, {off = CFrame.new(0, 1, 3) * CFrame.Angles(math.rad(45), 0, math.rad(-45))} }
-            TweenService:Create(s1.Weld, TweenInfo.new(0.5), {C0 = swordPos[1].off}):Play()
-            TweenService:Create(s2.Weld, TweenInfo.new(0.5), {C0 = swordPos[2].off}):Play()
-            TweenService:Create(s3.Weld, TweenInfo.new(0.5), {C0 = swordPos[3].off}):Play()
+            TweenService:Create(s1.Weld, TweenInfo.new(0.6, Enum.EasingStyle.Sine), {C0 = swordPos[1].off}):Play()
+            TweenService:Create(s2.Weld, TweenInfo.new(0.6, Enum.EasingStyle.Sine), {C0 = swordPos[2].off}):Play()
+            TweenService:Create(s3.Weld, TweenInfo.new(0.6, Enum.EasingStyle.Sine), {C0 = swordPos[3].off}):Play()
             
+            task.wait(0.6)
             RunService:BindToRenderStep("SpinSwords", 200, function()
                 if SwordState.GuardianSwords[1] and SwordState.GuardianSwords[2] then
-                    s1.Weld.C0 *= CFrame.Angles(0, math.rad(3), 0)
-                    s2.Weld.C0 *= CFrame.Angles(0, math.rad(3), 0)
+                    s1.Weld.C0 *= CFrame.Angles(0, math.rad(3), 0); s2.Weld.C0 *= CFrame.Angles(0, math.rad(3), 0)
                 end
             end)
         end)
@@ -259,15 +253,103 @@ TabSword:CreateButton({
 })
 
 -- ==========================================
--- TAB: NHÃN THUẬT (TOOLS)
+-- NGỰ KIẾM BẬT/TẮT (CÓ DI CHUYỂN & MOBILE UI)
+-- ==========================================
+local function BuildRidingSword()
+    local model = Instance.new("Model")
+    local core = Instance.new("Part", model); core.Name = "Core"; core.Size = Vector3.new(0.1, 6, 0.4); core.Color = Color3.fromRGB(15, 15, 15); core.Material = Enum.Material.Slate; core.Anchored = true; core.CanCollide = false; model.PrimaryPart = core
+    local edge1 = Instance.new("Part", model); edge1.Size = Vector3.new(0.05, 6.2, 0.1); edge1.Color = Color3.fromRGB(255, 255, 255); edge1.Material = Enum.Material.Neon; edge1.CFrame = core.CFrame * CFrame.new(0, 0, 0.25); edge1.Anchored = false; local w1 = Instance.new("WeldConstraint", core); w1.Part0 = core; w1.Part1 = edge1
+    local edge2 = Instance.new("Part", model); edge2.Size = Vector3.new(0.05, 6.2, 0.1); edge2.Color = Color3.fromRGB(255, 255, 255); edge2.Material = Enum.Material.Neon; edge2.CFrame = core.CFrame * CFrame.new(0, 0, -0.25); edge2.Anchored = false; local w2 = Instance.new("WeldConstraint", core); w2.Part0 = core; w2.Part1 = edge2
+    local tl = Instance.new("WedgePart", model); tl.Size = Vector3.new(0.1, 1.5, 0.2); tl.Color = Color3.fromRGB(255, 255, 255); tl.Material = Enum.Material.Neon; tl.CFrame = core.CFrame * CFrame.new(0, 3.75, 0.1); local wtl = Instance.new("WeldConstraint", core); wtl.Part0 = core; wtl.Part1 = tl
+    local tr = Instance.new("WedgePart", model); tr.Size = Vector3.new(0.1, 1.5, 0.2); tr.Color = Color3.fromRGB(255, 255, 255); tr.Material = Enum.Material.Neon; tr.CFrame = core.CFrame * CFrame.new(0, 3.75, -0.1) * CFrame.Angles(0, math.rad(180), 0); local wtr = Instance.new("WeldConstraint", core); wtr.Part0 = core; wtr.Part1 = tr
+    local cross = Instance.new("Part", model); cross.Size = Vector3.new(0.3, 0.4, 1.5); cross.Color = Color3.fromRGB(90, 50, 25); cross.Material = Enum.Material.Wood; cross.CFrame = core.CFrame * CFrame.new(0, -3.2, 0); local wc = Instance.new("WeldConstraint", core); wc.Part0 = core; wc.Part1 = cross
+    local hilt = Instance.new("Part", model); hilt.Size = Vector3.new(0.2, 1.5, 0.2); hilt.Color = Color3.fromRGB(50, 30, 15); hilt.Material = Enum.Material.Wood; hilt.CFrame = core.CFrame * CFrame.new(0, -4.1, 0); local wh = Instance.new("WeldConstraint", core); wh.Part0 = core; wh.Part1 = hilt
+    return model
+end
+
+local function CreateMobileUI()
+    if FlyingState.UI then FlyingState.UI:Destroy() end
+    local gui = Instance.new("ScreenGui"); gui.Name = "MinT_MobileFlightUI"; gui.Parent = player:WaitForChild("PlayerGui"); FlyingState.UI = gui
+    local btnUp = Instance.new("TextButton", gui); btnUp.Size = UDim2.new(0, 100, 0, 80); btnUp.Position = UDim2.new(1, -120, 0.5, -90); btnUp.BackgroundColor3 = Color3.fromRGB(30, 30, 30); btnUp.BackgroundTransparency = 0.5; btnUp.TextColor3 = Color3.fromRGB(255, 255, 255); btnUp.TextScaled = true; btnUp.Text = "⬆️\nBAY LÊN"; Instance.new("UICorner", btnUp)
+    local btnDown = Instance.new("TextButton", gui); btnDown.Size = UDim2.new(0, 100, 0, 80); btnDown.Position = UDim2.new(1, -120, 0.5, 10); btnDown.BackgroundColor3 = Color3.fromRGB(30, 30, 30); btnDown.BackgroundTransparency = 0.5; btnDown.TextColor3 = Color3.fromRGB(255, 255, 255); btnDown.TextScaled = true; btnDown.Text = "⬇️\nHẠ XUỐNG"; Instance.new("UICorner", btnDown)
+    btnUp.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then FlyingState.MobileUp = true end end)
+    btnUp.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then FlyingState.MobileUp = false end end)
+    btnDown.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then FlyingState.MobileDown = true end end)
+    btnDown.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then FlyingState.MobileDown = false end end)
+end
+
+local function RemoveMobileUI() if FlyingState.UI then FlyingState.UI:Destroy(); FlyingState.UI = nil end; FlyingState.MobileUp = false; FlyingState.MobileDown = false end
+local function QuadBezier(t, p0, p1, p2) return (1 - t)^2 * p0 + 2 * (1 - t) * t * p1 + t^2 * p2 end
+
+TabSword:CreateButton({
+    Name = "Lấy Vật Phẩm: 🗡️ Ngự Kiếm",
+    Callback = function()
+        if player.Backpack:FindFirstChild("🗡️ Ngự Kiếm") or (player.Character and player.Character:FindFirstChild("🗡️ Ngự Kiếm")) then return end
+        local tool = Instance.new("Tool"); tool.Name = "🗡️ Ngự Kiếm"; tool.RequiresHandle = false; tool.Parent = player.Backpack
+        tool.Activated:Connect(function()
+            local char = player.Character; local root = char and char:FindFirstChild("HumanoidRootPart")
+            if not root or FlyingState.IsTransitioning then return end
+
+            if not FlyingState.IsFlying then
+                FlyingState.IsTransitioning = true; FlyingState.IsFlying = true
+                local sword = BuildRidingSword(); sword.Parent = workspace; FlyingState.Sword = sword
+                local angle = math.random(0, 360); local spawnPos = root.Position + Vector3.new(170 * math.cos(math.rad(angle)), math.random(50, 150), 170 * math.sin(math.rad(angle)))
+                local curvePoint = root.Position + Vector3.new(math.random(-100, 100), math.random(100, 200), math.random(-100, 100))
+                PlaySound(138080210, 3, 1); char.Humanoid.PlatformStand = true; root.Anchored = true; SetPose(char, true) 
+                TweenService:Create(root, TweenInfo.new(1, Enum.EasingStyle.Sine), {CFrame = root.CFrame * CFrame.new(0, 8, 0)}):Play()
+                CreateMobileUI()
+                local t = 0; local flightConn; flightConn = RunService.RenderStepped:Connect(function(dt)
+                    t = t + dt * 0.2 
+                    if t >= 1 then 
+                        flightConn:Disconnect()
+                        if not FlyingState.Sword or not FlyingState.Sword.PrimaryPart then FlyingState.IsTransitioning = false; return end
+                        FlyingState.Sword.PrimaryPart.CFrame = root.CFrame * CFrame.new(0, -3.2, 0) * CFrame.Angles(0, math.rad(90), math.rad(90))
+                        local weld = Instance.new("WeldConstraint", root); weld.Name = "SwordWeld"; weld.Part0 = root; weld.Part1 = FlyingState.Sword.PrimaryPart
+                        FlyingState.Sword.PrimaryPart.Anchored = false; root.Anchored = false
+                        local bv = Instance.new("BodyVelocity", root); bv.MaxForce = Vector3.new(1e6, 1e6, 1e6); bv.Velocity = Vector3.new(0, 0, 0); FlyingState.BodyVelocity = bv
+                        local bg = Instance.new("BodyGyro", root); bg.MaxTorque = Vector3.new(1e6, 1e6, 1e6); bg.P = 15000; FlyingState.BodyGyro = bg
+                        RunService:BindToRenderStep("SwordSurfing", 1, function()
+                            local cam = workspace.CurrentCamera.CFrame; local moveDir = char.Humanoid.MoveDirection
+                            if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.LookVector end
+                            if FlyingState.MobileUp or UserInputService:IsKeyDown(Enum.KeyCode.E) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+                            if FlyingState.MobileDown or UserInputService:IsKeyDown(Enum.KeyCode.Q) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+                            bv.Velocity = moveDir * FlyingState.Speed; bg.CFrame = CFrame.new(root.Position, root.Position + cam.LookVector)
+                        end)
+                        FlyingState.IsTransitioning = false
+                    else
+                        if FlyingState.Sword and FlyingState.Sword.PrimaryPart then FlyingState.Sword.PrimaryPart.CFrame = CFrame.lookAt(QuadBezier(t, spawnPos, curvePoint, root.Position + Vector3.new(0,-3,0)), root.Position) * CFrame.Angles(math.rad(90), 0, 0) end
+                    end
+                end)
+            else
+                FlyingState.IsTransitioning = true; RunService:UnbindFromRenderStep("SwordSurfing"); RemoveMobileUI(); task.delay(5, function() FlyingState.IsTransitioning = false end)
+                if FlyingState.BodyVelocity then FlyingState.BodyVelocity:Destroy() end
+                if FlyingState.BodyGyro then FlyingState.BodyGyro:Destroy() end
+                local ray = workspace:Raycast(root.Position, Vector3.new(0, -1000, 0))
+                if ray then
+                    local landTween = TweenService:Create(root, TweenInfo.new(1.2, Enum.EasingStyle.Sine), {CFrame = CFrame.new(ray.Position + Vector3.new(0, 3.5, 0)) * CFrame.Angles(0, math.rad(root.Orientation.Y), 0)})
+                    landTween:Play(); landTween.Completed:Wait() 
+                end
+                char.Humanoid.PlatformStand = false; SetPose(char, false)
+                if FlyingState.Sword and FlyingState.Sword.PrimaryPart then
+                    local sr = FlyingState.Sword.PrimaryPart; for _, v in pairs(root:GetChildren()) do if v.Name == "SwordWeld" then v:Destroy() end end
+                    sr.Anchored = true; local fDir = (root.CFrame.LookVector * Vector3.new(1, 0, 1)).Unit; if fDir.Magnitude < 0.1 then fDir = root.CFrame.RightVector end 
+                    local away = sr.Position + (fDir * 300) + Vector3.new(0, 200, 0)
+                    TweenService:Create(sr, TweenInfo.new(3.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {CFrame = CFrame.lookAt(sr.Position, away) * CFrame.Angles(math.rad(90), 0, 0)}):Play(); Debris:AddItem(FlyingState.Sword, 4)
+                end
+                FlyingState.IsFlying = false; FlyingState.IsTransitioning = false
+            end
+        end)
+    end
+})
+
+-- ==========================================
+-- TAB: NHÃN THUẬT (MẮT DƯƠNG / MẮT ÂM)
 -- ==========================================
 local function ClearVision()
     for _, esp in pairs(VisionState.ESPs) do if esp then esp:Destroy() end end
     VisionState.ESPs = {}
     for char, size in pairs(VisionState.Hitboxes) do
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            char.HumanoidRootPart.Size = size; char.HumanoidRootPart.Transparency = 1; char.HumanoidRootPart.CanCollide = true
-        end
+        if char and char:FindFirstChild("HumanoidRootPart") then char.HumanoidRootPart.Size = size; char.HumanoidRootPart.Transparency = 1; char.HumanoidRootPart.CanCollide = true end
     end
     VisionState.Hitboxes = {}
     Lighting.Ambient = VisionState.OriginalLighting.Ambient; Lighting.GlobalShadows = VisionState.OriginalLighting.GlobalShadows; Lighting.Brightness = VisionState.OriginalLighting.Brightness; Lighting.OutdoorAmbient = VisionState.OriginalLighting.OutdoorAmbient
@@ -277,8 +359,7 @@ local function CreateESP(target, color, textName)
     if not target or not target.PrimaryPart then return end
     local hl = Instance.new("Highlight", target); hl.FillColor = color; hl.OutlineColor = Color3.new(1,1,1); hl.FillTransparency = 0.5; hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop; table.insert(VisionState.ESPs, hl)
     local bgui = Instance.new("BillboardGui", target.PrimaryPart); bgui.Size = UDim2.new(0, 100, 0, 40); bgui.StudsOffset = Vector3.new(0, 3, 0); bgui.AlwaysOnTop = true
-    local txt = Instance.new("TextLabel", bgui); txt.Size = UDim2.new(1, 0, 1, 0); txt.BackgroundTransparency = 1; txt.Text = textName; txt.TextColor3 = color; txt.Font = Enum.Font.GothamBold; txt.TextScaled = true
-    table.insert(VisionState.ESPs, bgui)
+    local txt = Instance.new("TextLabel", bgui); txt.Size = UDim2.new(1, 0, 1, 0); txt.BackgroundTransparency = 1; txt.Text = textName; txt.TextColor3 = color; txt.Font = Enum.Font.GothamBold; txt.TextScaled = true; table.insert(VisionState.ESPs, bgui)
 end
 
 TabVision:CreateButton({
@@ -286,17 +367,13 @@ TabVision:CreateButton({
     Callback = function()
         if player.Backpack:FindFirstChild("👁️ Mắt Dương") or (player.Character and player.Character:FindFirstChild("👁️ Mắt Dương")) then return end
         local tool = Instance.new("Tool"); tool.Name = "👁️ Mắt Dương"; tool.RequiresHandle = false; tool.Parent = player.Backpack
-
         tool.Activated:Connect(function()
             if not VisionState.YangActive then
                 VisionState.YangActive = true; if VisionState.YinActive then VisionState.YinActive = false; ClearVision() end
-                PlaySound(138080210, 2, 1.5)
-                Lighting.Ambient = Color3.new(1, 1, 1); Lighting.OutdoorAmbient = Color3.new(1, 1, 1); Lighting.GlobalShadows = false; Lighting.Brightness = 2
+                PlaySound(138080210, 2, 1.5); Lighting.Ambient = Color3.new(1, 1, 1); Lighting.OutdoorAmbient = Color3.new(1, 1, 1); Lighting.GlobalShadows = false; Lighting.Brightness = 2
                 for _, p in pairs(Players:GetPlayers()) do if p ~= player and p.Character then CreateESP(p.Character, Color3.fromRGB(0, 200, 255), p.Name) end end
-                Rayfield:Notify({Title = "Mắt Dương", Content = "Đã BẬT", Duration = 2})
             else
                 VisionState.YangActive = false; ClearVision()
-                Rayfield:Notify({Title = "Mắt Dương", Content = "Đã TẮT", Duration = 2})
             end
         end)
     end
@@ -307,7 +384,6 @@ TabVision:CreateButton({
     Callback = function()
         if player.Backpack:FindFirstChild("👁️ Mắt Âm") or (player.Character and player.Character:FindFirstChild("👁️ Mắt Âm")) then return end
         local tool = Instance.new("Tool"); tool.Name = "👁️ Mắt Âm"; tool.RequiresHandle = false; tool.Parent = player.Backpack
-
         tool.Activated:Connect(function()
             if not VisionState.YinActive then
                 VisionState.YinActive = true; if VisionState.YangActive then VisionState.YangActive = false; ClearVision() end
@@ -321,13 +397,10 @@ TabVision:CreateButton({
                             if root then VisionState.Hitboxes[obj] = root.Size; root.Size = Vector3.new(15, 15, 15); root.Transparency = 0.5; root.CanCollide = false end
                         end
                     elseif obj:IsA("Tool") then CreateESP(obj, Color3.fromRGB(139, 69, 19), "Đồ vật: " .. obj.Name)
-                    elseif obj:IsA("Part") and obj.Name == "DroppedItem" then CreateESP(obj, Color3.fromRGB(255, 255, 255), "Vật thể")
-                    end
+                    elseif obj:IsA("Part") and obj.Name == "DroppedItem" then CreateESP(obj, Color3.fromRGB(255, 255, 255), "Vật thể") end
                 end
-                Rayfield:Notify({Title = "Mắt Âm", Content = "Đã BẬT", Duration = 2})
             else
                 VisionState.YinActive = false; ClearVision()
-                Rayfield:Notify({Title = "Mắt Âm", Content = "Đã TẮT", Duration = 2})
             end
         end)
     end
