@@ -1,6 +1,7 @@
 -- ==========================================
--- TÊN SẢN PHẨM: KIẾM ĐẠO TỐI THƯỢNG (BẢN FINAL MOBILE TỐI ƯU CẢM ỨNG)
+-- TÊN SẢN PHẨM: KIẾM ĐẠO TỐI THƯỢNG (BẢN FINAL + NHÃN THUẬT)
 -- TÁC GIẢ: Em trai làm mướn x MinT
+-- TÍNH NĂNG: Diệt Thế + Ngự Kiếm Mobile + Mắt Âm/Dương
 -- ==========================================
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -16,33 +17,31 @@ local Camera = workspace.CurrentCamera
 local Window = Rayfield:CreateWindow({
     Name = "MinT Kiếm Đạo ⚔️",
     LoadingTitle = "Khởi động kỹ xảo...",
-    LoadingSubtitle = "Đã hỗ trợ Mobile & Nút cảm ứng...",
+    LoadingSubtitle = "Tích hợp Nhãn Thuật Âm Dương...",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
 
 local TabSword = Window:CreateTab("⚔️ Kiếm Đạo", nil)
+local TabVision = Window:CreateTab("👁️ Nhãn Thuật", nil)
 
 -- ==========================================
 -- BIẾN TRẠNG THÁI
 -- ==========================================
-local SwordState = {
-    IsTransformed = false,
-    LastCastTime = 0,
-    Cooldown = 25, 
-    GuardianSwords = {}
-}
+local SwordState = { IsTransformed = false, LastCastTime = 0, Cooldown = 25, GuardianSwords = {} }
+local FlyingState = { IsFlying = false, IsTransitioning = false, Sword = nil, BodyVelocity = nil, BodyGyro = nil, Speed = 150, MobileUp = false, MobileDown = false, UI = nil }
 
-local FlyingState = {
-    IsFlying = false,
-    IsTransitioning = false,
-    Sword = nil,
-    BodyVelocity = nil,
-    BodyGyro = nil,
-    Speed = 150,
-    MobileUp = false,
-    MobileDown = false,
-    UI = nil
+local VisionState = {
+    YangActive = false,
+    YinActive = false,
+    OriginalLighting = {
+        Ambient = Lighting.Ambient,
+        GlobalShadows = Lighting.GlobalShadows,
+        Brightness = Lighting.Brightness,
+        OutdoorAmbient = Lighting.OutdoorAmbient
+    },
+    ESPs = {},
+    Hitboxes = {}
 }
 
 local originalJoints = {}
@@ -77,75 +76,34 @@ local function SetPose(char, state)
     end
 end
 
--- ==========================================
--- HÀM TẠO NÚT BẤM CHO ĐIỆN THOẠI
--- ==========================================
 local function CreateMobileUI()
     if FlyingState.UI then FlyingState.UI:Destroy() end
-    
-    local gui = Instance.new("ScreenGui")
-    gui.Name = "MinT_MobileFlightUI"
-    gui.Parent = player:WaitForChild("PlayerGui")
+    local gui = Instance.new("ScreenGui"); gui.Name = "MinT_MobileFlightUI"; gui.Parent = player:WaitForChild("PlayerGui")
     FlyingState.UI = gui
 
     local btnUp = Instance.new("TextButton", gui)
-    btnUp.Size = UDim2.new(0, 100, 0, 80)
-    btnUp.Position = UDim2.new(1, -120, 0.5, -90)
-    btnUp.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    btnUp.BackgroundTransparency = 0.5
-    btnUp.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btnUp.TextScaled = true
-    btnUp.Font = Enum.Font.GothamBold
-    btnUp.Text = "⬆️\nBAY LÊN"
-    btnUp.UICorner = Instance.new("UICorner", btnUp)
+    btnUp.Size = UDim2.new(0, 100, 0, 80); btnUp.Position = UDim2.new(1, -120, 0.5, -90)
+    btnUp.BackgroundColor3 = Color3.fromRGB(30, 30, 30); btnUp.BackgroundTransparency = 0.5
+    btnUp.TextColor3 = Color3.fromRGB(255, 255, 255); btnUp.TextScaled = true; btnUp.Font = Enum.Font.GothamBold
+    btnUp.Text = "⬆️\nBAY LÊN"; Instance.new("UICorner", btnUp)
 
     local btnDown = Instance.new("TextButton", gui)
-    btnDown.Size = UDim2.new(0, 100, 0, 80)
-    btnDown.Position = UDim2.new(1, -120, 0.5, 10)
-    btnDown.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    btnDown.BackgroundTransparency = 0.5
-    btnDown.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btnDown.TextScaled = true
-    btnDown.Font = Enum.Font.GothamBold
-    btnDown.Text = "⬇️\nHẠ XUỐNG"
-    btnDown.UICorner = Instance.new("UICorner", btnDown)
+    btnDown.Size = UDim2.new(0, 100, 0, 80); btnDown.Position = UDim2.new(1, -120, 0.5, 10)
+    btnDown.BackgroundColor3 = Color3.fromRGB(30, 30, 30); btnDown.BackgroundTransparency = 0.5
+    btnDown.TextColor3 = Color3.fromRGB(255, 255, 255); btnDown.TextScaled = true; btnDown.Font = Enum.Font.GothamBold
+    btnDown.Text = "⬇️\nHẠ XUỐNG"; Instance.new("UICorner", btnDown)
 
-    -- Sự kiện chạm màn hình điện thoại
-    btnUp.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            FlyingState.MobileUp = true
-        end
-    end)
-    btnUp.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            FlyingState.MobileUp = false
-        end
-    end)
-
-    btnDown.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            FlyingState.MobileDown = true
-        end
-    end)
-    btnDown.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            FlyingState.MobileDown = false
-        end
-    end)
+    btnUp.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then FlyingState.MobileUp = true end end)
+    btnUp.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then FlyingState.MobileUp = false end end)
+    btnDown.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then FlyingState.MobileDown = true end end)
+    btnDown.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then FlyingState.MobileDown = false end end)
 end
 
 local function RemoveMobileUI()
-    if FlyingState.UI then
-        FlyingState.UI:Destroy()
-        FlyingState.UI = nil
-    end
-    FlyingState.MobileUp = false
-    FlyingState.MobileDown = false
+    if FlyingState.UI then FlyingState.UI:Destroy(); FlyingState.UI = nil end
+    FlyingState.MobileUp = false; FlyingState.MobileDown = false
 end
 
--- ==========================================
--- HÀM XÂY DỰNG KIẾM (DIỆT THẾ)
--- ==========================================
 local function BuildSword(scale, isGlowing, hasDarkAura)
     local model = Instance.new("Model")
     local blade = Instance.new("Part", model)
@@ -178,12 +136,8 @@ local function BuildSword(scale, isGlowing, hasDarkAura)
     return model
 end
 
--- ==========================================
--- HÀM XÂY DỰNG KIẾM (NGỰ KIẾM - ĐÃ LÀM HẸP VÀ MŨI TAM GIÁC)
--- ==========================================
 local function BuildRidingSword()
     local model = Instance.new("Model")
-    
     local core = Instance.new("Part", model)
     core.Name = "Core"; core.Size = Vector3.new(0.1, 6, 0.4)
     core.Color = Color3.fromRGB(15, 15, 15); core.Material = Enum.Material.Slate
@@ -220,302 +174,227 @@ local function BuildRidingSword()
     local wh = Instance.new("WeldConstraint", core); wh.Part0 = core; wh.Part1 = hilt
 
     local smoke = Instance.new("ParticleEmitter", core)
-    smoke.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
-    })
+    smoke.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)), ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))})
     smoke.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 4)})
     smoke.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)})
-    smoke.Lifetime = NumberRange.new(3, 3)
-    smoke.Rate = 100; smoke.Speed = NumberRange.new(0)
+    smoke.Lifetime = NumberRange.new(3, 3); smoke.Rate = 100; smoke.Speed = NumberRange.new(0)
     smoke.Texture = "rbxassetid://243660364"
 
     return model
 end
 
-local function QuadBezier(t, p0, p1, p2)
-    return (1 - t)^2 * p0 + 2 * (1 - t) * t * p1 + t^2 * p2
+local function QuadBezier(t, p0, p1, p2) return (1 - t)^2 * p0 + 2 * (1 - t) * t * p1 + t^2 * p2 end
+
+-- ==========================================
+-- HỆ THỐNG NHÃN THUẬT (MẮT ÂM / MẮT DƯƠNG)
+-- ==========================================
+local function ClearVision()
+    -- Xóa sóng năng lượng
+    for _, v in pairs(workspace:GetChildren()) do if v.Name == "VisionWave" then v:Destroy() end end
+    
+    -- Xóa ESP và nhãn
+    for _, esp in pairs(VisionState.ESPs) do if esp then esp:Destroy() end end
+    VisionState.ESPs = {}
+    
+    -- Phục hồi hitbox
+    for char, size in pairs(VisionState.Hitboxes) do
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.Size = size
+            char.HumanoidRootPart.Transparency = 1
+            char.HumanoidRootPart.CanCollide = true
+        end
+    end
+    VisionState.Hitboxes = {}
+    
+    -- Phục hồi đồ họa
+    Lighting.Ambient = VisionState.OriginalLighting.Ambient
+    Lighting.GlobalShadows = VisionState.OriginalLighting.GlobalShadows
+    Lighting.Brightness = VisionState.OriginalLighting.Brightness
+    Lighting.OutdoorAmbient = VisionState.OriginalLighting.OutdoorAmbient
 end
 
--- ==========================================
--- PHẦN 1: TÍNH NĂNG DIỆT THẾ
--- ==========================================
-TabSword:CreateButton({
-    Name = "Nhận: ⚔️ Ấn Ký Kiếm Đạo (Chiêu Cuối)",
+local function CreateWave(color)
+    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    local wave = Instance.new("Part", workspace)
+    wave.Name = "VisionWave"; wave.Shape = Enum.PartType.Ball; wave.Size = Vector3.new(1, 1, 1)
+    wave.CFrame = root.CFrame; wave.Color = color; wave.Material = Enum.Material.ForceField
+    wave.Anchored = true; wave.CanCollide = false
+    TweenService:Create(wave, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = Vector3.new(800, 800, 800), Transparency = 1}):Play()
+    Debris:AddItem(wave, 1.5)
+end
+
+local function CreateESP(target, color, textName)
+    if not target or not target.PrimaryPart then return end
+    
+    -- ESP Xuyên tường
+    local hl = Instance.new("Highlight")
+    hl.Parent = target
+    hl.FillColor = color
+    hl.OutlineColor = Color3.new(1,1,1)
+    hl.FillTransparency = 0.5
+    hl.OutlineTransparency = 0
+    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    table.insert(VisionState.ESPs, hl)
+    
+    -- Chữ hiển thị
+    local bgui = Instance.new("BillboardGui", target.PrimaryPart)
+    bgui.Size = UDim2.new(0, 100, 0, 40)
+    bgui.StudsOffset = Vector3.new(0, 3, 0)
+    bgui.AlwaysOnTop = true
+    local txt = Instance.new("TextLabel", bgui)
+    txt.Size = UDim2.new(1, 0, 1, 0)
+    txt.BackgroundTransparency = 1
+    txt.Text = textName
+    txt.TextColor3 = color
+    txt.TextStrokeTransparency = 0
+    txt.Font = Enum.Font.GothamBold
+    txt.TextScaled = true
+    table.insert(VisionState.ESPs, bgui)
+end
+
+TabVision:CreateButton({
+    Name = "👁️ Bật: Mắt Dương (Fullbright + ESP Ngầm)",
     Callback = function()
-        local tool = Instance.new("Tool", player.Backpack)
-        tool.Name = "⚔️ Diệt Thế"; tool.RequiresHandle = false
+        if VisionState.YangActive then return end
+        VisionState.YangActive = true
+        if VisionState.YinActive then VisionState.YinActive = false; ClearVision() end
         
-        tool.Activated:Connect(function()
-            local char = player.Character
-            if not char or SwordState.IsTransformed or tick() - SwordState.LastCastTime < SwordState.Cooldown then return end
-            
-            SwordState.LastCastTime = tick(); SwordState.IsTransformed = true
-            local root = char.HumanoidRootPart; local hum = char.Humanoid; local startPos = root.Position
-            hum.WalkSpeed = 0; hum.JumpPower = 0; root.Anchored = true
-            SetPose(char, true)
-
-            for _, v in pairs(char:GetDescendants()) do
-                if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
-                    v.Color = Color3.fromRGB(5, 5, 5); v.Material = Enum.Material.Neon
-                elseif v:IsA("Decal") and v.Name == "face" then
-                    v.Color3 = Color3.fromRGB(255, 0, 0) 
-                elseif v:IsA("Clothing") or v:IsA("ShirtGraphic") then v:Destroy() end
-            end
-            
-            local cc = Instance.new("ColorCorrectionEffect", Lighting)
-            cc.Name = "SwordCC"
-            TweenService:Create(cc, TweenInfo.new(2), {Saturation = 0.8, Contrast = 0.5, TintColor = Color3.fromRGB(255, 60, 60)}):Play()
-
-            local darkGround = Instance.new("Part", workspace)
-            darkGround.Size = Vector3.new(200, 2, 200); darkGround.CFrame = CFrame.new(startPos - Vector3.new(0, 3, 0))
-            darkGround.Color = Color3.new(0, 0, 0); darkGround.Material = Enum.Material.SmoothPlastic
-            darkGround.Anchored = true; darkGround.CanCollide = false
-            Debris:AddItem(darkGround, 25)
-
-            local floatingRocks = {}
-            for i = 1, 30 do
-                local rock = Instance.new("Part", workspace)
-                rock.Anchored = true; rock.CanCollide = false
-                rock.Position = startPos + Vector3.new(math.random(-40, 40), -2, math.random(-40, 40))
-                local rockMesh = Instance.new("SpecialMesh", rock)
-                rockMesh.MeshType = Enum.MeshType.FileMesh
-                rockMesh.MeshId = "rbxassetid://1290033"
-                rockMesh.Scale = Vector3.new(math.random(1,4), math.random(1,4), math.random(1,4))
-                rock.Material = Enum.Material.Slate; rock.Color = Color3.fromRGB(20, 20, 20)
-                TweenService:Create(rock, TweenInfo.new(10, Enum.EasingStyle.Sine), {Position = rock.Position + Vector3.new(0, math.random(50, 100), 0), Orientation = Vector3.new(math.random(0,360), math.random(0,360), math.random(0,360))}):Play()
-                table.insert(floatingRocks, rock); Debris:AddItem(rock, 10)
-            end
-
-            local tempSwords = {}
-            PlaySound(142070127, 3, 0.3) 
-            local heartbeat = PlaySound(874742456, 3, 1, root); heartbeat.Looped = true
-            
-            for i = 1, 500 do
-                local s = BuildSword(1.2, false, false); s.Parent = workspace
-                local radius = math.sqrt(i / 500) * 80; local angle = i * 137.5 * (math.pi / 180) 
-                local offset = Vector3.new((radius * math.cos(angle)) + math.random(-3,3), -15, (radius * math.sin(angle)) + math.random(-3,3))
-                s.PrimaryPart.CFrame = CFrame.new(startPos + offset) * CFrame.Angles(math.rad(180), math.random(-30, 30), 0)
-                table.insert(tempSwords, s)
-                TweenService:Create(s.PrimaryPart, TweenInfo.new(8), {CFrame = CFrame.new(startPos + Vector3.new(offset.X, 0, offset.Z)) * CFrame.Angles(math.rad(180), math.random(-30, 30), 0)}):Play()
-            end
-
-            local shakeConn = RunService.RenderStepped:Connect(function()
-                Camera.CFrame = Camera.CFrame * CFrame.Angles(math.random(-50, 50)/1000, math.random(-50, 50)/1000, 0)
-            end)
-            
-            task.wait(6) 
-            shakeConn:Disconnect(); heartbeat:Destroy()
-
-            PlaySound(4446671048, 2, 0.5)
-            for _, s in pairs(tempSwords) do
-                TweenService:Create(s.PrimaryPart, TweenInfo.new(1.5, Enum.EasingStyle.Exponential), {CFrame = root.CFrame * CFrame.new(math.random(-15, 15), math.random(-5, 15), math.random(-15, 15))}):Play()
-            end
-            task.wait(1.5)
-
-            local shockwave = Instance.new("Part", workspace)
-            shockwave.Size = Vector3.new(5, 1, 5); shockwave.CFrame = root.CFrame * CFrame.new(0, -2, 0)
-            shockwave.Anchored = true; shockwave.CanCollide = false; shockwave.Material = Enum.Material.Neon; shockwave.Color = Color3.fromRGB(255, 50, 50)
-            Instance.new("CylinderMesh", shockwave)
-            TweenService:Create(shockwave, TweenInfo.new(0.5), {Size = Vector3.new(200, 1, 200), Transparency = 1}):Play()
-            Debris:AddItem(shockwave, 1)
-
-            PlaySound(864568856, 4, 0.8)
-            root.CFrame = root.CFrame * CFrame.new(0, 150, 0)
-            for _, s in pairs(tempSwords) do
-                TweenService:Create(s.PrimaryPart, TweenInfo.new(0.5), {CFrame = root.CFrame * CFrame.new(math.random(-20,20), math.random(-10,30), math.random(-20,20))}):Play()
-            end
-            task.wait(0.5)
-
-            PlaySound(864568856, 2, 2)
-            for i, s in ipairs(tempSwords) do
-                s.PrimaryPart.Material = Enum.Material.Neon
-                local radiusCircle = math.random(15, 60) 
-                local angle = math.random(0, 360)
-                local offsetX = radiusCircle * math.cos(math.rad(angle))
-                local offsetY = radiusCircle * math.sin(math.rad(angle))
-                local targetCFrame = root.CFrame * CFrame.new(offsetX, offsetY, -20) * CFrame.Angles(math.rad(-90), 0, 0)
-                TweenService:Create(s.PrimaryPart, TweenInfo.new(1, Enum.EasingStyle.Back), {CFrame = targetCFrame}):Play()
-            end
-
-            task.wait(1.5)
-
-            local impact = Instance.new("ColorCorrectionEffect", Lighting)
-            impact.Saturation = -1; impact.Contrast = 1.5; impact.Brightness = 0.5
-            task.wait(0.5) 
-            impact:Destroy()
-
-            PlaySound(138080210, 5, 0.8) 
-            for _, s in ipairs(tempSwords) do
-                task.spawn(function()
-                    local dest = s.PrimaryPart.CFrame * CFrame.new(0, 500, 0) 
-                    local tw = TweenService:Create(s.PrimaryPart, TweenInfo.new(0.6, Enum.EasingStyle.Linear), {CFrame = dest})
-                    tw:Play(); tw.Completed:Wait()
-                    s.PrimaryPart.Color = Color3.fromRGB(255, 50, 0); s.PrimaryPart.Material = Enum.Material.Neon
-                    local crackAura = Instance.new("ParticleEmitter", s.PrimaryPart)
-                    crackAura.Color = ColorSequence.new(Color3.fromRGB(255, 0, 0))
-                    crackAura.Size = NumberSequence.new(2, 0); crackAura.Speed = NumberRange.new(10, 30)
-                    crackAura.Rate = 100; crackAura.Lifetime = NumberRange.new(0.5, 1)
-                    crackAura:Emit(15)
-                    task.wait(0.5); s:Destroy()
-                end)
-                task.wait(0.002) 
-            end
-
-            task.wait(2)
-            
-            SetPose(char, false); root.Anchored = false
-            hum.WalkSpeed = 50; hum.JumpPower = 60
-            
-            local swordPos = {
-                {off = CFrame.new(-4, 3, 0) * CFrame.Angles(math.rad(180), 0, 0), sc = 1.5},
-                {off = CFrame.new(4, 3, 0) * CFrame.Angles(math.rad(180), 0, 0), sc = 1.5},
-                {off = CFrame.new(0, 1, 3) * CFrame.Angles(math.rad(45), 0, math.rad(-45)), sc = 1.5}
-            }
-            
-            for _, p in ipairs(swordPos) do
-                local gs = BuildSword(p.sc, true, true) 
-                gs.Parent = workspace; gs.PrimaryPart.Anchored = false
-                local w = Instance.new("Weld", gs.PrimaryPart); w.Part0 = root; w.Part1 = gs.PrimaryPart
-                w.C0 = p.off * CFrame.new(math.random(-50, 50), 100, math.random(-50, 50))
-                TweenService:Create(w, TweenInfo.new(3, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {C0 = p.off}):Play()
-                table.insert(SwordState.GuardianSwords, gs)
-            end
-
-            RunService:BindToRenderStep("SpinSwords", 200, function()
-                if SwordState.GuardianSwords[1] and SwordState.GuardianSwords[2] then
-                    SwordState.GuardianSwords[1].PrimaryPart.Weld.C0 *= CFrame.Angles(0, math.rad(3), 0)
-                    SwordState.GuardianSwords[2].PrimaryPart.Weld.C0 *= CFrame.Angles(0, math.rad(3), 0)
-                end
-            end)
-            
-            Rayfield:Notify({Title = "Hoàn Tất", Content = "Diệt thế xong!", Duration = 3})
-        end)
-    end
-})
-
-TabSword:CreateButton({
-    Name = "🧹 Hủy Dạng (Tắt Diệt Thế)",
-    Callback = function()
-        SwordState.IsTransformed = false
-        RunService:UnbindFromRenderStep("SpinSwords")
+        CreateWave(Color3.fromRGB(0, 150, 255)) -- Vòng tròn xanh biển
+        PlaySound(138080210, 2, 1.5)
         
-        if Lighting:FindFirstChild("SwordCC") then Lighting.SwordCC:Destroy() end
-        local char = player.Character
-        if char then
-            if char:FindFirstChild("HumanoidRootPart") and char.HumanoidRootPart:FindFirstChild("MinTAura") then
-                char.HumanoidRootPart.MinTAura:Destroy()
-            end
-            if char:FindFirstChild("Humanoid") then
-                char.Humanoid.WalkSpeed = 16; char.Humanoid.JumpPower = 50
-            end
-            SetPose(char, false); char.HumanoidRootPart.Anchored = false
+        -- Fullbright vô hạn sáng
+        Lighting.Ambient = Color3.new(1, 1, 1)
+        Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+        Lighting.GlobalShadows = false
+        Lighting.Brightness = 2
+        
+        -- ESP cơ bản xuyên tường mờ mờ cho người chơi
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= player and p.Character then CreateESP(p.Character, Color3.fromRGB(0, 200, 255), p.Name) end
         end
+        Rayfield:Notify({Title = "Mắt Dương", Content = "Đã bật nhìn xuyên thấu và Fullbright.", Duration = 3})
+    end
+})
 
-        for _, s in pairs(SwordState.GuardianSwords) do if s then s:Destroy() end end
-        SwordState.GuardianSwords = {}
+TabVision:CreateButton({
+    Name = "👁️ Bật: Mắt Âm (Vạn Vật ESP + Tăng Hitbox)",
+    Callback = function()
+        if VisionState.YinActive then return end
+        VisionState.YinActive = true
+        if VisionState.YangActive then VisionState.YangActive = false; ClearVision() end
+        
+        CreateWave(Color3.fromRGB(255, 0, 0)) -- Vòng tròn đỏ
+        PlaySound(4446671048, 2, 0.8)
+        
+        -- Thuật toán quét vạn vật và tăng hitbox
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("Model") and obj ~= player.Character then
+                local isPlayer = Players:GetPlayerFromCharacter(obj)
+                local hasHum = obj:FindFirstChild("Humanoid")
+                local root = obj:FindFirstChild("HumanoidRootPart")
+                
+                if isPlayer then
+                    -- Người chơi (Màu Đỏ)
+                    CreateESP(obj, Color3.fromRGB(255, 50, 50), "Người: " .. isPlayer.Name)
+                    if root then
+                        VisionState.Hitboxes[obj] = root.Size
+                        root.Size = Vector3.new(15, 15, 15)
+                        root.Transparency = 0.5
+                        root.CanCollide = false
+                    end
+                elseif hasHum then
+                    -- NPC (Màu Xanh lục)
+                    CreateESP(obj, Color3.fromRGB(50, 255, 50), "NPC: " .. obj.Name)
+                    if root then
+                        VisionState.Hitboxes[obj] = root.Size
+                        root.Size = Vector3.new(15, 15, 15)
+                        root.Transparency = 0.5
+                        root.CanCollide = false
+                    end
+                end
+            elseif obj:IsA("Tool") then
+                -- Vật phẩm (Màu Nâu)
+                CreateESP(obj, Color3.fromRGB(139, 69, 19), "Đồ vật: " .. obj.Name)
+            elseif obj:IsA("Part") and obj.Name == "DroppedItem" then
+                -- Thể loại vật thể khác (Trắng)
+                CreateESP(obj, Color3.fromRGB(255, 255, 255), "Vật thể")
+            end
+        end
+        Rayfield:Notify({Title = "Mắt Âm", Content = "Đã bật ESP Vạn Vật & Phóng to Hitbox.", Duration = 3})
+    end
+})
+
+TabVision:CreateButton({
+    Name = "🛑 Tắt Nhãn Thuật",
+    Callback = function()
+        VisionState.YangActive = false
+        VisionState.YinActive = false
+        ClearVision()
+        Rayfield:Notify({Title = "Đã tắt", Content = "Đồ họa và Hitbox trở lại bình thường.", Duration = 3})
     end
 })
 
 -- ==========================================
--- PHẦN 2: TÍNH NĂNG NGỰ KIẾM PHI HÀNH (VẬT PHẨM)
+-- TÍNH NĂNG NGỰ KIẾM VÀ DIỆT THẾ (NHƯ CŨ, ĐÃ SỬA GÓC KIẾM)
 -- ==========================================
 TabSword:CreateButton({
     Name = "Nhận Vật Phẩm: 🗡️ Ngự Kiếm",
     Callback = function()
-        if player.Backpack:FindFirstChild("🗡️ Ngự Kiếm Phá Không") or (player.Character and player.Character:FindFirstChild("🗡️ Ngự Kiếm Phá Không")) then
-            Rayfield:Notify({Title = "Thông Báo", Content = "Đã có trong túi đồ rồi, kiếm lại đi!", Duration = 3})
-            return
-        end
+        if player.Backpack:FindFirstChild("🗡️ Ngự Kiếm") or (player.Character and player.Character:FindFirstChild("🗡️ Ngự Kiếm")) then return end
 
-        local tool = Instance.new("Tool")
-        tool.Name = "🗡️ Ngự Kiếm Phá Không"
-        tool.RequiresHandle = false
-        tool.Parent = player.Backpack
+        local tool = Instance.new("Tool"); tool.Name = "🗡️ Ngự Kiếm"; tool.RequiresHandle = false; tool.Parent = player.Backpack
 
         tool.Activated:Connect(function()
-            local char = player.Character
-            local root = char and char:FindFirstChild("HumanoidRootPart")
-            
+            local char = player.Character; local root = char and char:FindFirstChild("HumanoidRootPart")
             if not root or FlyingState.IsTransitioning then return end
 
             if not FlyingState.IsFlying then
-                -- ==========================
-                -- BẬT BAY LÊN
-                -- ==========================
-                FlyingState.IsTransitioning = true
-                FlyingState.IsFlying = true
+                FlyingState.IsTransitioning = true; FlyingState.IsFlying = true
                 
-                local sword = BuildRidingSword()
-                sword.Parent = workspace
-                FlyingState.Sword = sword
-
+                local sword = BuildRidingSword(); sword.Parent = workspace; FlyingState.Sword = sword
                 local angle = math.random(0, 360)
                 local spawnPos = root.Position + Vector3.new(170 * math.cos(math.rad(angle)), math.random(50, 150), 170 * math.sin(math.rad(angle)))
                 local curvePoint = root.Position + Vector3.new(math.random(-100, 100), math.random(100, 200), math.random(-100, 100))
 
                 PlaySound(138080210, 3, 1) 
-
-                char.Humanoid.PlatformStand = true 
-                root.Anchored = true
-                SetPose(char, true) 
+                char.Humanoid.PlatformStand = true; root.Anchored = true; SetPose(char, true) 
                 TweenService:Create(root, TweenInfo.new(1, Enum.EasingStyle.Sine), {CFrame = root.CFrame * CFrame.new(0, 8, 0)}):Play()
+                CreateMobileUI()
 
-                CreateMobileUI() -- GỌI NÚT LÊN/XUỐNG CHO ĐIỆN THOẠI
-
-                local t = 0
-                local flightConn
+                local t = 0; local flightConn
                 flightConn = RunService.RenderStepped:Connect(function(dt)
-                    t = t + dt * 0.2 -- LƯỚT CHẬM TRONG 5 GIÂY
+                    t = t + dt * 0.2 
                     if t >= 1 then 
                         flightConn:Disconnect()
-                        
-                        if not FlyingState.Sword or not FlyingState.Sword.PrimaryPart then
-                            FlyingState.IsTransitioning = false
-                            return 
-                        end
+                        if not FlyingState.Sword or not FlyingState.Sword.PrimaryPart then FlyingState.IsTransitioning = false; return end
 
-                        FlyingState.Sword.PrimaryPart.CFrame = root.CFrame * CFrame.new(0, -3.2, 0) * CFrame.Angles(math.rad(-90), math.rad(90), 0)
+                        -- SỬA LỖI KIẾM DỰNG ĐỨNG Ở ĐÂY: Xoay flat mặt kiếm ngửa lên đỡ chân (math.rad(90) ở trục Y và Z)
+                        FlyingState.Sword.PrimaryPart.CFrame = root.CFrame * CFrame.new(0, -3.2, 0) * CFrame.Angles(0, math.rad(90), math.rad(90))
                         
-                        local weld = Instance.new("WeldConstraint", root)
-                        weld.Name = "SwordWeld" 
-                        weld.Part0 = root; weld.Part1 = FlyingState.Sword.PrimaryPart
-                        FlyingState.Sword.PrimaryPart.Anchored = false
-                        root.Anchored = false
+                        local weld = Instance.new("WeldConstraint", root); weld.Name = "SwordWeld"; weld.Part0 = root; weld.Part1 = FlyingState.Sword.PrimaryPart
+                        FlyingState.Sword.PrimaryPart.Anchored = false; root.Anchored = false
 
-                        local bv = Instance.new("BodyVelocity", root)
-                        bv.MaxForce = Vector3.new(100000, 100000, 100000)
-                        bv.Velocity = Vector3.new(0, 0, 0)
+                        local bv = Instance.new("BodyVelocity", root); bv.MaxForce = Vector3.new(100000, 100000, 100000); bv.Velocity = Vector3.new(0, 0, 0)
                         FlyingState.BodyVelocity = bv
-
-                        local bg = Instance.new("BodyGyro", root)
-                        bg.MaxTorque = Vector3.new(100000, 100000, 100000)
-                        bg.P = 15000
+                        local bg = Instance.new("BodyGyro", root); bg.MaxTorque = Vector3.new(100000, 100000, 100000); bg.P = 15000
                         FlyingState.BodyGyro = bg
 
                         RunService:BindToRenderStep("SwordSurfing", Enum.RenderPriority.Camera.Value + 1, function()
                             local camCFrame = workspace.CurrentCamera.CFrame
-                            
-                            -- XỬ LÝ DI CHUYỂN BẰNG NÚT ĐIỀU HƯỚNG CỦA ĐIỆN THOẠI (MoveDirection)
                             local moveDir = char.Humanoid.MoveDirection
 
-                            -- Thêm hệ phím cho PC dùng chung
                             if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + camCFrame.LookVector end
                             if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - camCFrame.LookVector end
                             if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - camCFrame.RightVector end
                             if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + camCFrame.RightVector end
                             
-                            -- KẾT HỢP BAY LÊN/HẠ XUỐNG CHO CẢ ĐIỆN THOẠI VÀ PC
                             if FlyingState.MobileUp or UserInputService:IsKeyDown(Enum.KeyCode.E) then moveDir = moveDir + Vector3.new(0, 1, 0) end
                             if FlyingState.MobileDown or UserInputService:IsKeyDown(Enum.KeyCode.Q) then moveDir = moveDir - Vector3.new(0, 1, 0) end
 
                             if moveDir.Magnitude > 0 then moveDir = moveDir.Unit end
-
-                            bv.Velocity = moveDir * FlyingState.Speed
-                            bg.CFrame = CFrame.new(root.Position, root.Position + camCFrame.LookVector)
+                            bv.Velocity = moveDir * FlyingState.Speed; bg.CFrame = CFrame.new(root.Position, root.Position + camCFrame.LookVector)
                         end)
-
                         FlyingState.IsTransitioning = false
                     else
                         local currentPos = QuadBezier(t, spawnPos, curvePoint, root.Position + Vector3.new(0, -3, 0))
@@ -524,56 +403,37 @@ TabSword:CreateButton({
                         end
                     end
                 end)
-
             else
-                -- ==========================
-                -- TẮT VÀ HẠ CÁNH
-                -- ==========================
-                FlyingState.IsTransitioning = true
-                RunService:UnbindFromRenderStep("SwordSurfing")
-                RemoveMobileUI() -- TẮT NÚT CẢM ỨNG
-                
+                FlyingState.IsTransitioning = true; RunService:UnbindFromRenderStep("SwordSurfing"); RemoveMobileUI()
                 if FlyingState.BodyVelocity then FlyingState.BodyVelocity:Destroy() end
                 if FlyingState.BodyGyro then FlyingState.BodyGyro:Destroy() end
 
-                local raycastParams = RaycastParams.new()
-                raycastParams.FilterDescendantsInstances = {char, FlyingState.Sword}
-                raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+                local raycastParams = RaycastParams.new(); raycastParams.FilterDescendantsInstances = {char, FlyingState.Sword}; raycastParams.FilterType = Enum.RaycastFilterType.Exclude
                 local rayResult = workspace:Raycast(root.Position, Vector3.new(0, -1000, 0), raycastParams)
 
                 if rayResult then
-                    local landPos = rayResult.Position + Vector3.new(0, 3.5, 0)
-                    local currentYRot = math.rad(root.Orientation.Y)
+                    local landPos = rayResult.Position + Vector3.new(0, 3.5, 0); local currentYRot = math.rad(root.Orientation.Y)
                     local landTween = TweenService:Create(root, TweenInfo.new(1.2, Enum.EasingStyle.Sine), {CFrame = CFrame.new(landPos) * CFrame.Angles(0, currentYRot, 0)})
-                    landTween:Play()
-                    landTween.Completed:Wait() 
+                    landTween:Play(); landTween.Completed:Wait() 
                 end
 
-                char.Humanoid.PlatformStand = false
-                SetPose(char, false)
+                char.Humanoid.PlatformStand = false; SetPose(char, false)
 
                 if FlyingState.Sword and FlyingState.Sword.PrimaryPart then
                     local swordRoot = FlyingState.Sword.PrimaryPart
-                    
-                    for _, v in pairs(root:GetChildren()) do
-                        if v.Name == "SwordWeld" then v:Destroy() end
-                    end
+                    for _, v in pairs(root:GetChildren()) do if v.Name == "SwordWeld" then v:Destroy() end end
                     
                     swordRoot.Anchored = true
-                    local awayPos = swordRoot.Position + (root.CFrame.LookVector * 300) + Vector3.new(0, 150, 0)
-                    local flyAwayCFrame = CFrame.lookAt(swordRoot.Position, awayPos) * CFrame.Angles(math.rad(90), 0, 0)
-
-                    local flyAwayTween = TweenService:Create(swordRoot, TweenInfo.new(4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {CFrame = flyAwayCFrame})
-                    flyAwayTween:Play()
+                    local flatDirection = (root.CFrame.LookVector * Vector3.new(1, 0, 1)).Unit
+                    if flatDirection.Magnitude < 0.1 then flatDirection = root.CFrame.RightVector end 
                     
+                    local awayPos = swordRoot.Position + (flatDirection * 300) + Vector3.new(0, 200, 0)
+                    local flyAwayCFrame = CFrame.lookAt(swordRoot.Position, awayPos) * CFrame.Angles(math.rad(90), 0, 0)
+                    TweenService:Create(swordRoot, TweenInfo.new(3.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {CFrame = flyAwayCFrame}):Play()
                     Debris:AddItem(FlyingState.Sword, 4)
                 end
-                
-                FlyingState.IsFlying = false
-                FlyingState.IsTransitioning = false
+                FlyingState.IsFlying = false; FlyingState.IsTransitioning = false
             end
         end)
-        
-        Rayfield:Notify({Title = "Thông Báo", Content = "Đã tích hợp bảng điều khiển cảm ứng. Nhấp màn hình quẩy đi chị!", Duration = 4})
     end
 })
