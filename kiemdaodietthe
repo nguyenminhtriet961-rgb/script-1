@@ -1,8 +1,4 @@
--- ==========================================
--- TÊN SẢN PHẨM: KIẾM ĐẠO TỐI THƯỢNG (BẢN FINAL FULL KHÔNG THIẾU 1 MẢNH)
--- TÁC GIẢ: Em trai làm mướn x MinT
--- ==========================================
-
+ 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -16,7 +12,7 @@ local Camera = workspace.CurrentCamera
 local Window = Rayfield:CreateWindow({
     Name = "MinT Kiếm Đạo ⚔️",
     LoadingTitle = "Khởi động hệ thống...",
-    LoadingSubtitle = "Bản tổng hợp cuối cùng cho bà chị lười...",
+    LoadingSubtitle = "Vá lỗi kiếm ngược, Vết nứt khổng lồ...",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
@@ -48,7 +44,6 @@ local function SetPose(char, state)
     local joints = { rShoulder = char.RightUpperArm:FindFirstChild("RightShoulder"), lShoulder = char.LeftUpperArm:FindFirstChild("LeftShoulder"), rHip = char.RightUpperLeg:FindFirstChild("RightHip"), neck = char.Head:FindFirstChild("Neck") }
     if state then
         for name, joint in pairs(joints) do if joint then originalJoints[name] = joint.C0 end end
-        -- Tư thế bay lơ lửng chắp tay ngạo nghễ
         if joints.rShoulder then TweenService:Create(joints.rShoulder, TweenInfo.new(1), {C0 = joints.rShoulder.C0 * CFrame.Angles(math.rad(20), math.rad(-40), math.rad(20))}):Play() end
         if joints.lShoulder then TweenService:Create(joints.lShoulder, TweenInfo.new(1), {C0 = joints.lShoulder.C0 * CFrame.Angles(math.rad(20), math.rad(40), math.rad(-20))}):Play() end
         if joints.rHip then TweenService:Create(joints.rHip, TweenInfo.new(1), {C0 = joints.rHip.C0 * CFrame.Angles(math.rad(10), 0, 0)}):Play() end
@@ -86,16 +81,18 @@ local function BuildRidingSword()
     return model
 end
 
+-- TẠO VẾT NỨT SIÊU TO KHỔNG LỒ
 local function CreateLightningRift(cframe)
     local model = Instance.new("Model", workspace)
-    local p1 = Instance.new("Part", model); p1.Size = Vector3.new(2, 6, 1); p1.CFrame = cframe * CFrame.new(0, 5, 0) * CFrame.Angles(0, 0, math.rad(30))
-    local p2 = Instance.new("Part", model); p2.Size = Vector3.new(2, 8, 1); p2.CFrame = cframe * CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.rad(-30))
-    local p3 = Instance.new("Part", model); p3.Size = Vector3.new(2, 6, 1); p3.CFrame = cframe * CFrame.new(0, -5, 0) * CFrame.Angles(0, 0, math.rad(30))
+    -- Tăng kích thước (Size) và Tọa độ giãn cách (CFrame) để làm nó bự hơn
+    local p1 = Instance.new("Part", model); p1.Size = Vector3.new(4, 15, 2); p1.CFrame = cframe * CFrame.new(0, 12, 0) * CFrame.Angles(0, 0, math.rad(30))
+    local p2 = Instance.new("Part", model); p2.Size = Vector3.new(4, 20, 2); p2.CFrame = cframe * CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.rad(-30))
+    local p3 = Instance.new("Part", model); p3.Size = Vector3.new(4, 15, 2); p3.CFrame = cframe * CFrame.new(0, -12, 0) * CFrame.Angles(0, 0, math.rad(30))
     
     for _, p in pairs({p1, p2, p3}) do
         p.Color = Color3.fromRGB(0, 0, 30); p.Material = Enum.Material.Neon; p.Anchored = true; p.CanCollide = false
         local hl = Instance.new("Highlight", p); hl.FillTransparency = 1; hl.OutlineColor = Color3.fromRGB(0, 255, 0); hl.OutlineTransparency = 0
-        local stars = Instance.new("ParticleEmitter", p); stars.Texture = "rbxassetid://217311100"; stars.Color = ColorSequence.new(Color3.fromRGB(150, 200, 255)); stars.Size = NumberSequence.new(1.5, 0); stars.Rate = 50; stars.Speed = NumberRange.new(1, 3); stars.Lifetime = NumberRange.new(1, 2)
+        local stars = Instance.new("ParticleEmitter", p); stars.Texture = "rbxassetid://217311100"; stars.Color = ColorSequence.new(Color3.fromRGB(150, 200, 255)); stars.Size = NumberSequence.new(2.5, 0); stars.Rate = 80; stars.Speed = NumberRange.new(2, 5); stars.Lifetime = NumberRange.new(1, 2)
         table.insert(IgnoreList, p)
     end
     Debris:AddItem(model, 5)
@@ -148,7 +145,6 @@ TabSword:CreateButton({
                 PlaySound(864568856, 4, 0.8)
                 local darkGround = Instance.new("Part", workspace); darkGround.Size = Vector3.new(200, 2, 200); darkGround.CFrame = CFrame.new(root.Position - Vector3.new(0, 3, 0)); darkGround.Color = Color3.new(0, 0, 0); darkGround.Material = Enum.Material.SmoothPlastic; darkGround.Anchored = true; darkGround.CanCollide = false; Debris:AddItem(darkGround, 10)
                 
-                -- ANIMATION BAY LÊN LƠ LỬNG
                 TweenService:Create(root, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = root.CFrame * CFrame.new(0, 15, 0)}):Play()
 
                 local floatingRocks = {}
@@ -228,7 +224,7 @@ TabSword:CreateButton({
 })
 
 -- ==========================================
--- TÍNH NĂNG 2: HƯ KHÔNG TRẢM
+-- TÍNH NĂNG 2: HƯ KHÔNG TRẢM (ĐÃ CHỈNH 80M)
 -- ==========================================
 TabSword:CreateButton({
     Name = "Lấy Vật Phẩm: 🗡️ Hư Không Trảm",
@@ -274,9 +270,11 @@ TabSword:CreateButton({
             
             local rayParams = RaycastParams.new(); table.insert(IgnoreList, char); rayParams.FilterDescendantsInstances = IgnoreList; rayParams.FilterType = Enum.RaycastFilterType.Exclude
             local rayOrigin = root.Position + Vector3.new(0, 2, 0)
-            local rayResult = workspace:Raycast(rayOrigin, flatDir * 1000, rayParams)
             
-            local destPos = rayResult and (rayResult.Position - (flatDir * 5)) or (root.Position + (flatDir * 1000))
+            -- ĐÃ ĐỔI LẠI THÀNH 80 MÉT THEO YÊU CẦU
+            local rayResult = workspace:Raycast(rayOrigin, flatDir * 80, rayParams)
+            
+            local destPos = rayResult and (rayResult.Position - (flatDir * 5)) or (root.Position + (flatDir * 80))
             local riftPos2 = CFrame.new(destPos, destPos + flatDir)
             CreateLightningRift(riftPos2)
 
@@ -308,7 +306,7 @@ TabSword:CreateButton({
 })
 
 -- ==========================================
--- TÍNH NĂNG 3: NGỰ KIẾM (ĐÃ CHỈNH GÓC PHẲNG LÌ)
+-- TÍNH NĂNG 3: NGỰ KIẾM (ĐÃ BẺ MŨI KIẾM HƯỚNG VỀ PHÍA TRƯỚC)
 -- ==========================================
 TabSword:CreateButton({
     Name = "Lấy Vật Phẩm: 🗡️ Ngự Kiếm",
@@ -333,7 +331,8 @@ TabSword:CreateButton({
                         flightConn:Disconnect()
                         if not FlyingState.Sword or not FlyingState.Sword.PrimaryPart then FlyingState.IsTransitioning = false; return end
                         
-                        FlyingState.Sword.PrimaryPart.CFrame = root.CFrame * CFrame.new(0, -3.2, 0) * CFrame.Angles(0, math.rad(90), math.rad(90))
+                        -- CĂN LẠI TRỤC ĐỂ MŨI KIẾM PHÓNG THẲNG TỚI TRƯỚC, CHUÔI PHÍA SAU, MẶT KIẾM DẸP LÊN TRÊN
+                        FlyingState.Sword.PrimaryPart.CFrame = root.CFrame * CFrame.new(0, -3.5, 0) * CFrame.Angles(math.rad(-90), math.rad(90), 0)
                         
                         local weld = Instance.new("WeldConstraint", root); weld.Name = "SwordWeld"; weld.Part0 = root; weld.Part1 = FlyingState.Sword.PrimaryPart
                         FlyingState.Sword.PrimaryPart.Anchored = false; root.Anchored = false
@@ -348,7 +347,8 @@ TabSword:CreateButton({
                         end)
                         FlyingState.IsTransitioning = false
                     else
-                        if FlyingState.Sword and FlyingState.Sword.PrimaryPart then FlyingState.Sword.PrimaryPart.CFrame = CFrame.lookAt(QuadBezier(t, spawnPos, curvePoint, root.Position + Vector3.new(0,-3,0)), root.Position) * CFrame.Angles(math.rad(90), 0, 0) end
+                        -- MŨI KIẾM HƯỚNG THEO ĐƯỜNG BAY
+                        if FlyingState.Sword and FlyingState.Sword.PrimaryPart then FlyingState.Sword.PrimaryPart.CFrame = CFrame.lookAt(QuadBezier(t, spawnPos, curvePoint, root.Position + Vector3.new(0,-3,0)), root.Position) * CFrame.Angles(math.rad(-90), math.rad(90), 0) end
                     end
                 end)
             else
@@ -365,7 +365,7 @@ TabSword:CreateButton({
                     local sr = FlyingState.Sword.PrimaryPart; for _, v in pairs(root:GetChildren()) do if v.Name == "SwordWeld" then v:Destroy() end end
                     sr.Anchored = true; local fDir = (root.CFrame.LookVector * Vector3.new(1, 0, 1)).Unit; if fDir.Magnitude < 0.1 then fDir = root.CFrame.RightVector end 
                     local away = sr.Position + (fDir * 300) + Vector3.new(0, 200, 0)
-                    TweenService:Create(sr, TweenInfo.new(3.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {CFrame = CFrame.lookAt(sr.Position, away) * CFrame.Angles(math.rad(90), 0, 0)}):Play(); Debris:AddItem(FlyingState.Sword, 4)
+                    TweenService:Create(sr, TweenInfo.new(3.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {CFrame = CFrame.lookAt(sr.Position, away) * CFrame.Angles(math.rad(-90), math.rad(90), 0)}):Play(); Debris:AddItem(FlyingState.Sword, 4)
                 end
                 FlyingState.IsFlying = false; FlyingState.IsTransitioning = false
             end
