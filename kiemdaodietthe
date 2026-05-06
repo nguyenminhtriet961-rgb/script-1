@@ -1,5 +1,5 @@
 -- ==========================================
--- TÊN SẢN PHẨM: KIẾM ĐẠO TỐI THƯỢNG (BẢN FINAL - NGỰ KIẾM VIP)
+-- TÊN SẢN PHẨM: KIẾM ĐẠO TỐI THƯỢNG (BẢN FINAL MOBILE TỐI ƯU CẢM ỨNG)
 -- TÁC GIẢ: Em trai làm mướn x MinT
 -- ==========================================
 
@@ -9,13 +9,14 @@ local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 local Window = Rayfield:CreateWindow({
     Name = "MinT Kiếm Đạo ⚔️",
     LoadingTitle = "Khởi động kỹ xảo...",
-    LoadingSubtitle = "Đã fix lỗi lười gõ phím của user...",
+    LoadingSubtitle = "Đã hỗ trợ Mobile & Nút cảm ứng...",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
@@ -38,7 +39,10 @@ local FlyingState = {
     Sword = nil,
     BodyVelocity = nil,
     BodyGyro = nil,
-    Speed = 150
+    Speed = 150,
+    MobileUp = false,
+    MobileDown = false,
+    UI = nil
 }
 
 local originalJoints = {}
@@ -71,6 +75,72 @@ local function SetPose(char, state)
         for name, joint in pairs(joints) do if joint and originalJoints[name] then joint.C0 = originalJoints[name] end end
         originalJoints = {}
     end
+end
+
+-- ==========================================
+-- HÀM TẠO NÚT BẤM CHO ĐIỆN THOẠI
+-- ==========================================
+local function CreateMobileUI()
+    if FlyingState.UI then FlyingState.UI:Destroy() end
+    
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "MinT_MobileFlightUI"
+    gui.Parent = player:WaitForChild("PlayerGui")
+    FlyingState.UI = gui
+
+    local btnUp = Instance.new("TextButton", gui)
+    btnUp.Size = UDim2.new(0, 100, 0, 80)
+    btnUp.Position = UDim2.new(1, -120, 0.5, -90)
+    btnUp.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    btnUp.BackgroundTransparency = 0.5
+    btnUp.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btnUp.TextScaled = true
+    btnUp.Font = Enum.Font.GothamBold
+    btnUp.Text = "⬆️\nBAY LÊN"
+    btnUp.UICorner = Instance.new("UICorner", btnUp)
+
+    local btnDown = Instance.new("TextButton", gui)
+    btnDown.Size = UDim2.new(0, 100, 0, 80)
+    btnDown.Position = UDim2.new(1, -120, 0.5, 10)
+    btnDown.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    btnDown.BackgroundTransparency = 0.5
+    btnDown.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btnDown.TextScaled = true
+    btnDown.Font = Enum.Font.GothamBold
+    btnDown.Text = "⬇️\nHẠ XUỐNG"
+    btnDown.UICorner = Instance.new("UICorner", btnDown)
+
+    -- Sự kiện chạm màn hình điện thoại
+    btnUp.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            FlyingState.MobileUp = true
+        end
+    end)
+    btnUp.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            FlyingState.MobileUp = false
+        end
+    end)
+
+    btnDown.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            FlyingState.MobileDown = true
+        end
+    end)
+    btnDown.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            FlyingState.MobileDown = false
+        end
+    end)
+end
+
+local function RemoveMobileUI()
+    if FlyingState.UI then
+        FlyingState.UI:Destroy()
+        FlyingState.UI = nil
+    end
+    FlyingState.MobileUp = false
+    FlyingState.MobileDown = false
 end
 
 -- ==========================================
@@ -114,13 +184,11 @@ end
 local function BuildRidingSword()
     local model = Instance.new("Model")
     
-    -- Lõi kiếm (bóp hẹp lại còn 0.4 thay vì 0.8)
     local core = Instance.new("Part", model)
     core.Name = "Core"; core.Size = Vector3.new(0.1, 6, 0.4)
     core.Color = Color3.fromRGB(15, 15, 15); core.Material = Enum.Material.Slate
     core.Anchored = true; core.CanCollide = false; model.PrimaryPart = core
 
-    -- Viền sáng 2 bên cũng bóp hẹp theo
     local edge1 = Instance.new("Part", model)
     edge1.Size = Vector3.new(0.05, 6.2, 0.1); edge1.Color = Color3.fromRGB(255, 255, 255); edge1.Material = Enum.Material.Neon
     edge1.CFrame = core.CFrame * CFrame.new(0, 0, 0.25); edge1.Anchored = false; edge1.CanCollide = false
@@ -131,7 +199,6 @@ local function BuildRidingSword()
     edge2.CFrame = core.CFrame * CFrame.new(0, 0, -0.25); edge2.Anchored = false; edge2.CanCollide = false
     local w2 = Instance.new("WeldConstraint", core); w2.Part0 = core; w2.Part1 = edge2
 
-    -- Mũi kiếm hình tam giác cân (Ghép từ 2 WedgePart úp vào nhau)
     local tipLeft = Instance.new("WedgePart", model)
     tipLeft.Size = Vector3.new(0.1, 1.5, 0.2); tipLeft.Color = Color3.fromRGB(255, 255, 255); tipLeft.Material = Enum.Material.Neon
     tipLeft.CFrame = core.CFrame * CFrame.new(0, 3.75, 0.1); tipLeft.Anchored = false; tipLeft.CanCollide = false
@@ -142,13 +209,11 @@ local function BuildRidingSword()
     tipRight.CFrame = core.CFrame * CFrame.new(0, 3.75, -0.1) * CFrame.Angles(0, math.rad(180), 0); tipRight.Anchored = false; tipRight.CanCollide = false
     local wtr = Instance.new("WeldConstraint", core); wtr.Part0 = core; wtr.Part1 = tipRight
 
-    -- Kiếm cách chữ thập
     local cross = Instance.new("Part", model)
     cross.Size = Vector3.new(0.3, 0.4, 1.5); cross.Color = Color3.fromRGB(90, 50, 25); cross.Material = Enum.Material.Wood
     cross.CFrame = core.CFrame * CFrame.new(0, -3.2, 0); cross.Anchored = false; cross.CanCollide = false
     local wc = Instance.new("WeldConstraint", core); wc.Part0 = core; wc.Part1 = cross
 
-    -- Chuôi kiếm
     local hilt = Instance.new("Part", model)
     hilt.Size = Vector3.new(0.2, 1.5, 0.2); hilt.Color = Color3.fromRGB(50, 30, 15); hilt.Material = Enum.Material.Wood
     hilt.CFrame = core.CFrame * CFrame.new(0, -4.1, 0); hilt.Anchored = false; hilt.CanCollide = false
@@ -376,7 +441,9 @@ TabSword:CreateButton({
             if not root or FlyingState.IsTransitioning then return end
 
             if not FlyingState.IsFlying then
+                -- ==========================
                 -- BẬT BAY LÊN
+                -- ==========================
                 FlyingState.IsTransitioning = true
                 FlyingState.IsFlying = true
                 
@@ -395,11 +462,12 @@ TabSword:CreateButton({
                 SetPose(char, true) 
                 TweenService:Create(root, TweenInfo.new(1, Enum.EasingStyle.Sine), {CFrame = root.CFrame * CFrame.new(0, 8, 0)}):Play()
 
+                CreateMobileUI() -- GỌI NÚT LÊN/XUỐNG CHO ĐIỆN THOẠI
+
                 local t = 0
                 local flightConn
                 flightConn = RunService.RenderStepped:Connect(function(dt)
-                    -- SỬA LỖI 1: BAY CHẬM TRONG 5 GIÂY (0.2 thay vì 0.8)
-                    t = t + dt * 0.2 
+                    t = t + dt * 0.2 -- LƯỚT CHẬM TRONG 5 GIÂY
                     if t >= 1 then 
                         flightConn:Disconnect()
                         
@@ -408,7 +476,6 @@ TabSword:CreateButton({
                             return 
                         end
 
-                        -- SỬA LỖI 3: XOAY KIẾM NẰM BẸP XUỐNG ĐẤT, MẶT PHẲNG ĐỠ CHÂN
                         FlyingState.Sword.PrimaryPart.CFrame = root.CFrame * CFrame.new(0, -3.2, 0) * CFrame.Angles(math.rad(-90), math.rad(90), 0)
                         
                         local weld = Instance.new("WeldConstraint", root)
@@ -429,16 +496,19 @@ TabSword:CreateButton({
 
                         RunService:BindToRenderStep("SwordSurfing", Enum.RenderPriority.Camera.Value + 1, function()
                             local camCFrame = workspace.CurrentCamera.CFrame
-                            local moveDir = Vector3.new(0,0,0)
-
-                            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + camCFrame.LookVector end
-                            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - camCFrame.LookVector end
-                            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - camCFrame.RightVector end
-                            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + camCFrame.RightVector end
                             
-                            -- SỬA LỖI 4: PHÍM BAY LÊN/HẠ XUỐNG DÙNG E VÀ Q CHUẨN MEN
-                            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.E) then moveDir = moveDir + Vector3.new(0, 1, 0) end
-                            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Q) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+                            -- XỬ LÝ DI CHUYỂN BẰNG NÚT ĐIỀU HƯỚNG CỦA ĐIỆN THOẠI (MoveDirection)
+                            local moveDir = char.Humanoid.MoveDirection
+
+                            -- Thêm hệ phím cho PC dùng chung
+                            if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + camCFrame.LookVector end
+                            if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - camCFrame.LookVector end
+                            if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - camCFrame.RightVector end
+                            if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + camCFrame.RightVector end
+                            
+                            -- KẾT HỢP BAY LÊN/HẠ XUỐNG CHO CẢ ĐIỆN THOẠI VÀ PC
+                            if FlyingState.MobileUp or UserInputService:IsKeyDown(Enum.KeyCode.E) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+                            if FlyingState.MobileDown or UserInputService:IsKeyDown(Enum.KeyCode.Q) then moveDir = moveDir - Vector3.new(0, 1, 0) end
 
                             if moveDir.Magnitude > 0 then moveDir = moveDir.Unit end
 
@@ -447,20 +517,21 @@ TabSword:CreateButton({
                         end)
 
                         FlyingState.IsTransitioning = false
-                        Rayfield:Notify({Title = "Ngự Kiếm", Content = "Dùng W,A,S,D lướt đi. Phím E bay lên, Phím Q hạ xuống.", Duration = 4})
                     else
                         local currentPos = QuadBezier(t, spawnPos, curvePoint, root.Position + Vector3.new(0, -3, 0))
                         if FlyingState.Sword and FlyingState.Sword.PrimaryPart then
-                            -- Chĩa mũi thẳng về phía mục tiêu trong lúc bay lượn tới
                             FlyingState.Sword.PrimaryPart.CFrame = CFrame.lookAt(currentPos, root.Position + Vector3.new(0,-3,0)) * CFrame.Angles(math.rad(90), 0, 0)
                         end
                     end
                 end)
 
             else
+                -- ==========================
                 -- TẮT VÀ HẠ CÁNH
+                -- ==========================
                 FlyingState.IsTransitioning = true
                 RunService:UnbindFromRenderStep("SwordSurfing")
+                RemoveMobileUI() -- TẮT NÚT CẢM ỨNG
                 
                 if FlyingState.BodyVelocity then FlyingState.BodyVelocity:Destroy() end
                 if FlyingState.BodyGyro then FlyingState.BodyGyro:Destroy() end
@@ -503,6 +574,6 @@ TabSword:CreateButton({
             end
         end)
         
-        Rayfield:Notify({Title = "Nhận thành công", Content = "Nhớ dùng E và Q để nâng/hạ độ cao nhé bà chị!", Duration = 3})
+        Rayfield:Notify({Title = "Thông Báo", Content = "Đã tích hợp bảng điều khiển cảm ứng. Nhấp màn hình quẩy đi chị!", Duration = 4})
     end
 })
