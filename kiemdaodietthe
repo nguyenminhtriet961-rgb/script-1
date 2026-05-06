@@ -1,4 +1,8 @@
- 
+-- ==========================================
+-- TÊN SẢN PHẨM: KIẾM ĐẠO DIỆT THẾ (BẢN FULL VÁ LỖI TRỤC TỌA ĐỘ)
+-- TÁC GIẢ: Em trai x MinT
+-- ==========================================
+
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -9,9 +13,9 @@ local player = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 local Window = Rayfield:CreateWindow({
-    Name = "cặc Kiếm Đạo ⚔️",
+    Name = "MinT Kiếm Đạo ⚔️",
     LoadingTitle = "Khởi động kỹ xảo...",
-    LoadingSubtitle = " !",
+    LoadingSubtitle = "Đã fix lỗi kiếm bay ngược...",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
@@ -221,12 +225,23 @@ TabSword:CreateButton({
             RunService:BindToRenderStep("SpinMagic", 1, function() if magicCircle then magicCircle.CFrame = magicCircle.CFrame * CFrame.Angles(0, 0, math.rad(2)) end end)
             Debris:AddItem(magicCircle, 10)
 
-            -- [Ngắm bắn & Sắp xếp 500 kiếm quanh vòng ma pháp]
+            -- ====================================================
+            -- [ĐÃ SỬA: Ngắm bắn & Sắp xếp 500 kiếm quanh vòng ma pháp]
+            -- ====================================================
             PlaySound(864568856, 2, 2)
             for i, s in ipairs(tempSwords) do
                 s.PrimaryPart.Material = Enum.Material.Neon
                 local radiusCircle = math.random(10, 80); local angle = math.random(0, 360)
-                local targetCFrame = magicCircle.CFrame * CFrame.new(radiusCircle * math.cos(math.rad(angle)), radiusCircle * math.sin(math.rad(angle)), -5) * CFrame.Angles(0, math.rad(90), math.rad(-90))
+                
+                -- Tính toán vị trí xuất hiện trên vòng ma pháp
+                local spawnPos = (magicCircle.CFrame * CFrame.new(radiusCircle * math.cos(math.rad(angle)), radiusCircle * math.sin(math.rad(angle)), -5)).Position
+                
+                -- Khóa mục tiêu chĩa xuống mặt đất (tỏa ra phạm vi ngẫu nhiên)
+                local targetGroundPos = root.Position + Vector3.new(math.random(-150, 150), -200, math.random(-150, 150))
+                
+                -- Ép MŨI KIẾM (+Y) chĩa thẳng tắp vào mục tiêu trên mặt đất
+                local targetCFrame = CFrame.lookAt(spawnPos, targetGroundPos) * CFrame.Angles(math.rad(-90), 0, 0)
+                
                 TweenService:Create(s.PrimaryPart, TweenInfo.new(1, Enum.EasingStyle.Back), {CFrame = targetCFrame}):Play()
             end
             task.wait(1.5)
@@ -241,7 +256,8 @@ TabSword:CreateButton({
             PlaySound(138080210, 5, 0.8) 
             for _, s in ipairs(tempSwords) do
                 task.spawn(function()
-                    local dest = s.PrimaryPart.CFrame * CFrame.new(0, -500, 0) 
+                    -- Dùng +500 ở trục Y để nó bay bằng mũi kiếm thay vì chuôi kiếm
+                    local dest = s.PrimaryPart.CFrame * CFrame.new(0, 500, 0) 
                     local tw = TweenService:Create(s.PrimaryPart, TweenInfo.new(0.6, Enum.EasingStyle.Linear), {CFrame = dest})
                     tw:Play(); tw.Completed:Wait()
                     
@@ -295,6 +311,7 @@ TabSword:CreateButton({
     Callback = function()
         SwordState.IsTransformed = false
         RunService:UnbindFromRenderStep("SpinSwords")
+        RunService:UnbindFromRenderStep("SpinMagic")
         
         if Lighting:FindFirstChild("SwordCC") then Lighting.SwordCC:Destroy() end
         local char = player.Character
