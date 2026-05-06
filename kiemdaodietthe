@@ -1,8 +1,4 @@
--- ==========================================
--- TÊN SẢN PHẨM: KIẾM ĐẠO DIỆT THẾ (BẢN FIX RUNG CHẤN & KIẾM TRẬN)
--- TÁC GIẢ: Em trai làm mướn
--- ==========================================
-
+-- 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -13,8 +9,8 @@ local player = Players.LocalPlayer
 
 local Window = Rayfield:CreateWindow({
     Name = "MinT Kiếm Đạo ⚔️",
-    LoadingTitle = "Ma Khí Xâm Chiếm...",
-    LoadingSubtitle = "Vạn Kiếm Quy Tông!",
+    LoadingTitle = "Ma Khí Ngút Trời...",
+    LoadingSubtitle = "10 Giây Diệt Thế!",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
@@ -24,14 +20,14 @@ local TabSword = Window:CreateTab("⚔️ Kiếm Đạo Diệt Thế", nil)
 local SwordState = {
     IsTransformed = false,
     LastCastTime = 0,
-    Cooldown = 20,
+    Cooldown = 25, -- Tăng cooldown vì cutscene dài
     GuardianSwords = {}
 }
 
 local originalJoints = {}
 
 -- ==========================================
--- HÀM HỖ TRỢ: TẠO KIẾM (Form Katana Trắng, Chuôi Nâu Đen)
+-- HÀM HỖ TRỢ: TẠO KIẾM (Form Katana Trắng)
 -- ==========================================
 local function BuildSword(scale, isGlowing)
     local model = Instance.new("Model")
@@ -41,11 +37,11 @@ local function BuildSword(scale, isGlowing)
     blade.Anchored = true; blade.CanCollide = false; model.PrimaryPart = blade
     
     local hilt = Instance.new("Part", model)
-    hilt.Size = Vector3.new(0.2 * scale, 1.2 * scale, 0.2 * scale); hilt.Color = Color3.fromRGB(40, 25, 15); hilt.Material = Enum.Material.Wood
+    hilt.Size = Vector3.new(0.2 * scale, 1.2 * scale, 0.2 * scale); hilt.Color = Color3.fromRGB(20, 10, 5); hilt.Material = Enum.Material.Fabric
     hilt.Anchored = true; hilt.CanCollide = false; hilt.CFrame = blade.CFrame * CFrame.new(0, -3.1 * scale, 0)
     
     local guard = Instance.new("Part", model)
-    guard.Size = Vector3.new(0.3 * scale, 0.1 * scale, 0.5 * scale); guard.Color = Color3.fromRGB(20, 20, 20); guard.Material = Enum.Material.Metal
+    guard.Size = Vector3.new(0.3 * scale, 0.1 * scale, 0.5 * scale); guard.Color = Color3.fromRGB(10, 10, 10); guard.Material = Enum.Material.Metal
     guard.Anchored = true; guard.CanCollide = false; guard.CFrame = blade.CFrame * CFrame.new(0, -2.5 * scale, 0)
 
     for _, part in pairs({hilt, guard}) do
@@ -58,25 +54,32 @@ end
 local function PlaySound(id, vol, pitch)
     local s = Instance.new("Sound", workspace)
     s.SoundId = "rbxassetid://" .. tostring(id); s.Volume = vol or 2; s.Pitch = pitch or 1
-    s:Play(); Debris:AddItem(s, 10)
+    s:Play(); Debris:AddItem(s, 12)
 end
 
+-- ==========================================
+-- HÀM BẺ POSE CƯỜNG GIẢ (R15)
+-- ==========================================
 local function SetPose(char, state)
     if not char:FindFirstChild("RightUpperArm") then return end 
-    local rArm = char.RightUpperArm:FindFirstChild("RightShoulder")
-    local rLeg = char.RightUpperLeg:FindFirstChild("RightHip")
+    local joints = {
+        rShoulder = char.RightUpperArm:FindFirstChild("RightShoulder"),
+        lShoulder = char.LeftUpperArm:FindFirstChild("LeftShoulder"),
+        rHip = char.RightUpperLeg:FindFirstChild("RightHip"),
+        neck = char.Head:FindFirstChild("Neck")
+    }
+
     if state then
-        if rArm then 
-            originalJoints.rArm = rArm.C0
-            TweenService:Create(rArm, TweenInfo.new(0.5), {C0 = originalJoints.rArm * CFrame.Angles(math.rad(90), math.rad(-45), 0)}):Play()
-        end
-        if rLeg then
-            originalJoints.rLeg = rLeg.C0
-            TweenService:Create(rLeg, TweenInfo.new(0.5), {C0 = originalJoints.rLeg * CFrame.Angles(math.rad(30), 0, 0)}):Play()
-        end
+        for name, joint in pairs(joints) do if joint then originalJoints[name] = joint.C0 end end
+        -- Tay kết ấn trước ngực
+        if joints.rShoulder then TweenService:Create(joints.rShoulder, TweenInfo.new(1), {C0 = joints.rShoulder.C0 * CFrame.Angles(math.rad(45), math.rad(-60), math.rad(30))}):Play() end
+        if joints.lShoulder then TweenService:Create(joints.lShoulder, TweenInfo.new(1), {C0 = joints.lShoulder.C0 * CFrame.Angles(math.rad(45), math.rad(60), math.rad(-30))}):Play() end
+        -- Co chân
+        if joints.rHip then TweenService:Create(joints.rHip, TweenInfo.new(1), {C0 = joints.rHip.C0 * CFrame.Angles(math.rad(40), 0, 0)}):Play() end
+        -- Cúi mặt lạnh lùng
+        if joints.neck then TweenService:Create(joints.neck, TweenInfo.new(1), {C0 = joints.neck.C0 * CFrame.Angles(math.rad(20), 0, 0)}):Play() end
     else
-        if rArm and originalJoints.rArm then rArm.C0 = originalJoints.rArm end
-        if rLeg and originalJoints.rLeg then rLeg.C0 = originalJoints.rLeg end
+        for name, joint in pairs(joints) do if joint and originalJoints[name] then joint.C0 = originalJoints[name] end end
         originalJoints = {}
     end
 end
@@ -85,7 +88,7 @@ end
 -- CHIÊU THỨC: BIẾN HÌNH DIỆT THẾ
 -- ==========================================
 TabSword:CreateButton({
-    Name = "Nhận: ⚔️ Ấn Ký Kiếm Đạo",
+    Name = "Nhận: ⚔️ Ấn Ký Kiếm Đạo (Bản 10s)",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
         tool.Name = "⚔️ Biến Hình"; tool.RequiresHandle = false
@@ -97,85 +100,88 @@ TabSword:CreateButton({
             SwordState.LastCastTime = tick(); SwordState.IsTransformed = true
             local root = char.HumanoidRootPart; local hum = char.Humanoid; local startPos = root.Position
             hum.WalkSpeed = 0; hum.JumpPower = 0; root.Anchored = true
-            
-            -- [1] MẶT ĐẤT HÓA ĐEN (200x200)
-            local darkGround = Instance.new("Part", workspace)
-            darkGround.Size = Vector3.new(200, 1, 200); darkGround.CFrame = CFrame.new(startPos - Vector3.new(0, 2.9, 0))
-            darkGround.Color = Color3.new(0, 0, 0); darkGround.Material = Enum.Material.Neon; darkGround.Anchored = true; darkGround.CanCollide = false
-            darkGround.Transparency = 1
-            TweenService:Create(darkGround, TweenInfo.new(1), {Transparency = 0.5}):Play()
-            Debris:AddItem(darkGround, 15)
+            SetPose(char, true)
 
-            -- [2] KIẾM TRỒI LÊN VÀ RUNG LẮC (3 GIÂY)
+            -- [1] MẶT ĐẤT ĐEN TUYỆT ĐỐI (200x200)
+            local darkGround = Instance.new("Part", workspace)
+            darkGround.Size = Vector3.new(200, 2, 200); darkGround.CFrame = CFrame.new(startPos - Vector3.new(0, 3, 0))
+            darkGround.Color = Color3.new(0, 0, 0); darkGround.Material = Enum.Material.ForceField -- Đen đặc không nhìn xuyên
+            darkGround.Anchored = true; darkGround.CanCollide = false
+            Debris:AddItem(darkGround, 20)
+
+            -- [2] 200 THANH KIẾM TRỒI LÊN CHẬM RÃI (10 GIÂY)
             local tempSwords = {}
-            PlaySound(142070127, 2, 0.4) -- Tiếng vọng u ám
-            for i = 1, 40 do
-                local s = BuildSword(0.8, false)
+            PlaySound(142070127, 3, 0.3) -- Tiếng bass cực nặng
+            
+            for i = 1, 200 do
+                local s = BuildSword(0.7, false)
                 s.Parent = workspace
-                local offset = Vector3.new(math.random(-30, 30), -6, math.random(-30, 30))
-                s.PrimaryPart.CFrame = CFrame.new(startPos + offset) * CFrame.Angles(math.rad(180), math.random(-1, 1), 0)
+                local radius = math.random(5, 80)
+                local angle = math.random(0, 360)
+                local offset = Vector3.new(math.cos(angle) * radius, -6, math.sin(angle) * radius)
+                s.PrimaryPart.CFrame = CFrame.new(startPos + offset) * CFrame.Angles(math.rad(180 + math.random(-10, 10)), math.random(-5, 5), 0)
                 table.insert(tempSwords, s)
                 
-                -- Tween nhích lên khỏi mặt đất
-                TweenService:Create(s.PrimaryPart, TweenInfo.new(2, Enum.EasingStyle.Sine), {CFrame = s.PrimaryPart.CFrame * CFrame.new(0, 5, 0)}):Play()
+                -- Trồi lên chậm rãi trong 8 giây
+                TweenService:Create(s.PrimaryPart, TweenInfo.new(8, Enum.EasingStyle.Sine), {CFrame = s.PrimaryPart.CFrame * CFrame.new(0, 5.5, 0)}):Play()
             end
 
-            -- Hiệu ứng rung chuyển
+            -- Rung lắc dữ dội
             local shakeConn = RunService.Heartbeat:Connect(function()
                 for _, s in pairs(tempSwords) do
-                    s.PrimaryPart.CFrame = s.PrimaryPart.CFrame * CFrame.Angles(math.rad(math.random(-2, 2)), math.rad(math.random(-2, 2)), 0)
+                    s.PrimaryPart.CFrame = s.PrimaryPart.CFrame * CFrame.Angles(math.rad(math.random(-4, 4)), math.rad(math.random(-4, 4)), 0)
                 end
             end)
-            PlaySound(5094957444, 2, 0.8) -- Tiếng kim loại rung
-            task.wait(3)
+            
+            PlaySound(5094957444, 2, 0.7) 
+            task.wait(10) -- Đợi đủ 10 giây rung lắc và trồi lên
             shakeConn:Disconnect()
 
-            -- [3] KIẾM BAY XOAY QUANH VÀ PHÓNG LÊN CAO
-            PlaySound(4446671048, 2, 1) -- Tiếng xé gió
+            -- [3] PHÓNG LÊN TRỜI VÀ XOAY KIẾM
+            PlaySound(4446671048, 3, 0.8)
             for _, s in pairs(tempSwords) do
                 task.spawn(function()
-                    TweenService:Create(s.PrimaryPart, TweenInfo.new(0.5, Enum.EasingStyle.Back), {CFrame = root.CFrame * CFrame.Angles(0, math.random(0, 360), 0) * CFrame.new(0, 0, 10)}):Play()
-                    task.wait(0.5)
-                    TweenService:Create(s.PrimaryPart, TweenInfo.new(0.8, Enum.EasingStyle.Exponential), {CFrame = root.CFrame * CFrame.new(0, 150, 5)}):Play()
+                    TweenService:Create(s.PrimaryPart, TweenInfo.new(0.6, Enum.EasingStyle.Back), {CFrame = root.CFrame * CFrame.Angles(0, math.random(0, 360), 0) * CFrame.new(0, 0, 15)}):Play()
+                    task.wait(0.6)
+                    TweenService:Create(s.PrimaryPart, TweenInfo.new(1, Enum.EasingStyle.Exponential), {CFrame = root.CFrame * CFrame.new(0, 150, 5)}):Play()
                 end)
             end
             
             task.wait(1)
             root.CFrame = root.CFrame * CFrame.new(0, 150, 0)
-            SetPose(char, true)
             
-            -- [4] KIẾM TRẬN SAU LƯNG VÀ PHÓNG XUỐNG 60 ĐỘ
+            -- [4] KIẾM TRẬN SAU LƯNG VÀ PHÓNG 60 ĐỘ
             local swordCircle = {}
-            for i = 1, 20 do
-                local s = BuildSword(0.7, true)
+            for i = 1, 30 do
+                local s = BuildSword(0.8, true)
                 s.Parent = workspace; table.insert(swordCircle, s)
-                local angle = math.rad(i * (360/20))
-                s.PrimaryPart.CFrame = root.CFrame * CFrame.new(math.cos(angle) * 12, math.sin(angle) * 12, 5) * CFrame.Angles(math.rad(-60), 0, 0)
+                local angle = math.rad(i * (360/30))
+                s.PrimaryPart.CFrame = root.CFrame * CFrame.new(math.cos(angle) * 15, math.sin(angle) * 15, 8) * CFrame.Angles(math.rad(-60), 0, 0)
             end
 
-            task.wait(1.5)
-            PlaySound(864568856, 3, 1.5) -- Tiếng bộc phá
+            task.wait(2)
+            PlaySound(864568856, 4, 1.2)
             for _, s in pairs(swordCircle) do
                 task.spawn(function()
-                    local targetPos = s.PrimaryPart.CFrame * CFrame.new(0, -300, 0)
-                    local tw = TweenService:Create(s.PrimaryPart, TweenInfo.new(1.5, Enum.EasingStyle.Linear), {CFrame = targetPos})
+                    local targetPos = s.PrimaryPart.CFrame * CFrame.new(0, -400, 0)
+                    local tw = TweenService:Create(s.PrimaryPart, TweenInfo.new(1.2, Enum.EasingStyle.Linear), {CFrame = targetPos})
                     tw:Play()
                     tw.Completed:Wait()
                     s:Destroy()
                 end)
-                task.wait(0.05)
+                task.wait(0.03)
             end
             
             for _, s in pairs(tempSwords) do s:Destroy() end
 
-            -- [5] 3 THANH KIẾM HỘ THỂ
+            -- [5] 3 THANH ĐẠI KIẾM HỘ THỂ
             SetPose(char, false); root.Anchored = false
             hum.WalkSpeed = 50; hum.JumpPower = 60
             
             local swordPos = {
-                {off = CFrame.new(-3, 2, 0) * CFrame.Angles(math.rad(180), 0, 0), sc = 1.2},
-                {off = CFrame.new(3, 2, 0) * CFrame.Angles(math.rad(180), 0, 0), sc = 1.2},
-                {off = CFrame.new(0, 1, 2) * CFrame.Angles(math.rad(45), 0, math.rad(-45)), sc = 1.5}
+                {off = CFrame.new(-3.5, 3, 0) * CFrame.Angles(math.rad(180), 0, 0), sc = 1.3},
+                {off = CFrame.new(3.5, 3, 0) * CFrame.Angles(math.rad(180), 0, 0), sc = 1.3},
+                {off = CFrame.new(0, 1, 2.5) * CFrame.Angles(math.rad(45), 0, math.rad(-45)), sc = 1.6}
             }
             
             for _, p in ipairs(swordPos) do
@@ -187,17 +193,17 @@ TabSword:CreateButton({
 
             RunService:BindToRenderStep("SpinSwords", 200, function()
                 if SwordState.GuardianSwords[1] and SwordState.GuardianSwords[2] then
-                    SwordState.GuardianSwords[1].PrimaryPart.Weld.C0 *= CFrame.Angles(0, math.rad(5), 0)
-                    SwordState.GuardianSwords[2].PrimaryPart.Weld.C0 *= CFrame.Angles(0, math.rad(5), 0)
+                    SwordState.GuardianSwords[1].PrimaryPart.Weld.C0 *= CFrame.Angles(0, math.rad(6), 0)
+                    SwordState.GuardianSwords[2].PrimaryPart.Weld.C0 *= CFrame.Angles(0, math.rad(6), 0)
                 end
             end)
-            Rayfield:Notify({Title = "Thành Công", Content = "Kiếm Đạo Diệt Thế đã sẵn sàng!", Duration = 3})
+            Rayfield:Notify({Title = "Diệt Thế", Content = "Kiếm Đạo tối thượng đã thức tỉnh!", Duration = 3})
         end)
     end
 })
 
 TabSword:CreateButton({
-    Name = "🧹 Thu Kiếm (Hủy Dạng)",
+    Name = "🧹 Hủy Dạng",
     Callback = function()
         SwordState.IsTransformed = false
         RunService:UnbindFromRenderStep("SpinSwords")
