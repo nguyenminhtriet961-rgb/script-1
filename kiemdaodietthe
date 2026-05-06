@@ -1,4 +1,8 @@
- 
+-- ==========================================
+-- TÊN SẢN PHẨM: KIẾM ĐẠO DIỆT THẾ (BẢN TỐI ƯU KIẾM TRẬN & SÁO TRỘN)
+-- TÁC GIẢ: Em trai làm mướn
+-- ==========================================
+
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -11,7 +15,7 @@ local Camera = workspace.CurrentCamera
 local Window = Rayfield:CreateWindow({
     Name = "tiên Kiếm Đạo ⚔️",
     LoadingTitle = "Khởi động tản nhiệt...",
-    LoadingSubtitle = "Vu vi sukulu",
+    LoadingSubtitle = " !",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false,
 })
@@ -115,9 +119,9 @@ TabSword:CreateButton({
             hum.WalkSpeed = 0; hum.JumpPower = 0; root.Anchored = true
             SetPose(char, true)
 
-            -- [1] MẶT ĐẤT ĐEN KỊT
+            -- [1] MẶT ĐẤT ĐEN KỊT (Ép mỏng lại để không nuốt kiếm)
             local darkGround = Instance.new("Part", workspace)
-            darkGround.Size = Vector3.new(200, 2, 200); darkGround.CFrame = CFrame.new(startPos - Vector3.new(0, 1.5, 0))
+            darkGround.Size = Vector3.new(200, 0.5, 200); darkGround.CFrame = CFrame.new(startPos - Vector3.new(0, 2.5, 0))
             darkGround.Color = Color3.new(0, 0, 0); darkGround.Material = Enum.Material.ForceField
             darkGround.Anchored = true; darkGround.CanCollide = false; darkGround.Transparency = 0
             Debris:AddItem(darkGround, 20)
@@ -136,11 +140,12 @@ TabSword:CreateButton({
                 local jitterX = math.random(-3, 3)
                 local jitterZ = math.random(-3, 3)
                 
-                local offset = Vector3.new((radius * math.cos(angle)) + jitterX, -8, (radius * math.sin(angle)) + jitterZ)
+                local offset = Vector3.new((radius * math.cos(angle)) + jitterX, -15, (radius * math.sin(angle)) + jitterZ)
                 s.PrimaryPart.CFrame = CFrame.new(startPos + offset) * CFrame.Angles(math.rad(180 + math.random(-15, 15)), math.random(-30, 30), math.rad(math.random(-10, 10)))
                 table.insert(tempSwords, s)
                 
-                TweenService:Create(s.PrimaryPart, TweenInfo.new(8, Enum.EasingStyle.Sine), {CFrame = s.PrimaryPart.CFrame * CFrame.new(0, 7.5, 0)}):Play()
+                -- Trồi lên cao để cắm rõ trên mặt đất đen
+                TweenService:Create(s.PrimaryPart, TweenInfo.new(8, Enum.EasingStyle.Sine), {CFrame = s.PrimaryPart.CFrame * CFrame.new(0, 16, 0)}):Play()
             end
 
             local shakeConn = RunService.RenderStepped:Connect(function()
@@ -153,16 +158,29 @@ TabSword:CreateButton({
             end)
             
             PlaySound(5094957444, 2, 0.7) 
-            task.wait(10) 
+            task.wait(8) 
             shakeConn:Disconnect()
 
-            -- [3] PHÓNG LÊN TRỜI 
-            PlaySound(4446671048, 3, 0.8)
+            -- [2.5] TỤ KHÍ (GATHER) TRƯỚC KHI BAY LÊN
+            PlaySound(4446671048, 2, 0.5)
+            for _, s in pairs(tempSwords) do
+                local gatherPos = root.CFrame * CFrame.new(math.random(-15, 15), math.random(-5, 15), math.random(-15, 15))
+                local gatherRot = CFrame.Angles(math.rad(math.random(-45, 45)), math.rad(math.random(-45, 45)), math.rad(math.random(-45, 45)))
+                TweenService:Create(s.PrimaryPart, TweenInfo.new(1.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {CFrame = gatherPos * gatherRot}):Play()
+            end
+            task.wait(1.5)
+
+            -- [3] PHÓNG LÊN TRỜI CÙNG LÚC
+            PlaySound(864568856, 3, 0.8)
             root.CFrame = root.CFrame * CFrame.new(0, 150, 0)
+            for _, s in pairs(tempSwords) do
+                TweenService:Create(s.PrimaryPart, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {CFrame = root.CFrame * CFrame.new(math.random(-20,20), math.random(-10,30), math.random(-20,20))}):Play()
+            end
+            task.wait(0.5)
             
             -- [4] SÁO TRỘN 10 LẦN LIÊN TỤC
             for shuffle = 1, 10 do
-                PlaySound(4446671048, 0.5, 1.5) -- Tiếng xé gió rít liên tục
+                PlaySound(4446671048, 0.5, 1.5)
                 for _, s in pairs(tempSwords) do
                     local randPos = root.CFrame * CFrame.new(math.random(-50, 50), math.random(-30, 50), math.random(-50, 50))
                     local randRot = CFrame.Angles(math.rad(math.random(0,360)), math.rad(math.random(0,360)), math.rad(math.random(0,360)))
@@ -174,14 +192,12 @@ TabSword:CreateButton({
             -- [5] TỰ ĐỘNG XẾP THÀNH VÒNG TRÒN SAU LƯNG & NGẮM VỀ TRƯỚC
             PlaySound(864568856, 2, 2)
             for i, s in ipairs(tempSwords) do
-                -- Chuyển kiếm thành dạng phát sáng (Neon)
                 s.PrimaryPart.Material = Enum.Material.Neon
-                
                 local angle = math.rad((i / #tempSwords) * 360)
-                local radiusCircle = 40 -- Độ rộng của vòng kiếm trận
+                local radiusCircle = 45
                 local targetPos = root.CFrame * CFrame.new(math.cos(angle) * radiusCircle, math.sin(angle) * radiusCircle, 15)
                 
-                -- Ngắm về trước mặt người chơi, chúi xuống góc 60 độ
+                -- Ngắm chéo xuống 60 độ
                 local lookDir = root.CFrame.LookVector * 100 - Vector3.new(0, 173.2, 0) 
                 local targetCFrame = CFrame.lookAt(targetPos.Position, targetPos.Position + lookDir)
                 
@@ -190,15 +206,27 @@ TabSword:CreateButton({
 
             task.wait(1.5)
             
-            -- [6] PHÓNG XUỐNG DƯỚI NHƯ MƯA TÊN
+            -- [6] PHÓNG LOẠN XẠ (VẬT LÝ ĐẠN ĐẠO - KHÔNG DÙNG TWEEN)
             PlaySound(864568856, 4, 1.2)
             for _, s in ipairs(tempSwords) do
                 task.spawn(function()
-                    local dest = s.PrimaryPart.CFrame * CFrame.new(0, 0, -400)
-                    local tw = TweenService:Create(s.PrimaryPart, TweenInfo.new(1.2, Enum.EasingStyle.Linear), {CFrame = dest})
-                    tw:Play(); tw.Completed:Wait(); s:Destroy()
+                    local baseDir = (root.CFrame.LookVector * 10 - Vector3.new(0, 17.32, 0)).Unit
+                    -- Thêm độ lệch (scatter) để kiếm bay tủa ra nhiều hướng
+                    local scatterDir = (baseDir + Vector3.new(math.random(-50, 50)/100, math.random(-50, 50)/100, math.random(-50, 50)/100)).Unit
+                    local speed = math.random(400, 700) -- Tốc độ bay khác nhau
+                    local maxDist = 800
+                    local traveled = 0
+                    
+                    while traveled < maxDist and s.Parent do
+                        local dt = RunService.Heartbeat:Wait()
+                        local dist = speed * dt
+                        traveled = traveled + dist
+                        -- Vừa bay vừa xoay cuồng loạn 360 độ các hướng
+                        s.PrimaryPart.CFrame = (s.PrimaryPart.CFrame + scatterDir * dist) * CFrame.Angles(math.rad(math.random(-40, 40)), math.rad(math.random(-40, 40)), math.rad(math.random(-40, 40)))
+                    end
+                    if s.Parent then s:Destroy() end
                 end)
-                task.wait(0.005) -- Xả liên tục siêu tốc độ
+                task.wait(0.002) -- Xả cực nhanh
             end
             
             -- [7] 3 THANH ĐẠI KIẾM MA KHÍ BAY CHẬM VÀO NGƯỜI
