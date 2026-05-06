@@ -1,1 +1,158 @@
 
+-- ==========================================
+-- SỨC MẠNH TỐI THƯỢNG: MA THẦN ĐIÊN LOẠN (BẢN TỔNG LỰC)
+-- TÁC GIẢ: Em trai làm mướn x MinT
+-- HIỆU ỨNG: Glitch, Distortion, Chaos
+-- ==========================================
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local Debris = game:GetService("Debris")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local Window = Rayfield:CreateWindow({
+    Name = "MinT: Ma Thần Cuồng Nộ 👿",
+    LoadingTitle = "Khởi tạo Ma Tính...",
+    LoadingSubtitle = "Đừng gõ sai chính tả nữa chị ơi...",
+    ConfigurationSaving = { Enabled = false },
+    KeySystem = false,
+})
+
+local TabMadness = Window:CreateTab("🌀 Cuồng Loạn", nil)
+
+-- ==========================================
+-- BIẾN TRẠNG THÁI & HÀM HỖ TRỢ
+-- ==========================================
+local MadnessActive = false
+local OriginalLighting = { Ambient = Lighting.Ambient, ColorShift_Top = Lighting.ColorShift_Top }
+
+local function PlayDistortedSound(id, vol, pitch)
+    local s = Instance.new("Sound", workspace)
+    s.SoundId = "rbxassetid://" .. tostring(id); s.Volume = vol or 2; s.Pitch = pitch or 1
+    s:Play(); Debris:AddItem(s, 5)
+    return s
+end
+
+local function GlitchScreen(duration)
+    local start = tick()
+    local cc = Instance.new("ColorCorrectionEffect", Lighting)
+    local bloom = Instance.new("BloomEffect", Lighting)
+    
+    local conn; conn = RunService.RenderStepped:Connect(function()
+        if tick() - start < duration then
+            cc.TintColor = Color3.new(math.random(), 0, 0)
+            cc.Contrast = math.random(1, 5)
+            bloom.Intensity = math.random(1, 10)
+            Camera.FieldOfView = 70 + math.random(-10, 20)
+        else
+            cc:Destroy(); bloom:Destroy(); conn:Disconnect()
+            Camera.FieldOfView = 70
+        end
+    end)
+end
+
+-- ==========================================
+-- KÍCH HOẠT ẤN KÝ MA THẦN (BIẾN HÌNH ĐIÊN LOẠN)
+-- ==========================================
+TabMadness:CreateToggle({
+    Name = "👿 Trạng Thái Ma Thần Điên Loạn",
+    CurrentValue = false,
+    Flag = "MadnessToggle",
+    Callback = function(Value)
+        local char = player.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+        
+        MadnessActive = Value
+        
+        if Value then
+            -- BẮT ĐẦU ĐIÊN LOẠN
+            GlitchScreen(2)
+            PlayDistortedSound(864568856, 5, 0.4) -- Tiếng nổ trầm
+            PlayDistortedSound(138084556, 3, 1.5) -- Tiếng xé rách
+            
+            -- Animation co giật
+            root.Anchored = true
+            for i = 1, 10 do
+                root.CFrame *= CFrame.new(math.random(-1,1), math.random(-1,1), math.random(-1,1)) * CFrame.Angles(math.rad(math.random(-5,5)), 0, 0)
+                task.wait(0.05)
+            end
+            
+            -- Bùng nổ Hắc Ám
+            PlayDistortedSound(864568856, 10, 0.6)
+            local explosion = Instance.new("Part", workspace)
+            explosion.Shape = Enum.PartType.Sphere; explosion.Size = Vector3.new(1,1,1); explosion.CFrame = root.CFrame
+            explosion.Material = Enum.Material.Neon; explosion.Color = Color3.new(0,0,0); explosion.Anchored = true; explosion.CanCollide = false
+            TweenService:Create(explosion, TweenInfo.new(1), {Size = Vector3.new(60,60,60), Transparency = 1}):Play()
+            Debris:AddItem(explosion, 1)
+
+            root.Anchored = false
+            char.Humanoid.WalkSpeed = 120
+            char.Humanoid.JumpPower = 180
+            
+            -- Aura "Điên Loạn" bám theo người
+            local att = Instance.new("Attachment", root)
+            local p = Instance.new("ParticleEmitter", att)
+            p.Color = ColorSequence.new(Color3.new(0,0,0), Color3.new(1,0,0))
+            p.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 10), NumberSequenceKeypoint.new(1, 0)})
+            p.Rate = 300; p.Texture = "rbxassetid://243660364"; p.Lifetime = NumberRange.new(0.3, 0.7)
+            p.Speed = NumberRange.new(10, 30)
+            
+            RunService:BindToRenderStep("MadnessWalk", 201, function()
+                if char.Humanoid.MoveDirection.Magnitude > 0 then
+                    if math.random(1, 10) == 1 then
+                        local crack = Instance.new("Part", workspace)
+                        crack.Size = Vector3.new(5, 0.1, 5); crack.CFrame = root.CFrame * CFrame.new(0, -3, 0); crack.Anchored = true; crack.CanCollide = false
+                        crack.Color = Color3.new(0,0,0); crack.Material = Enum.Material.Neon
+                        TweenService:Create(crack, TweenInfo.new(0.5), {Transparency = 1, Size = Vector3.new(10, 0, 10)}):Play()
+                        Debris:AddItem(crack, 0.5)
+                        PlayDistortedSound(138080210, 0.5, 2)
+                    end
+                end
+            end)
+            
+            Rayfield:Notify({Title = "MA TÍNH", Content = "Chị đã đánh mất lý trí!", Duration = 5})
+        else
+            -- TRỞ LẠI BÌNH THƯỜNG
+            RunService:UnbindFromRenderStep("MadnessWalk")
+            char.Humanoid.WalkSpeed = 16
+            char.Humanoid.JumpPower = 50
+            for _, v in pairs(root:GetChildren()) do if v:IsA("Attachment") then v:Destroy() end end
+            Rayfield:Notify({Title = "TỈNH TÁO", Content = "Đã thu hồi Ma tính.", Duration = 3})
+        end
+    end
+})
+
+-- ==========================================
+-- KỸ NĂNG: HƯ VÔ CUỒNG TRẢM (CHÉM LOẠN XẠ)
+-- ==========================================
+TabMadness:CreateButton({
+    Name = "🩸 Kỹ năng: Hư Vô Cuồng Trảm",
+    Callback = function()
+        local char = player.Character; local root = char and char:FindFirstChild("HumanoidRootPart")
+        if not root or not MadnessActive then return end
+        
+        PlayDistortedSound(874742456, 5, 0.5) -- Tiếng tim đập
+        GlitchScreen(0.5)
+        
+        for i = 1, 20 do
+            task.spawn(function()
+                local slash = Instance.new("Part", workspace)
+                slash.Size = Vector3.new(0.2, math.random(10, 30), 2)
+                slash.Color = Color3.new(math.random(), 0, 0)
+                slash.Material = Enum.Material.Neon; slash.Anchored = true; slash.CanCollide = false
+                slash.CFrame = root.CFrame * CFrame.new(math.random(-15, 15), math.random(-10, 10), math.random(-20, -5)) * CFrame.Angles(math.rad(math.random(0,360)), math.rad(math.random(0,360)), 0)
+                
+                PlayDistortedSound(138080210, 1, math.random(15, 25)/10)
+                TweenService:Create(slash, TweenInfo.new(0.2), {Transparency = 1, Size = Vector3.new(0, 40, 0)}):Play()
+                Debris:AddItem(slash, 0.2)
+            end)
+            task.wait(0.05)
+        end
+    end
+})
