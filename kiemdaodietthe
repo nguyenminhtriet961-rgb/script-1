@@ -1,8 +1,4 @@
--- ==========================================
- 
--- TÁC GIẢ: Em trai làm mướn x MinT
--- TÍNH NĂNG: Đủ 5 Kỹ Năng + Mobile UI + Nhãn Thuật
--- ==========================================
+ =======================================
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
@@ -15,7 +11,7 @@ local player = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 local Window = Rayfield:CreateWindow({
-    Name = "MinT Kiếm Đạo ⚔️",
+    Name = "cặc Kiếm Đạo ⚔️",
     LoadingTitle = "Khởi động hệ thống...",
     LoadingSubtitle = "Đã fix lại Animation Ngự Kiếm...",
     ConfigurationSaving = { Enabled = false },
