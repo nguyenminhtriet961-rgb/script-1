@@ -1,9 +1,4 @@
--- ==========================================
--- TÊN SẢN PHẨM: KIẾM ĐẠO DIỆT THẾ (CUTSCENE 10 GIÂY CHUẨN ANIME)
--- TÁC GIẢ: Em trai làm mướn
--- CHÚ Ý: Chống chỉ định spam, đã tích hợp Cooldown và dọn dẹp Memory
--- ==========================================
-
+ 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -30,44 +25,50 @@ local SwordState = {
     IsTransformed = false,
     LastCastTime = 0,
     Cooldown = 15,
-    RealmPos = Vector3.new(0, 100000, 0),
     GuardianSwords = {}
 }
 
 local originalJoints = {}
 
 -- ==========================================
--- HÀM HỖ TRỢ: TẠO KIẾM 3D (Không dùng Mesh rác)
+-- HÀM HỖ TRỢ: TẠO KIẾM (Form Thuôn Dài, Lưỡi Trắng, Chuôi Nâu Đen)
 -- ==========================================
 local function BuildSword(scale, isGlowing)
     local model = Instance.new("Model")
     
-    -- Lưỡi kiếm (Blade)
+    -- Lưỡi kiếm (Blade) - Trắng
     local blade = Instance.new("Part", model)
     blade.Name = "Blade"
-    blade.Size = Vector3.new(0.2 * scale, 4 * scale, 0.6 * scale)
-    blade.Color = isGlowing and Color3.fromRGB(150, 255, 255) or Color3.fromRGB(200, 200, 200)
+    blade.Size = Vector3.new(0.1 * scale, 5 * scale, 0.4 * scale) -- Thuôn dài, không bè
+    blade.Color = Color3.fromRGB(255, 255, 255) -- Trắng toát
     blade.Material = isGlowing and Enum.Material.Neon or Enum.Material.Metal
     blade.Anchored = true; blade.CanCollide = false
     model.PrimaryPart = blade
     
-    -- Chuôi kiếm (Hilt)
+    -- Chuôi kiếm (Hilt) - Nâu Đen
     local hilt = Instance.new("Part", model)
-    hilt.Size = Vector3.new(0.25 * scale, 1 * scale, 0.25 * scale)
-    hilt.Color = Color3.fromRGB(255, 215, 0) -- Vàng gold
-    hilt.Material = Enum.Material.Metal
+    hilt.Size = Vector3.new(0.2 * scale, 1.2 * scale, 0.2 * scale)
+    hilt.Color = Color3.fromRGB(40, 25, 15) -- Nâu đen
+    hilt.Material = Enum.Material.Wood
     hilt.Anchored = true; hilt.CanCollide = false
-    hilt.CFrame = blade.CFrame * CFrame.new(0, -2.5 * scale, 0)
+    hilt.CFrame = blade.CFrame * CFrame.new(0, -3.1 * scale, 0)
     
-    -- Hộ thủ chữ thập (Guard)
+    -- Vành kiếm (Guard/Tsuba) - Nhỏ gọn, dẹt
     local guard = Instance.new("Part", model)
-    guard.Size = Vector3.new(0.3 * scale, 0.2 * scale, 1.5 * scale)
-    guard.Color = Color3.fromRGB(255, 215, 0)
+    guard.Size = Vector3.new(0.3 * scale, 0.1 * scale, 0.5 * scale)
+    guard.Color = Color3.fromRGB(20, 20, 20) -- Đen nhám
     guard.Material = Enum.Material.Metal
     guard.Anchored = true; guard.CanCollide = false
-    guard.CFrame = blade.CFrame * CFrame.new(0, -2 * scale, 0)
+    guard.CFrame = blade.CFrame * CFrame.new(0, -2.5 * scale, 0)
 
     -- Nhóm lại
+    for _, part in pairs({hilt, guard}) do
+        local weld = Instance.new("WeldConstraint", blade)
+        weld.Part0 = blade
+        weld.Part1 = part
+        part.Anchored = false -- Thả neo các part phụ để di chuyển mượt theo PrimaryPart
+    end
+
     return model
 end
 
@@ -84,7 +85,7 @@ end
 -- HÀM BẺ XƯƠNG (POSE) CHO R15
 -- ==========================================
 local function SetPose(char, state)
-    if not char:FindFirstChild("RightUpperArm") then return end -- Bỏ qua nếu là R6
+    if not char:FindFirstChild("RightUpperArm") then return end 
     
     local rArm = char.RightUpperArm:FindFirstChild("RightShoulder")
     local rLeg = char.RightUpperLeg:FindFirstChild("RightHip")
@@ -92,15 +93,17 @@ local function SetPose(char, state)
     if state then
         if rArm then 
             originalJoints.rArm = rArm.C0
-            TweenService:Create(rArm, TweenInfo.new(0.5), {C0 = originalJoints.rArm * CFrame.Angles(0, 0, math.rad(90))}):Play()
+            -- Bẻ tay lên trước mặt kết ấn
+            TweenService:Create(rArm, TweenInfo.new(0.5), {C0 = originalJoints.rArm * CFrame.Angles(math.rad(90), math.rad(-45), 0)}):Play()
         end
         if rLeg then
             originalJoints.rLeg = rLeg.C0
+            -- Co 1 chân ra sau
             TweenService:Create(rLeg, TweenInfo.new(0.5), {C0 = originalJoints.rLeg * CFrame.Angles(math.rad(30), 0, 0)}):Play()
         end
     else
-        if rArm and originalJoints.rArm then rArm.C0 = originalJoints.rArm end
-        if rLeg and originalJoints.rLeg then rLeg.C0 = originalJoints.rLeg end
+        if rArm and originalJoints.rArm then TweenService:Create(rArm, TweenInfo.new(0.5), {C0 = originalJoints.rArm}):Play() end
+        if rLeg and originalJoints.rLeg then TweenService:Create(rLeg, TweenInfo.new(0.5), {C0 = originalJoints.rLeg}):Play() end
         originalJoints = {}
     end
 end
@@ -135,70 +138,61 @@ TabSword:CreateButton({
             
             local root = char.HumanoidRootPart
             local hum = char:FindFirstChild("Humanoid")
+            local startPos = root.Position
             
             hum.WalkSpeed = 0; hum.JumpPower = 0
             root.Anchored = true
             
-            -- [1] TẠO KHÔNG GIAN ẢO BÃI KIẾM
-            local realmBase = Instance.new("Part", workspace)
-            realmBase.Size = Vector3.new(200, 1, 200)
-            realmBase.CFrame = CFrame.new(SwordState.RealmPos)
-            realmBase.Color = Color3.fromRGB(10, 10, 15)
-            realmBase.Material = Enum.Material.Slate
-            realmBase.Anchored = true
+            -- [1] TẠO KIẾM BAO VÂY XUNG QUANH NHÂN VẬT TẠI CHỖ
+            PlaySound(142070127, 2, 0.5) -- Âm thanh ma mị
             
-            local fog = Instance.new("Atmosphere", Lighting)
-            fog.Density = 0.5; fog.Color = Color3.fromRGB(50, 0, 80)
-            
-            -- Trồng 30 thanh kiếm xịn làm màu
             local fakeSwords = {}
-            for i = 1, 30 do
+            local radius = 30
+            for i = 1, 36 do -- Xếp kiếm thành vòng tròn lớn
+                local angle = math.rad(i * 10)
                 local s = BuildSword(0.8, false)
                 s.Parent = workspace
-                local randomOffset = Vector3.new(math.random(-40, 40), 2, math.random(-40, 40))
-                s.PrimaryPart.CFrame = CFrame.new(SwordState.RealmPos + randomOffset) * CFrame.Angles(math.rad(math.random(160, 200)), math.random(-3, 3), 0)
+                
+                local spawnPos = startPos + Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
+                -- Mũi kiếm hướng về phía người chơi
+                s.PrimaryPart.CFrame = CFrame.lookAt(spawnPos, startPos + Vector3.new(0, 2, 0)) * CFrame.Angles(math.rad(-90), 0, 0)
                 table.insert(fakeSwords, s)
             end
 
-            -- Chuyển Camera đến Bãi Kiếm
-            Camera.CameraType = Enum.CameraType.Scriptable
-            Camera.CFrame = CFrame.lookAt(SwordState.RealmPos + Vector3.new(0, 10, 40), SwordState.RealmPos)
-            PlaySound(142070127, 2, 0.5) -- Âm thanh ma mị
-            
-            -- [2] KIẾM BAY VỀ MỘT HƯỚNG (2 GIÂY)
+            -- [2] KIẾM LAO VỀ PHÍA NGƯỜI CHƠI (2 GIÂY)
             task.wait(1)
-            PlaySound(4446671048, 1.5, 1.2) -- Tiếng kiếm rút khỏi vỏ
+            PlaySound(4446671048, 1.5, 1.2) -- Tiếng kiếm rút
+            
             for _, s in ipairs(fakeSwords) do
-                TweenService:Create(s.PrimaryPart, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {
-                    CFrame = s.PrimaryPart.CFrame * CFrame.new(0, 100, -200)
+                -- Tween kiếm cắm thẳng vào vị trí người chơi
+                TweenService:Create(s.PrimaryPart, TweenInfo.new(1.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {
+                    CFrame = s.PrimaryPart.CFrame * CFrame.new(0, -radius + 2, 0)
                 }):Play()
             end
             
-            task.wait(2)
+            task.wait(1.4) -- Đợi gần chạm thì phóng lên
             
-            -- [3] CHUYỂN CẢNH: NHÂN VẬT PHÓNG LÊN TRỜI (150m)
-            local blur = Instance.new("BlurEffect", Lighting); blur.Size = 50
+            -- [3] PHÓNG LÊN TRỜI (150m) VÀ KẾT ẤN
+            local blur = Instance.new("BlurEffect", Lighting); blur.Size = 30
             TweenService:Create(blur, TweenInfo.new(0.5), {Size = 0}):Play()
             Debris:AddItem(blur, 0.5)
             
-            realmBase:Destroy(); fog:Destroy()
-            for _, s in pairs(fakeSwords) do s:Destroy() end
+            for _, s in pairs(fakeSwords) do s:Destroy() end -- Xóa kiếm nền
             
             root.CFrame = root.CFrame * CFrame.new(0, 150, 0)
-            Camera.CFrame = CFrame.lookAt(root.Position + Vector3.new(0, 2, -15), root.Position)
             SetPose(char, true) -- Cường giả kết ấn
             
             PlaySound(864568856, 1, 2) -- Âm thanh nổ uy lực
             
-            -- [4] MƯA KIẾM RƠI XUỐNG XUNG QUANH (2 GIÂY)
+            -- [4] MƯA KIẾM TRẮNG RƠI XUỐNG XUNG QUANH (2 GIÂY)
             for i = 1, 20 do
                 task.spawn(function()
                     local rainSword = BuildSword(0.6, true)
                     rainSword.Parent = workspace
-                    local spawnPos = root.Position + Vector3.new(math.random(-20, 20), 50, math.random(-20, 20))
+                    local spawnPos = root.Position + Vector3.new(math.random(-25, 25), 40, math.random(-25, 25))
                     rainSword.PrimaryPart.CFrame = CFrame.new(spawnPos) * CFrame.Angles(math.rad(-90), 0, 0)
                     
-                    local fallTw = TweenService:Create(rainSword.PrimaryPart, TweenInfo.new(0.5), {
+                    local fallTw = TweenService:Create(rainSword.PrimaryPart, TweenInfo.new(0.6, Enum.EasingStyle.Linear), {
                         CFrame = rainSword.PrimaryPart.CFrame * CFrame.new(0, -100, 0)
                     })
                     fallTw:Play()
@@ -213,7 +207,6 @@ TabSword:CreateButton({
             -- [5] 3 THANH ĐẠI KIẾM HỘ THỂ BÁM THEO
             SetPose(char, false)
             root.Anchored = false
-            Camera.CameraType = Enum.CameraType.Custom
             hum.WalkSpeed = 50; hum.JumpPower = 60
             
             local swordPositions = {
@@ -278,10 +271,6 @@ TabSword:CreateButton({
                 hum.JumpPower = 50
             end
             SetPose(char, false)
-        end
-        
-        if Camera.CameraType == Enum.CameraType.Scriptable then
-            Camera.CameraType = Enum.CameraType.Custom
         end
         
         Rayfield:Notify({Title = "Thu Công", Content = "Đã thu lại kiếm khí.", Duration = 2})
