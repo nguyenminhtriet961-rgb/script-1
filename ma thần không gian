@@ -101,11 +101,8 @@ local function SpawnFloorPortal(cframe, color)
     return portal, aura
 end
 
--- ==========================================
--- 1. BIẾN HÌNH & HỦY DẠNG
--- ==========================================
 TabTrans:CreateButton({
-    Name = "Nhận: 🔮 Ấn Ký Ma Thần khoog gian (Bật/Tắt)",
+    Name = "Nhận: 🔮 Ấn Ký Ma Thần không gian (Bật/Tắt)",
     Callback = function()
         local tool = Instance.new("Tool", player.Backpack)
         tool.Name, tool.RequiresHandle = "🔮 Ấn Ký Ma Thần không gian", false
@@ -117,16 +114,36 @@ TabTrans:CreateButton({
             local hum = char:FindFirstChild("Humanoid")
             
             if _G.IsMaThan then
+                -- TẮT MA THẦN
                 _G.IsMaThan = false
-                hum.WalkSpeed = 16; hum.HipHeight = 0
+                hum.WalkSpeed = 16
+                
+                -- Khôi phục HipHeight gốc thay vì gán bằng 0
+                hum.HipHeight = _G.OriginalHipHeight or 2 
+                
                 if root:FindFirstChild("V4AuraWhite") then root.V4AuraWhite:Destroy() end
                 if root:FindFirstChild("V4AuraBlack") then root.V4AuraBlack:Destroy() end
                 if ghostMovementConn then ghostMovementConn:Disconnect() end
                 if Lighting:FindFirstChild("MaThanCC") then Lighting.MaThanCC:Destroy() end
+                
+                -- Tự động tắt luôn Thiên Không Bộ nếu đang lơ lửng
+                if hoverActive then
+                    hoverActive = false
+                    RunService:UnbindFromRenderStep("HoverPadSync")
+                    if hoverPad then hoverPad:Destroy(); hoverPad = nil end
+                    if gui then gui:Destroy() end
+                end
+
+                -- Ép nhân vật đổi state để hệ thống tự kích hoạt lại Animation bước đi
+                hum:ChangeState(Enum.HumanoidStateType.Jumping)
+
                 PlaySound(178452221, 1.5, 2)
                 Rayfield:Notify({Title = "Thông báo", Content = "Đã thu hồi pháp lực.", Duration = 2})
             else
+                -- BẬT MA THẦN
+                _G.OriginalHipHeight = hum.HipHeight -- Lưu lại chiều cao hông gốc trước khi biến hình
                 _G.IsMaThan = true
+                
                 local animator = hum:FindFirstChildOfClass("Animator")
                 if animator then for _, anim in pairs(animator:GetPlayingAnimationTracks()) do anim:Stop() end end
                 
@@ -184,7 +201,6 @@ TabTrans:CreateButton({
         end)
     end
 })
-
 -- ==========================================
 -- 2. THIÊN KHÔNG BỘ (LƠ LỬNG TRÊN TRỜI)
 -- ==========================================
