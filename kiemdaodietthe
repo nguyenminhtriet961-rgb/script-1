@@ -1,5 +1,3 @@
- =======================================
-
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -18,8 +16,9 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false,
 })
 
-local TabSword = Window:CreateTab("⚔️ Kiếm Đạo", nil)
-local TabVision = Window:CreateTab("👁️ Nhãn Thuật", nil)
+-- Fix tham số nil ở đây
+local TabSword = Window:CreateTab("⚔️ Kiếm Đạo")
+local TabVision = Window:CreateTab("👁️ Nhãn Thuật")
 
 -- ==========================================
 -- BIẾN TRẠNG THÁI TOÀN CỤC
@@ -583,7 +582,7 @@ TabSword:CreateButton({
     end
 })
 -- ==========================================
--- KỸ NĂNG 6: PHÁ BÍCH KIẾM VŨ (THAY PHIÊN CHÉM, K QUÉT TƯỜNG, CỔNG TRẮNG)
+-- KỸ NĂNG 6: PHÁ BÍCH KIẾM VŨ
 -- ==========================================
 TabSword:CreateButton({
     Name = "Vật Phẩm 6: 🗡️ Phá Bích Kiếm Vũ",
@@ -606,26 +605,21 @@ TabSword:CreateButton({
                 SwordState.GuardianSwords[3].PrimaryPart
             }
             
-            -- Tọa độ gốc của 3 thanh kiếm để tụi nó rút về
             local defaultPos = {
                 CFrame.new(-4, 3, 0) * CFrame.Angles(math.rad(180), 0, 0),
                 CFrame.new(4, 3, 0) * CFrame.Angles(math.rad(180), 0, 0),
                 CFrame.new(0, 1, 3) * CFrame.Angles(math.rad(45), 0, math.rad(-45))
             }
 
-            -- 1. CHÉM THAY PHIÊN TRONG 2.4 GIÂY (12 NHÁT)
-            -- Mỗi lần lặp tốn ~0.2s => 12 lần = 2.4s
             for i = 1, 12 do
-                local idx = ((i - 1) % 3) + 1 -- Luân phiên 1 -> 2 -> 3
+                local idx = ((i - 1) % 3) + 1
                 local currentSword = swords[idx]
                 local baseC0 = defaultPos[idx]
 
-                -- Lao lên chém
-                PlaySound(138080210, 3, math.random(12, 16)/10) -- Âm thanh chém rít gió thay đổi pitch
+                PlaySound(138080210, 3, math.random(12, 16)/10)
                 local targetC0 = CFrame.new(math.random(-3, 3), math.random(0, 5), -6) * CFrame.Angles(math.rad(math.random(-180, 180)), math.rad(90), 0)
                 TweenService:Create(currentSword.Weld, TweenInfo.new(0.08, Enum.EasingStyle.Sine), {C0 = targetC0}):Play()
                 
-                -- Vệt sáng kiếm TRẮNG
                 local slash = Instance.new("Part", workspace)
                 slash.Size = Vector3.new(0.2, 20, 0.2); slash.Material = Enum.Material.Neon; slash.Color = Color3.fromRGB(255, 255, 255)
                 slash.Anchored = true; slash.CanCollide = false
@@ -635,28 +629,23 @@ TabSword:CreateButton({
                 
                 task.wait(0.1)
 
-                -- Rút kiếm về quỹ đạo
                 TweenService:Create(currentSword.Weld, TweenInfo.new(0.1, Enum.EasingStyle.Sine), {C0 = baseC0}):Play()
                 task.wait(0.1)
             end
 
-            -- 2. NỔ BÙM VÀ KHÔNG GIAN VỠ NÁT MÀU TRẮNG
             PlaySound(864568856, 5, 1.2)
             local portalPos = root.CFrame * CFrame.new(0, 0, -6)
 
-            -- Xả 60 mảnh vụn rớt lả tả
             for i = 1, 60 do
                 local debrisPart = Instance.new("Part", workspace)
                 debrisPart.Size = Vector3.new(math.random(1,4), math.random(1,4), math.random(1,4))
-                debrisPart.Material = Enum.Material.Slate; debrisPart.Color = Color3.fromRGB(150, 150, 150) -- Đá xám trắng
+                debrisPart.Material = Enum.Material.Slate; debrisPart.Color = Color3.fromRGB(150, 150, 150)
                 debrisPart.CFrame = portalPos * CFrame.Angles(math.rad(math.random(0,360)), math.rad(math.random(0,360)), 0)
-                -- Lực văng từ tâm nổ
                 debrisPart.Velocity = (root.CFrame.LookVector * math.random(30, 80)) + Vector3.new(math.random(-30,30), math.random(30, 70), math.random(-30,30))
-                debrisPart.CanCollide = false -- Tắt va chạm để nhân vật lướt không bị kẹt
+                debrisPart.CanCollide = false
                 Debris:AddItem(debrisPart, 3)
             end
 
-            -- Cổng ánh sáng màu TRẮNG
             local portal = Instance.new("Part", workspace)
             portal.Size = Vector3.new(10, 12, 1); portal.CFrame = portalPos
             portal.Material = Enum.Material.Neon; portal.Color = Color3.fromRGB(255, 255, 255)
@@ -667,13 +656,11 @@ TabSword:CreateButton({
             portalAura.Size = NumberSequence.new(2, 0); portalAura.Rate = 100; portalAura.Speed = NumberRange.new(5, 10); portalAura.Lifetime = NumberRange.new(0.5, 1)
             Debris:AddItem(portal, 5)
 
-            -- 3. NHÂN VẬT LƯỚT QUA (DỊCH CHUYỂN XUYÊN MỌI VẬT THỂ 25 MET)
             root.Anchored = false
             TweenService:Create(root, TweenInfo.new(0.3, Enum.EasingStyle.Sine), {CFrame = root.CFrame * CFrame.new(0, 0, -25)}):Play()
             task.wait(0.3)
             char.Humanoid.WalkSpeed = 50
 
-            -- 4. KIẾM TRỞ LẠI QUỸ ĐẠO QUAY BÌNH THƯỜNG
             TweenService:Create(swords[1].Weld, TweenInfo.new(0.5), {C0 = defaultPos[1]}):Play()
             TweenService:Create(swords[2].Weld, TweenInfo.new(0.5), {C0 = defaultPos[2]}):Play()
             TweenService:Create(swords[3].Weld, TweenInfo.new(0.5), {C0 = defaultPos[3]}):Play()
@@ -690,7 +677,7 @@ TabSword:CreateButton({
     end
 })
 -- ==========================================
--- KỸ NĂNG 8: VẠN KIẾM QUY TÔNG (PHỤC HỒI KIẾM)
+-- KỸ NĂNG 8: VẠN KIẾM QUY TÔNG
 -- ==========================================
 TabSword:CreateButton({
     Name = "Vật Phẩm 8: 🔄 Vạn Kiếm Quy Tông",
@@ -702,45 +689,37 @@ TabSword:CreateButton({
             local char = player.Character; local root = char and char:FindFirstChild("HumanoidRootPart")
             if not root then return end
 
-            -- 1. Dọn dẹp kiếm cũ bị lỗi hoặc kẹt
             for _, s in pairs(SwordState.GuardianSwords) do
                 if s and s:IsA("Model") then s:Destroy() end
             end
             SwordState.GuardianSwords = {}
             RunService:UnbindFromRenderStep("SpinSwords")
 
-            -- 2. Ép trạng thái biến hình để xài được chiêu khác
             SwordState.IsTransformed = true
 
-            -- Tọa độ chuẩn của 3 thanh kiếm
             local swordPos = {
                 {off = CFrame.new(-4, 3, 0) * CFrame.Angles(math.rad(180), 0, 0), sc = 1.5},
                 {off = CFrame.new(4, 3, 0) * CFrame.Angles(math.rad(180), 0, 0), sc = 1.5},
                 {off = CFrame.new(0, 1, 3) * CFrame.Angles(math.rad(45), 0, math.rad(-45)), sc = 1.5}
             }
 
-            PlaySound(142070127, 4, 1) -- Âm thanh triệu hồi vang dội
+            PlaySound(142070127, 4, 1)
 
-            -- 3. Triệu hồi kiếm từ trên cao lao xuống
             for _, p in ipairs(swordPos) do
-                -- BuildSword là hàm đã có sẵn ở tuốt trên cùng script của em
                 local gs = BuildSword(p.sc, true, true) 
                 gs.Parent = workspace; gs.PrimaryPart.Anchored = false
                 
-                -- Đặt vị trí ban đầu tích tụ trên trời
                 gs.PrimaryPart.CFrame = root.CFrame * CFrame.new(math.random(-30, 30), 200, math.random(-30, 30))
                 
                 local w = Instance.new("Weld", gs.PrimaryPart); w.Part0 = root; w.Part1 = gs.PrimaryPart
-                w.C0 = p.off * CFrame.new(0, 200, 0) -- Weld từ khoảng cách 200m
+                w.C0 = p.off * CFrame.new(0, 200, 0)
 
-                -- Tween lao vút xuống lưng
                 TweenService:Create(w, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {C0 = p.off}):Play()
                 table.insert(SwordState.GuardianSwords, gs)
             end
 
             task.wait(1)
 
-            -- 4. Bật lại hoạt ảnh xoay bảo vệ cho 2 kiếm ở vai
             RunService:BindToRenderStep("SpinSwords", 200, function()
                 if SwordState.GuardianSwords[1] and SwordState.GuardianSwords[2] then
                     SwordState.GuardianSwords[1].PrimaryPart.Weld.C0 *= CFrame.Angles(0, math.rad(3), 0)
@@ -753,15 +732,15 @@ TabSword:CreateButton({
     end
 })
 -- ==========================================
--- KỸ NĂNG 9: HƯ KHÔNG ĐỘC ẢNH (BẢN UPDATE FULL ÂM THANH ÁM SÁT)
+-- KỸ NĂNG 9: HƯ KHÔNG ĐỘC ẢNH
 -- ==========================================
 local SelectedTarget = nil
 
--- Tạo Dropdown để chọn người chơi
+-- Fix lại giá trị mặc định cho Option
 local PlayerDropdown = TabSword:CreateDropdown({
     Name = "🎯 Chọn Mục Tiêu Ám Sát",
     Options = {"Chưa có ai"},
-    CurrentOption = {""},
+    CurrentOption = {"Chưa có ai"},
     MultipleOptions = false,
     Flag = "AssassinateTarget",
     Callback = function(Option)
@@ -769,7 +748,6 @@ local PlayerDropdown = TabSword:CreateDropdown({
     end,
 })
 
--- Nút cập nhật danh sách người chơi
 TabSword:CreateButton({
     Name = "🔄 Cập Nhật Danh Sách Người Chơi",
     Callback = function()
@@ -783,7 +761,7 @@ TabSword:CreateButton({
 })
 
 TabSword:CreateButton({
-    Name = "Vật Phẩm 9: 🔪 Hư Không Độc Ảnh",
+    Name = "Vật Phẩm 9: 🔪 Hư KHông Độc Ảnh",
     Callback = function()
         if player.Backpack:FindFirstChild("🔪 Hư Không Độc Ảnh") or (player.Character and player.Character:FindFirstChild("🔪 Hư Không Độc Ảnh")) then return end
         local tool = Instance.new("Tool"); tool.Name = "🔪 Hư Không Độc Ảnh"; tool.RequiresHandle = false; tool.Parent = player.Backpack
@@ -806,31 +784,26 @@ TabSword:CreateButton({
                 Rayfield:Notify({Title = "Lỗi", Content = "Mục tiêu đã bay màu hoặc không tồn tại!", Duration = 3}); return
             end
 
-            -- 1. TẠO VẾT NỨT HƯ KHÔNG (Gấp 4 lần) VÀ ÂM THANH XÉ RÁCH
             local riftPos = root.CFrame * CFrame.new(0, 0, -8)
             local rift = CreateLightningRift(riftPos, 4, false)
-            PlaySound(864568856, 5, 0.6) -- Tiếng nổ bass trầm
-            PlaySound(138084556, 3, 0.8) -- Tiếng xé rách không gian
+            PlaySound(864568856, 5, 0.6)
+            PlaySound(138084556, 3, 0.8)
 
-            -- 2. LAO VÚT VÀO CỔNG (Kèm âm thanh rít gió)
             char.Humanoid.WalkSpeed = 0; root.Anchored = true
-            PlaySound(142070127, 4, 1.5) -- Tiếng lao vút đi xé gió
+            PlaySound(142070127, 4, 1.5)
             TweenService:Create(root, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {CFrame = riftPos}):Play()
             
             task.wait(0.4)
-            -- Làm mờ nhân vật để tạo cảm giác biến mất
             for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.Transparency = 1 end end
             
             task.wait(0.1)
 
-            -- 3. XUẤT HIỆN SAU LƯNG ĐỐI THỦ (Kèm âm thanh sét đánh + rút kiếm)
             local behindCFrame = targetRoot.CFrame * CFrame.new(0, 0, 3) 
             root.CFrame = behindCFrame
             
             task.wait(0.1)
-            -- Hiện hình lại và dội âm thanh
-            PlaySound(138080210, 5, 1.2) -- Tiếng sét/năng lượng bùng nổ
-            PlaySound(4446671048, 3, 1) -- Tiếng rút kiếm sắc lẹm
+            PlaySound(138080210, 5, 1.2)
+            PlaySound(4446671048, 3, 1)
             
             for _, v in pairs(char:GetDescendants()) do 
                 if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then 
@@ -846,7 +819,7 @@ TabSword:CreateButton({
     end
 })
 -- ==========================================
--- KỸ NĂNG 10: KIẾM VŨ LIÊN HOÀN (BẢN UPDATE SIÊU ĐẸP - ANIME STYLE)
+-- KỸ NĂNG 10: KIẾM VŨ LIÊN HOÀN
 -- ==========================================
 local BasicAttackState = {
     Combo = 0,
@@ -855,7 +828,6 @@ local BasicAttackState = {
     ResetTime = 1.5
 }
 
--- Hàm tạo độ rung lắc màn hình cực ngầu
 local function ShakeCamera(intensity, duration)
     local startTime = tick()
     local shakeConn
@@ -872,25 +844,22 @@ local function ShakeCamera(intensity, duration)
     end)
 end
 
--- Hàm tạo vệt chém Anime
 local function CreateAnimeSlash(char, color, angleOffset)
     local root = char:FindFirstChild("HumanoidRootPart")
     if not root then return end
     
     local slash = Instance.new("Part", workspace)
-    slash.Size = Vector3.new(0.1, 20, 2) -- Hình lưỡi liềm dẹp
+    slash.Size = Vector3.new(0.1, 20, 2)
     slash.Material = Enum.Material.Neon
     slash.Color = color or Color3.fromRGB(255, 255, 255)
     slash.Anchored = true
     slash.CanCollide = false
     
-    -- Xoay vệt chém theo góc của nhân vật + góc nghiêng tùy chỉnh
     slash.CFrame = root.CFrame * CFrame.new(0, 0, -6) * CFrame.Angles(math.rad(angleOffset.X), math.rad(angleOffset.Y), math.rad(angleOffset.Z))
     
     local mesh = Instance.new("SpecialMesh", slash)
     mesh.MeshType = Enum.MeshType.Sphere
     
-    -- Hiệu ứng mờ dần và phình to vệt sáng
     TweenService:Create(slash, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
         Transparency = 1, 
         Size = Vector3.new(0.5, 30, 4)
@@ -931,13 +900,11 @@ TabSword:CreateButton({
             local def2 = CFrame.new(4, 3, 0) * CFrame.Angles(math.rad(180), 0, 0)
             local def3 = CFrame.new(0, 1, 3) * CFrame.Angles(math.rad(45), 0, math.rad(-45))
 
-            -- Lướt lên phía trước
             root.Anchored = false
             TweenService:Create(root, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = root.CFrame * CFrame.new(0, 0, -4)}):Play()
 
             if BasicAttackState.Combo == 1 then
-                -- NHÁT 1: Chém ngang trái
-                PlaySound(138080210, 5, 1.2) -- Volume 5 max ping
+                PlaySound(138080210, 5, 1.2)
                 ShakeCamera(1, 0.1)
                 CreateAnimeSlash(char, Color3.fromRGB(150, 255, 255), Vector3.new(0, 0, 60))
                 
@@ -947,7 +914,6 @@ TabSword:CreateButton({
                 task.wait(0.1)
 
             elseif BasicAttackState.Combo == 2 then
-                -- NHÁT 2: Chém ngang phải
                 PlaySound(138080210, 5, 1.3)
                 ShakeCamera(1, 0.1)
                 CreateAnimeSlash(char, Color3.fromRGB(150, 255, 255), Vector3.new(0, 0, -60))
@@ -958,7 +924,6 @@ TabSword:CreateButton({
                 task.wait(0.1)
 
             elseif BasicAttackState.Combo == 3 then
-                -- NHÁT 3: Chém dọc từ trên xuống
                 PlaySound(138084556, 5, 1.1)
                 ShakeCamera(2, 0.15)
                 CreateAnimeSlash(char, Color3.fromRGB(255, 100, 100), Vector3.new(90, 0, 0))
@@ -969,23 +934,20 @@ TabSword:CreateButton({
                 task.wait(0.1)
 
             elseif BasicAttackState.Combo == 4 then
-                -- NHÁT 4: Tam kiếm đập đất (Sóng xung kích Anime)
-                PlaySound(4446671048, 5, 0.8) -- Tiếng rít gồng kiếm
+                PlaySound(4446671048, 5, 0.8)
                 TweenService:Create(s1.Weld, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {C0 = CFrame.new(-3, -2, -6) * CFrame.Angles(math.rad(-120), 0, math.rad(-30))}):Play()
                 TweenService:Create(s2.Weld, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {C0 = CFrame.new(3, -2, -6) * CFrame.Angles(math.rad(-120), 0, math.rad(30))}):Play()
                 TweenService:Create(s3.Weld, TweenInfo.new(0.3, Enum.EasingStyle.Exponential), {C0 = CFrame.new(0, -3, -7) * CFrame.Angles(math.rad(-130), 0, 0)}):Play()
                 
                 task.wait(0.2)
                 
-                PlaySound(864568856, 6, 0.9) -- Nổ rung chấn
-                ShakeCamera(5, 0.4) -- Rung màn hình mạnh
+                PlaySound(864568856, 6, 0.9)
+                ShakeCamera(5, 0.4)
                 
-                -- Vệt sáng đập đất hình chữ X khổng lồ
                 CreateAnimeSlash(char, Color3.fromRGB(255, 50, 50), Vector3.new(0, 0, 45))
                 CreateAnimeSlash(char, Color3.fromRGB(255, 50, 50), Vector3.new(0, 0, -45))
                 CreateAnimeSlash(char, Color3.fromRGB(255, 50, 50), Vector3.new(90, 0, 0))
 
-                -- Sóng xung kích bùng nổ
                 local shockwave = Instance.new("Part", workspace)
                 shockwave.Size = Vector3.new(2, 1, 2); shockwave.CFrame = root.CFrame * CFrame.new(0, -3, -6)
                 shockwave.Anchored = true; shockwave.CanCollide = false; shockwave.Material = Enum.Material.Neon; shockwave.Color = Color3.fromRGB(255, 50, 0)
@@ -993,7 +955,6 @@ TabSword:CreateButton({
                 TweenService:Create(shockwave, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = Vector3.new(60, 2, 60), Transparency = 1}):Play()
                 Debris:AddItem(shockwave, 0.6)
 
-                -- Bắn vụn đá tứ tung
                 for i = 1, 20 do
                     local debrisPart = Instance.new("Part", workspace)
                     debrisPart.Size = Vector3.new(math.random(1,4), math.random(1,4), math.random(1,4))
@@ -1006,7 +967,6 @@ TabSword:CreateButton({
                 
                 task.wait(0.6)
                 
-                -- Thu cả 3 kiếm về
                 TweenService:Create(s1.Weld, TweenInfo.new(0.4, Enum.EasingStyle.Sine), {C0 = def1}):Play()
                 TweenService:Create(s2.Weld, TweenInfo.new(0.4, Enum.EasingStyle.Sine), {C0 = def2}):Play()
                 TweenService:Create(s3.Weld, TweenInfo.new(0.4, Enum.EasingStyle.Sine), {C0 = def3}):Play()
